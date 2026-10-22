@@ -22,7 +22,8 @@ export default function DeliveryPartnerMobileApp() {
   const progressPercent = Math.round((completedStops.length / deliveries.length) * 100) || 0;
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-100 flex flex-col font-sans -m-4 sm:-m-6 lg:-m-8">
+    <div className="py-2 flex justify-center w-full">
+      <div className="w-full max-w-md min-h-[85vh] bg-slate-100 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
       {/* Mobile Header Bar */}
       <div className="bg-emerald-700 text-white p-4 pt-6 sticky top-0 z-30 shadow-md">
         <div className="flex items-center justify-between mb-3">
@@ -163,5 +164,6 @@ export default function DeliveryPartnerMobileApp() {
         )}
       </div>
     </div>
+  </div>
   );
 }

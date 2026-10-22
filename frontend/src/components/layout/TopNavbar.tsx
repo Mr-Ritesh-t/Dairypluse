@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Menu,
   Search,
@@ -14,13 +14,20 @@ import {
   Truck,
   ShoppingBag,
   DollarSign,
+  Activity,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import { checkBackendHealth } from '@/lib/api';
 
 export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { openModal } = useDairyPulse();
   const [quickActionOpen, setQuickActionOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkBackendHealth().then((res) => setBackendOnline(res.online));
+  }, []);
 
   return (
     <header
@@ -115,6 +122,18 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
           <Calendar className="w-3.5 h-3.5 text-emerald-600" />
           <span>Today, 23 Oct 2026</span>
+        </div>
+
+        {/* Backend API status badge */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
+            }`}
+          />
+          <span className="text-slate-600">
+            {backendOnline ? 'FastAPI v1 Live' : 'Local Mock Engine'}
+          </span>
         </div>
 
         {/* Notifications Bell */}

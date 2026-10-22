@@ -30,7 +30,8 @@ export default function CustomerSelfServiceApp() {
   const [extraMilkRequested, setExtraMilkRequested] = useState(false);
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-100 flex flex-col font-sans -m-4 sm:-m-6 lg:-m-8">
+    <div className="py-2 flex justify-center w-full">
+      <div className="w-full max-w-md min-h-[85vh] bg-slate-100 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
       {/* Mobile Top Header */}
       <div className="bg-emerald-700 text-white p-5 pt-6 sticky top-0 z-30 shadow-md">
         <div className="flex items-center justify-between mb-2">
@@ -161,5 +162,6 @@ export default function CustomerSelfServiceApp() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
