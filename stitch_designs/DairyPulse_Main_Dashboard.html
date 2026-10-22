@@ -1,0 +1,935 @@
+﻿<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>DairyPulse - Dairy Business Dashboard</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pulse: {
+              green: '#00A86B',
+              darkGreen: '#008552',
+              mint: '#E6F8F0',
+              blue: '#2563EB',
+              softBlue: '#EFF6FF',
+              amber: '#F59E0B',
+              softAmber: '#FFFBEB',
+              purple: '#7C3AED',
+              softPurple: '#F5F3FF',
+              sidebarActive: '#E8F5E9',
+              sidebarTextActive: '#0E703C',
+              badgeGreenBg: '#ECFDF5',
+              badgeGreenText: '#059669',
+              badgeBlueBg: '#EFF6FF',
+              badgeBlueText: '#2563EB',
+              badgeOrangeBg: '#FFF7ED',
+              badgeOrangeText: '#EA580C',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style data-purpose="base-styling">
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #F8FAFC;
+      color: #1E293B;
+    }
+    /* Custom scrollbar for clean dashboard view */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+<style data-purpose="banner-illustrations">
+    /* Scenic pastoral banner background gradient and soft hill styling */
+    .pastoral-banner {
+      background: linear-gradient(180deg, #D9F2FB 0%, #E8F8EE 55%, #D4EED8 100%);
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#F4F7FB] flex">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-30 overflow-y-auto" data-purpose="main-sidebar">
+<!-- Top Branding & Navigation -->
+<div>
+<!-- Brand Logo & Title -->
+<div class="px-6 pt-6 pb-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
+<!-- Stylized Cow / Dairy Logo -->
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19 13.5a5.5 5.5 0 0 1-11 0c0-1.5.5-2.9 1.4-4L9 7l2 1 1-2 1 2 2-1-.4 2.5c.9 1.1 1.4 2.5 1.4 4Z" fill="#10B981" fill-opacity="0.2"></path>
+<path d="M7 10l-3-2a2 2 0 0 0-2.8 2.2L2 14c.4 2 2 3.5 4 3.5h.5"></path>
+<path d="M17 10l3-2a2 2 0 0 1 2.8 2.2L22 14c-.4 2-2 3.5-4 3.5h-.5"></path>
+<circle cx="10" cy="13" fill="currentColor" r="1"></circle>
+<circle cx="14" cy="13" fill="currentColor" r="1"></circle>
+<path d="M10 17s1 1 2 1 2-1 2-1"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center">
+            Dairy<span class="text-emerald-600">Pulse</span>
+</h1>
+<p class="text-[10px] text-slate-500 font-medium tracking-tight mt-1">Fresh Milk, Healthier Tomorrows</p>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav aria-label="Main Navigation" class="mt-4 px-3 space-y-1">
+<!-- Dashboard (Active) -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-semibold text-sm bg-emerald-100/70 text-emerald-800 transition" href="#dashboard">
+<svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Dashboard
+        </a>
+<!-- Milk Inventory -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#inventory">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Milk Inventory
+        </a>
+<!-- Household Subscriptions -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#household">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Household Subscriptions
+        </a>
+<!-- Shop Orders -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#orders">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Shop Orders
+        </a>
+<!-- Delivery Management -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#delivery">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Delivery Management
+        </a>
+<!-- Customers -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#customers">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Customers
+        </a>
+<!-- Billing & Payments -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#billing">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Billing &amp; Payments
+        </a>
+<!-- Staff Management -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#staff">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Staff Management
+        </a>
+<!-- Expenses -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#expenses">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Expenses
+        </a>
+<!-- Reports -->
+<a class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" href="#reports">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+          Reports
+        </a>
+</nav>
+</div>
+<!-- Bottom Promo Banner Card -->
+<div class="p-4">
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100 via-green-100 to-emerald-200 p-4 border border-emerald-200 shadow-sm">
+<!-- Botanical decorative elements -->
+<div class="absolute -right-4 -bottom-6 opacity-30 text-emerald-800">
+<svg class="w-28 h-28" fill="currentColor" viewBox="0 0 100 100">
+<path d="M50 0 C60 30 80 40 100 50 C80 60 60 70 50 100 C40 70 20 60 0 50 C20 40 40 30 50 0 Z"></path>
+</svg>
+</div>
+<div class="relative z-10">
+<h4 class="font-bold text-slate-900 text-sm leading-tight">Pure Milk<br><span class="text-emerald-800">Better Living</span></h4>
+<p class="text-[11px] text-slate-600 font-medium mt-1.5 leading-snug">Manage today for a healthier tomorrow.</p>
+<div class="mt-3 flex items-center justify-between">
+<span class="inline-flex items-center text-[11px] font-semibold text-emerald-800 bg-white/80 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-xs">
+              Eco Dairy 100%
+            </span>
+<!-- Bottle icon -->
+<svg class="w-7 h-7 text-emerald-700 opacity-90" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M9 3h6M10 3v2m4-2v2M8 7h8l1 3v10a2 2 0 01-2 2H9a2 2 0 01-2-2V10l1-3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- Main Content Container with left offset for sidebar -->
+<div class="flex-1 ml-64 flex flex-col min-w-0">
+<!-- BEGIN: TopNavigationBar -->
+<header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-20 shadow-xs" data-purpose="top-navbar">
+<!-- Left side: Hamburger & Search -->
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<button aria-label="Toggle Navigation" class="text-slate-600 hover:text-slate-900 focus:outline-none p-1.5 rounded-lg hover:bg-slate-100" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Search Bar -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition placeholder:text-slate-400" placeholder="Search customers, orders, or anything..." type="text">
+</div>
+</div>
+<!-- Right side: Date Selector, Notifications, User Profile -->
+<div class="flex items-center gap-4">
+<!-- Date Selector Button -->
+<button class="flex items-center gap-2 px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 transition shadow-2xs" type="button">
+<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<rect height="18" rx="2" ry="2" width="18" x="3" y="4"></rect>
+<line x1="16" x2="16" y1="2" y2="6"></line>
+<line x1="8" x2="8" y1="2" y2="6"></line>
+<line x1="3" x2="21" y1="10" y2="10"></line>
+</svg>
+<span>Tue, 15 Apr 2025</span>
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Notifications Bell -->
+<button aria-label="Notifications" class="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute top-1.5 right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">3</span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-3 pl-2 border-l border-slate-200 cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-slate-300 ring-2 ring-emerald-500/20 overflow-hidden flex items-center justify-center text-slate-700 font-semibold text-xs">
+<span class="bg-gradient-to-tr from-amber-600 to-amber-400 text-white w-full h-full flex items-center justify-center font-bold">RT</span>
+</div>
+<div class="flex flex-col text-left">
+<div class="flex items-center gap-1">
+<span class="text-xs font-semibold text-slate-900 leading-tight">Ritesh Tayade</span>
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[10px] text-slate-400 font-medium">Owner</span>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopNavigationBar -->
+<!-- BEGIN: MainDashboardContent -->
+<main class="p-8 space-y-6" data-purpose="dashboard-content">
+<!-- BEGIN: HeroWelcomeBanner -->
+<section class="pastoral-banner rounded-3xl border border-emerald-100 shadow-sm relative px-8 py-7 flex flex-col md:flex-row md:items-center justify-between min-h-[170px] overflow-hidden" data-purpose="hero-banner">
+<!-- Decorative pastoral background layer -->
+<div class="absolute inset-0 opacity-15 pointer-events-none">
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1200 200">
+<path d="M0 160 Q 300 110, 600 150 T 1200 130 L 1200 200 L 0 200 Z" fill="#059669"></path>
+<path d="M0 180 Q 400 140, 800 170 T 1200 150 L 1200 200 L 0 200 Z" fill="#047857"></path>
+</svg>
+</div>
+<!-- Left Greeting Text -->
+<div class="relative z-10 max-w-lg">
+<h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Good Morning, <span class="text-emerald-700">Ritesh!</span>
+</h2>
+<p class="text-slate-600 text-sm mt-1.5 font-medium">
+            Here's what's happening with your dairy business today.
+          </p>
+</div>
+<!-- Right Side Pastoral Landscape & Dairy Illustration -->
+<div class="relative z-10 flex items-end gap-6 self-end mt-4 md:mt-0">
+<!-- Cows Grazing Visual representation -->
+<div class="hidden lg:flex items-end gap-2 pb-1">
+<!-- Grazing Cow 1 -->
+<div class="text-slate-800 opacity-80 flex flex-col items-center">
+<svg class="w-16 h-12" fill="currentColor" viewBox="0 0 100 70">
+<ellipse cx="50" cy="40" rx="30" ry="18"></ellipse>
+<circle cx="25" cy="28" r="12"></circle>
+<rect height="15" rx="2" width="5" x="25" y="52"></rect>
+<rect height="15" rx="2" width="5" x="37" y="52"></rect>
+<rect height="15" rx="2" width="5" x="60" y="52"></rect>
+<rect height="15" rx="2" width="5" x="72" y="52"></rect>
+<path d="M78 38 Q 88 42, 85 55" fill="none" stroke="currentColor" stroke-width="3"></path>
+</svg>
+</div>
+<!-- Grazing Cow 2 -->
+<div class="text-slate-800 opacity-90 flex flex-col items-center">
+<svg class="w-20 h-14" fill="currentColor" viewBox="0 0 100 70">
+<ellipse cx="50" cy="40" rx="32" ry="20"></ellipse>
+<circle cx="22" cy="26" r="14"></circle>
+<rect height="16" rx="2" width="6" x="25" y="54"></rect>
+<rect height="16" rx="2" width="6" x="38" y="54"></rect>
+<rect height="16" rx="2" width="6" x="60" y="54"></rect>
+<rect height="16" rx="2" width="6" x="73" y="54"></rect>
+<path d="M80 38 Q 92 45, 87 60" fill="none" stroke="currentColor" stroke-width="3"></path>
+</svg>
+</div>
+</div>
+<!-- Milk Jar & Glass Pitcher Container -->
+<div class="flex items-end gap-3 bg-white/70 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/80 shadow-xs">
+<!-- Glass Milk Pitcher -->
+<div class="flex flex-col items-center">
+<svg class="w-10 h-12 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 40 48">
+<path d="M12 6h16M14 6v4c-6 4-6 10-6 18a10 10 0 0020 0c0-8 0-14-6-18V6" stroke-linecap="round" stroke-width="2"></path>
+<path d="M12 18 C12 28, 28 28, 28 18" fill="#E0F2FE" opacity="0.6"></path>
+<path d="M28 16c4 0 7 2 7 6s-3 6-7 6" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-bold text-slate-700 mt-1">Fresh Farm</span>
+</div>
+<!-- Milk Glass -->
+<div class="flex flex-col items-center">
+<svg class="w-6 h-9 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 36">
+<path d="M4 4h16l-2 26a2 2 0 01-2 2H8a2 2 0 01-2-2L4 4z" stroke-width="2"></path>
+<path d="M5.5 14h13l-1.5 15a1 1 0 01-1 1H8a1 1 0 01-1-1L5.5 14z" fill="#F0F9FF"></path>
+</svg>
+<span class="text-[9px] font-semibold text-slate-500 mt-1">100% Pure</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: HeroWelcomeBanner -->
+<!-- BEGIN: KeyMetricCards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-purpose="metrics-row">
+<!-- Metric Card 1: Today's Sales -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+<!-- Sales / Chart Icon -->
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-slate-500">Today's Sales</p>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-2xl font-extrabold text-slate-900 tracking-tight">₹8,450</span>
+<span class="text-xs font-semibold text-emerald-600 flex items-center">
+<svg class="w-3.5 h-3.5 mr-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M5 10l7-7m0 0l7 7m-7-7v18" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+                  12%
+                </span>
+</div>
+<p class="text-[11px] text-slate-400 mt-1">vs yesterday</p>
+</div>
+</div>
+</div>
+<!-- Metric Card 2: Milk in Stock -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+<!-- Milk Drop Icon -->
+<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-slate-500">Milk in Stock</p>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-2xl font-extrabold text-slate-900 tracking-tight">120 L</span>
+<span class="text-xs font-semibold text-rose-500 flex items-center">
+<svg class="w-3.5 h-3.5 mr-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M19 14l-7 7m0 0l-7-7m7 7V3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+                  8%
+                </span>
+</div>
+<p class="text-[11px] text-slate-400 mt-1">vs yesterday</p>
+</div>
+</div>
+</div>
+<!-- Metric Card 3: Deliveries -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+<!-- Delivery Truck Icon -->
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-slate-500">Deliveries</p>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-2xl font-extrabold text-slate-900 tracking-tight">28 / 32</span>
+</div>
+<!-- Progress Bar -->
+<div class="mt-2.5">
+<div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+<div class="bg-emerald-500 h-1.5 rounded-full" style="width: 87.5%"></div>
+</div>
+<p class="text-[11px] text-slate-500 font-medium mt-1">87% completed</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Metric Card 4: Pending Payments -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+<!-- Wallet Icon -->
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-slate-500">Pending Payments</p>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-2xl font-extrabold text-slate-900 tracking-tight">₹12,600</span>
+<span class="text-xs font-semibold text-rose-500 flex items-center">
+<svg class="w-3.5 h-3.5 mr-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M5 10l7-7m0 0l7 7m-7-7v18" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+                  5%
+                </span>
+</div>
+<p class="text-[11px] text-slate-400 mt-1">from last week</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: KeyMetricCards -->
+<!-- BEGIN: ChartsAndInventoryRow -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6" data-purpose="charts-and-inventory">
+<!-- Sales Overview Chart (8 columns on large screens) -->
+<div class="lg:col-span-7 xl:col-span-8 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+<!-- Chart Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3 border-b border-slate-100">
+<div>
+<h3 class="text-base font-bold text-slate-900">Sales Overview</h3>
+<p class="text-xs text-slate-400 mt-0.5">Household vs Shop vs Total revenue comparison</p>
+</div>
+<!-- Range Selector Toggle Buttons -->
+<div class="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-medium text-slate-600">
+<button class="px-3 py-1 bg-emerald-600 text-white rounded-lg font-semibold shadow-xs transition" type="button">7 Days</button>
+<button class="px-3 py-1 hover:text-slate-900 rounded-lg transition" type="button">30 Days</button>
+<button class="px-3 py-1 hover:text-slate-900 rounded-lg transition" type="button">3 Months</button>
+</div>
+</div>
+<!-- Chart Area Container -->
+<div class="mt-4 relative">
+<div class="h-64 w-full relative flex flex-col justify-between">
+<!-- Y-Axis Grid Lines & Labels -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-400">
+<div class="border-b border-dashed border-slate-200 flex justify-between pb-1"><span>20K</span></div>
+<div class="border-b border-dashed border-slate-200 flex justify-between pb-1"><span>15K</span></div>
+<div class="border-b border-dashed border-slate-200 flex justify-between pb-1"><span>10K</span></div>
+<div class="border-b border-dashed border-slate-200 flex justify-between pb-1"><span>5K</span></div>
+<div class="border-b border-slate-300 flex justify-between pb-1"><span>0</span></div>
+</div>
+<!-- Bar Columns and Points Visual Layer -->
+<div class="relative h-56 mt-4 ml-8 mr-2 flex items-end justify-between z-10">
+<!-- Apr 9 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[52%] transition-all group-hover:brightness-110" title="Household: ₹5,200"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[36%] transition-all group-hover:brightness-110" title="Shop: ₹3,600"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">9 Apr</span>
+</div>
+<!-- Apr 10 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[68%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[44%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">10 Apr</span>
+</div>
+<!-- Apr 11 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[70%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[46%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">11 Apr</span>
+</div>
+<!-- Apr 12 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[72%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[48%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">12 Apr</span>
+</div>
+<!-- Apr 13 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[65%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[42%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">13 Apr</span>
+</div>
+<!-- Apr 14 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[67%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[43%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">14 Apr</span>
+</div>
+<!-- Apr 15 -->
+<div class="flex flex-col items-center gap-2 group cursor-pointer">
+<div class="flex items-end gap-1.5 h-44">
+<div class="w-3.5 bg-emerald-600 rounded-t-sm h-[74%] transition-all group-hover:brightness-110"></div>
+<div class="w-3.5 bg-blue-500 rounded-t-sm h-[50%] transition-all group-hover:brightness-110"></div>
+</div>
+<span class="text-[11px] font-medium text-slate-500">15 Apr</span>
+</div>
+</div>
+<!-- SVG Line Trend Overlay for Total Sales -->
+<svg class="absolute inset-0 h-44 ml-8 mr-2 pointer-events-none mt-2" preserveAspectRatio="none" viewBox="0 0 700 176">
+<!-- Total sales polyline -->
+<polyline fill="none" points="50,115 150,80 250,75 350,68 450,92 550,72 650,60" stroke="#10B981" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Circular trend nodes -->
+<circle cx="50" cy="115" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="150" cy="80" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="250" cy="75" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="350" cy="68" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="450" cy="92" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="550" cy="72" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+<circle cx="650" cy="60" fill="#FFFFFF" r="4" stroke="#10B981" stroke-width="2.5"></circle>
+</svg>
+</div>
+<!-- Legend indicators -->
+<div class="flex items-center justify-center gap-6 mt-6 pt-3 border-t border-slate-100 text-xs font-medium text-slate-600">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-emerald-600 rounded-sm"></span>
+<span>Household Sales</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-blue-500 rounded-sm"></span>
+<span>Shop Sales</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-1 bg-emerald-500 inline-block rounded-full"></span>
+<span class="w-2 h-2 rounded-full border border-emerald-500 bg-white inline-block -ml-2.5 mr-0.5"></span>
+<span>Total Sales</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Milk Inventory Status (4-5 columns) -->
+<div class="lg:col-span-5 xl:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<h3 class="text-base font-bold text-slate-900">Milk Inventory</h3>
+<a class="text-xs font-semibold text-blue-600 hover:text-blue-700" href="#inventory">View All</a>
+</div>
+<div class="mt-4 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="text-slate-400 border-b border-slate-100">
+<th class="pb-2 font-medium">Milk Type</th>
+<th class="pb-2 font-medium text-center">Available</th>
+<th class="pb-2 font-medium text-center">Unit</th>
+<th class="pb-2 font-medium text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Cow Milk -->
+<tr>
+<td class="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
+<div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs">
+                        🐄
+                      </div>
+<span>Cow Milk</span>
+</td>
+<td class="py-3 text-center font-bold text-slate-700">80</td>
+<td class="py-3 text-center text-slate-500">Litres</td>
+<td class="py-3 text-right">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        In Stock
+                      </span>
+</td>
+</tr>
+<!-- Buffalo Milk -->
+<tr>
+<td class="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
+<div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center text-xs">
+                        🐃
+                      </div>
+<span>Buffalo Milk</span>
+</td>
+<td class="py-3 text-center font-bold text-slate-700">40</td>
+<td class="py-3 text-center text-slate-500">Litres</td>
+<td class="py-3 text-right">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        In Stock
+                      </span>
+</td>
+</tr>
+<!-- Toned Milk -->
+<tr>
+<td class="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
+<div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center text-xs">
+                        🥛
+                      </div>
+<span>Toned Milk</span>
+</td>
+<td class="py-3 text-center font-bold text-slate-700">20</td>
+<td class="py-3 text-center text-slate-500">Litres</td>
+<td class="py-3 text-right">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        Low Stock
+                      </span>
+</td>
+</tr>
+<!-- Flavoured Milk -->
+<tr>
+<td class="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
+<div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center text-xs">
+                        🧃
+                      </div>
+<span>Flavoured Milk</span>
+</td>
+<td class="py-3 text-center font-bold text-slate-700">15</td>
+<td class="py-3 text-center text-slate-500">Litres</td>
+<td class="py-3 text-right">
+<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        Low Stock
+                      </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+<span>Total Milk Volume:</span>
+<span class="font-bold text-slate-800 text-sm">155 Litres</span>
+</div>
+</div>
+</section>
+<!-- END: ChartsAndInventoryRow -->
+<!-- BEGIN: TablesDeliveriesAndRecentOrders -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6" data-purpose="deliveries-and-orders-tables">
+<!-- Table 1: Today's Deliveries -->
+<div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h3 class="text-base font-bold text-slate-900">Today's Deliveries</h3>
+<p class="text-xs text-slate-400 mt-0.5">Route assignment &amp; real-time delivery status</p>
+</div>
+<a class="text-xs font-semibold text-blue-600 hover:text-blue-700" href="#deliveries">View All</a>
+</div>
+<div class="mt-4 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="text-slate-400 border-b border-slate-100">
+<th class="pb-2.5 font-medium">#</th>
+<th class="pb-2.5 font-medium">Customer</th>
+<th class="pb-2.5 font-medium">Type</th>
+<th class="pb-2.5 font-medium">Quantity</th>
+<th class="pb-2.5 font-medium">Delivery Boy</th>
+<th class="pb-2.5 font-medium text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Delivery 1 -->
+<tr>
+<td class="py-3 text-slate-400 font-medium">1</td>
+<td class="py-3 font-semibold text-slate-800">Sharma Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">1 L</td>
+<td class="py-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]">R</div>
+<span class="text-slate-700 font-medium">Rahul</span>
+</div>
+</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Delivered
+                    </span>
+</td>
+</tr>
+<!-- Delivery 2 -->
+<tr>
+<td class="py-3 text-slate-400 font-medium">2</td>
+<td class="py-3 font-semibold text-slate-800">Patil Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">0.5 L</td>
+<td class="py-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[10px]">S</div>
+<span class="text-slate-700 font-medium">Saurabh</span>
+</div>
+</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Delivered
+                    </span>
+</td>
+</tr>
+<!-- Delivery 3 -->
+<tr>
+<td class="py-3 text-slate-400 font-medium">3</td>
+<td class="py-3 font-semibold text-slate-800">Gupta Store</td>
+<td class="py-3 text-slate-500">Shop</td>
+<td class="py-3 font-bold text-slate-700">10 L</td>
+<td class="py-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px]">I</div>
+<span class="text-slate-700 font-medium">Imran</span>
+</div>
+</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      In Progress
+                    </span>
+</td>
+</tr>
+<!-- Delivery 4 -->
+<tr>
+<td class="py-3 text-slate-400 font-medium">4</td>
+<td class="py-3 font-semibold text-slate-800">Deshmukh Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">1 L</td>
+<td class="py-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]">R</div>
+<span class="text-slate-700 font-medium">Rahul</span>
+</div>
+</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Pending
+                    </span>
+</td>
+</tr>
+<!-- Delivery 5 -->
+<tr>
+<td class="py-3 text-slate-400 font-medium">5</td>
+<td class="py-3 font-semibold text-slate-800">More Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">1.5 L</td>
+<td class="py-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[10px]">S</div>
+<span class="text-slate-700 font-medium">Saurabh</span>
+</div>
+</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Pending
+                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Table 2: Recent Orders -->
+<div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h3 class="text-base font-bold text-slate-900">Recent Orders</h3>
+<p class="text-xs text-slate-400 mt-0.5">Daily transactions and shop invoices</p>
+</div>
+<a class="text-xs font-semibold text-blue-600 hover:text-blue-700" href="#orders">View All</a>
+</div>
+<div class="mt-4 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="text-slate-400 border-b border-slate-100">
+<th class="pb-2.5 font-medium">Customer</th>
+<th class="pb-2.5 font-medium">Type</th>
+<th class="pb-2.5 font-medium">Quantity</th>
+<th class="pb-2.5 font-medium">Amount</th>
+<th class="pb-2.5 font-medium text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Order 1 -->
+<tr>
+<td class="py-3 font-semibold text-slate-800">Sharma Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">1 L</td>
+<td class="py-3 font-extrabold text-slate-900">₹60</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Delivered
+                    </span>
+</td>
+</tr>
+<!-- Order 2 -->
+<tr>
+<td class="py-3 font-semibold text-slate-800">Gupta Store</td>
+<td class="py-3 text-slate-500">Shop</td>
+<td class="py-3 font-bold text-slate-700">10 L</td>
+<td class="py-3 font-extrabold text-slate-900">₹600</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Delivered
+                    </span>
+</td>
+</tr>
+<!-- Order 3 -->
+<tr>
+<td class="py-3 font-semibold text-slate-800">Patil Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">0.5 L</td>
+<td class="py-3 font-extrabold text-slate-900">₹30</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      In Progress
+                    </span>
+</td>
+</tr>
+<!-- Order 4 -->
+<tr>
+<td class="py-3 font-semibold text-slate-800">Amit Store</td>
+<td class="py-3 text-slate-500">Shop</td>
+<td class="py-3 font-bold text-slate-700">20 L</td>
+<td class="py-3 font-extrabold text-slate-900">₹1,200</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Pending
+                    </span>
+</td>
+</tr>
+<!-- Order 5 -->
+<tr>
+<td class="py-3 font-semibold text-slate-800">Deshmukh Family</td>
+<td class="py-3 text-slate-500">Household</td>
+<td class="py-3 font-bold text-slate-700">1 L</td>
+<td class="py-3 font-extrabold text-slate-900">₹60</td>
+<td class="py-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Pending
+                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- END: TablesDeliveriesAndRecentOrders -->
+<!-- BEGIN: BottomQuickActionButtons -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2" data-purpose="quick-actions">
+<!-- Quick Action 1: Add Milk Stock -->
+<button class="flex items-center gap-3.5 p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition group text-left" type="button">
+<div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-snug">Add Milk Stock</h4>
+<p class="text-xs text-emerald-100 font-normal">Record new milk inventory</p>
+</div>
+</button>
+<!-- Quick Action 2: Add Customer -->
+<button class="flex items-center gap-3.5 p-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition group text-left" type="button">
+<div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-snug">Add Customer</h4>
+<p class="text-xs text-blue-100 font-normal">Create new household or shop</p>
+</div>
+</button>
+<!-- Quick Action 3: Generate Bill -->
+<button class="flex items-center gap-3.5 p-4 rounded-2xl bg-[#EA580C] hover:bg-[#C2410C] text-white shadow-sm transition group text-left" type="button">
+<div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-snug">Generate Bill</h4>
+<p class="text-xs text-orange-100 font-normal">Create customer invoice</p>
+</div>
+</button>
+<!-- Quick Action 4: Assign Deliveries -->
+<button class="flex items-center gap-3.5 p-4 rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-sm transition group text-left" type="button">
+<div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-snug">Assign Deliveries</h4>
+<p class="text-xs text-purple-100 font-normal">Manage today's deliveries</p>
+</div>
+</button>
+</section>
+<!-- END: BottomQuickActionButtons -->
+</main>
+<!-- END: MainDashboardContent -->
+</div>
+<!-- Client-side Interactivity Script -->
+<script data-purpose="dashboard-interactions">
+    document.addEventListener('DOMContentLoaded', () => {
+      // Toggle date or notification mock feedback
+      const bellBtn = document.querySelector('header button[aria-label="Notifications"]');
+      if (bellBtn) {
+        bellBtn.addEventListener('click', () => {
+          alert('Notifications: 3 unread order alerts pending dispatch.');
+        });
+      }
+
+      // Quick Action Button Feedback
+      const actionButtons = document.querySelectorAll('section[data-purpose="quick-actions"] button');
+      actionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const actionName = btn.querySelector('h4')?.textContent || 'Action';
+          console.log(`Triggered: ${actionName}`);
+        });
+      });
+    });
+  </script>
+</body></html>

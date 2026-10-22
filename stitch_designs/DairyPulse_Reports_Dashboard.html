@@ -1,0 +1,1097 @@
+﻿<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>DairyPulse - Reports &amp; Analytics Dashboard</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#078B50',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            },
+            dairy: {
+              card: '#FFFFFF',
+              bg: '#F5F7FA',
+              dark: '#111827',
+              muted: '#6B7280',
+              border: '#E5E7EB'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-scrollbars">
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+<style data-purpose="dashboard-decorations">
+    .farm-pattern {
+      background-color: #f0fdf4;
+      background-image: radial-gradient(#10b981 0.75px, transparent 0.75px), radial-gradient(#10b981 0.75px, #f0fdf4 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      background-opacity: 0.08;
+    }
+    .chart-grid-line {
+      stroke: #F1F5F9;
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 antialiased font-sans flex h-screen overflow-hidden">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 select-none overflow-y-auto">
+<!-- Top Branding & Navigation -->
+<div>
+<!-- Brand Logo -->
+<div class="px-6 py-5 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-sm ring-2 ring-emerald-100">
+<!-- Stylized Cow / Milk icon -->
+<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+<path d="M19.5 9c-.28 0-.53.11-.71.29L17.5 10.58V8c0-1.66-1.34-3-3-3h-5C7.84 5 6.5 6.34 6.5 8v2.58l-1.29-1.29A.996.996 0 1 0 3.8 10.7l2.7 2.7V17c0 1.1.9 2 2 2h1v1c0 .55.45 1 1 1s1-.45 1-1v-1h5v1c0 .55.45 1 1 1s1-.45 1-1v-1h1c1.1 0 2-.9 2-2v-3.59l2.7-2.7c.39-.39.39-1.02 0-1.41-.18-.19-.43-.3-.7-.3zM9 10c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900 leading-none">DairyPulse</h1>
+<p class="text-[11px] text-emerald-600 font-medium tracking-wide mt-1">Fresh Milk, Healthier Tomorrows</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="mt-2 px-3 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Dashboard
+        </a>
+<!-- Milk Inventory -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Milk Inventory
+        </a>
+<!-- Household Subscriptions -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Household Subscriptions
+        </a>
+<!-- Shop Orders -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Shop Orders
+        </a>
+<!-- Delivery Management -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Delivery Management
+        </a>
+<!-- Customers -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Customers
+        </a>
+<!-- Billing & Payments -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Billing &amp; Payments
+        </a>
+<!-- Staff Management -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Staff Management
+        </a>
+<!-- Expenses -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors" href="#">
+<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Expenses
+        </a>
+<!-- Reports (Active Tab) -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold bg-emerald-50 text-emerald-700 transition-colors border-l-4 border-emerald-600 shadow-xs" href="#">
+<svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Reports
+        </a>
+</nav>
+</div>
+<!-- Bottom Promo Banner Card -->
+<div class="p-4">
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-100 via-emerald-50 to-teal-100 border border-emerald-200/60 p-4 text-emerald-950 shadow-sm">
+<div class="relative z-10">
+<h4 class="font-bold text-base text-slate-900 leading-tight">Pure Milk<br><span class="text-emerald-700">Better Living</span></h4>
+<p class="text-[12px] text-slate-600 mt-2 leading-relaxed">
+            Data-driven decisions for a stronger and healthier dairy business.
+          </p>
+</div>
+<!-- Decorative graphic elements -->
+<div class="mt-3 flex justify-end">
+<div class="relative w-20 h-20 -mr-2 -mb-2 flex items-center justify-center">
+<div class="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>
+<!-- Milk Bottle Vector -->
+<svg class="w-16 h-16 text-emerald-700 drop-shadow-md" fill="currentColor" viewBox="0 0 64 64">
+<path d="M26 6h12v4h-12zM28 10h8v4l6 6v36a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V20l6-6z" fill="#ffffff" stroke="#059669" stroke-width="2"></path>
+<path d="M24 38c4 2 8-2 16 0v16a2 2 0 0 1-2 2H26a2 2 0 0 1-2-2z" fill="#a7f3d0"></path>
+<!-- Green leaf -->
+<path d="M44 32c0 8-8 12-8 12s0-8 8-12z" fill="#059669"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentArea -->
+<div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+<!-- BEGIN: TopBar -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-8 py-3.5 flex items-center justify-between gap-4">
+<!-- Search Input Container -->
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<button class="text-slate-500 hover:text-slate-700 focus:outline-none md:hidden">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<div class="relative w-full">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" placeholder="Search reports, data, or anything..." type="text">
+</div>
+</div>
+<!-- Right Action Items (Date Picker, Notifications, User Profile) -->
+<div class="flex items-center gap-4">
+<!-- Date Range Filter Dropdown -->
+<div class="relative inline-block text-left">
+<button class="inline-flex items-center gap-2.5 px-3.5 py-2 text-xs md:text-sm font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg shadow-2xs transition-colors" type="button">
+<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>01 Apr 2025 - 30 Apr 2025</span>
+<svg class="w-3.5 h-3.5 text-slate-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Notification Bell with Count Badge -->
+<div class="relative">
+<button aria-label="Notifications" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors relative">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+              3
+            </span>
+</button>
+</div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-3 pl-2 border-l border-slate-200">
+<div class="w-9 h-9 rounded-full bg-slate-200 overflow-hidden ring-2 ring-emerald-500/20">
+<img alt="Ritesh Tayade avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaLjCn6V2iigqwJmdpq-WCdKHW-uUJChemPAln1w9duiMllz-bL37L_JJzneW4kXtO4h-1oMFHXN6swmrbf0pSL7DXe-opUwW8Qsr-pvXcSgZ54y20BzsTep-dLilEU0y0HdxnO6p-lVdLKSO1zXwC3LC5SeRn_4KeO7pd7y-WzXfGevmtDXE26q3cE9SXZnACOO4my_rTDrgx1dfNQ509GEEgzikP1N45jQEKQficGF4qsjF4t1R1">
+</div>
+<div class="hidden sm:block text-left leading-tight">
+<p class="text-sm font-semibold text-slate-800 flex items-center gap-1">
+              Ritesh Tayade
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</p>
+<span class="text-xs text-slate-400 font-normal">Owner</span>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- Scrollable Main Container -->
+<main class="flex-1 p-6 md:p-8 space-y-6">
+<!-- BEGIN: HeroBanner -->
+<section class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-900 via-teal-800 to-sky-900 text-white shadow-md" data-purpose="page-hero-banner">
+<!-- Background scenic illustration elements -->
+<div class="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay farm-pattern"></div>
+<div class="absolute -right-10 -bottom-10 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative z-10 px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+<div>
+<h2 class="text-3xl font-extrabold tracking-tight text-white">Reports</h2>
+<p class="text-emerald-100 text-sm mt-1.5 font-normal max-w-xl">
+              Get insights into your dairy business with detailed reports and analytics.
+            </p>
+</div>
+<!-- Export Report Action -->
+<div class="shrink-0 flex items-center gap-3">
+<button class="inline-flex items-center gap-2.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-150 transform hover:-translate-y-0.5 active:translate-y-0" id="btn-export-reports">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Export Report</span>
+</button>
+</div>
+</div>
+</section>
+<!-- END: HeroBanner -->
+<!-- BEGIN: CategoryTabs -->
+<div class="border-b border-slate-200 text-sm font-medium">
+<ul class="flex flex-wrap -mb-px gap-6 text-slate-500">
+<li class="mr-2">
+<button class="inline-block py-3 px-1 text-emerald-700 font-bold border-b-2 border-emerald-600 active-tab transition-all">
+              Overview
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Sales &amp; Revenue
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Milk &amp; Inventory
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Customers
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Deliveries
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Expenses
+            </button>
+</li>
+<li class="mr-2">
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Staff
+            </button>
+</li>
+<li>
+<button class="inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all">
+              Custom Reports
+            </button>
+</li>
+</ul>
+</div>
+<!-- END: CategoryTabs -->
+<!-- BEGIN: SummaryKpis -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-purpose="kpi-cards-grid">
+<!-- KPI 1: Total Revenue -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Revenue</p>
+<h3 class="text-2xl font-black text-slate-900 mt-0.5">₹2,48,500</h3>
+<p class="text-xs text-slate-400 mt-1">vs last month</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+            ↑ 12%
+          </span>
+</div>
+<!-- KPI 2: Total Milk Sold -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-sm shrink-0">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Milk Sold</p>
+<h3 class="text-2xl font-black text-slate-900 mt-0.5">12,450 L</h3>
+<p class="text-xs text-slate-400 mt-1">vs last month</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+            ↑ 8%
+          </span>
+</div>
+<!-- KPI 3: Active Customers -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm shrink-0">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Customers</p>
+<h3 class="text-2xl font-black text-slate-900 mt-0.5">124</h3>
+<p class="text-xs text-slate-400 mt-1">vs last month</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+            ↑ 10%
+          </span>
+</div>
+<!-- KPI 4: Total Orders -->
+<div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm shrink-0">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Orders</p>
+<h3 class="text-2xl font-black text-slate-900 mt-0.5">586</h3>
+<p class="text-xs text-slate-400 mt-1">vs last month</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+            ↑ 15%
+          </span>
+</div>
+</section>
+<!-- END: SummaryKpis -->
+<!-- BEGIN: ChartsRow1 -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6" data-purpose="charts-row-upper">
+<!-- Revenue Trend (Span 5 cols) -->
+<div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h4 class="font-bold text-slate-900 text-base">Revenue Trend</h4>
+<p class="text-xs text-slate-400">Daily breakdown by channel</p>
+</div>
+<select class="text-xs font-medium bg-slate-50 border-slate-200 rounded-lg py-1 px-2.5 focus:ring-emerald-500 focus:border-emerald-500 text-slate-600">
+<option>Daily</option>
+<option>Weekly</option>
+<option>Monthly</option>
+</select>
+</div>
+<!-- SVG Chart for Revenue Trend (Stacked Bar + Trendline) -->
+<div class="relative w-full h-52 mt-4">
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 450 200">
+<!-- Grid lines & Y-axis labels -->
+<line class="chart-grid-line" x1="45" x2="430" y1="20" y2="20"></line>
+<text class="text-[10px] fill-slate-400" text-anchor="end" x="35" y="24">₹1L</text>
+<line class="chart-grid-line" x1="45" x2="430" y1="60" y2="60"></line>
+<text class="text-[10px] fill-slate-400" text-anchor="end" x="35" y="64">₹80K</text>
+<line class="chart-grid-line" x1="45" x2="430" y1="100" y2="100"></line>
+<text class="text-[10px] fill-slate-400" text-anchor="end" x="35" y="104">₹60K</text>
+<line class="chart-grid-line" x1="45" x2="430" y1="140" y2="140"></line>
+<text class="text-[10px] fill-slate-400" text-anchor="end" x="35" y="144">₹40K</text>
+<line class="chart-grid-line" x1="45" x2="430" y1="175" y2="175"></line>
+<text class="text-[10px] fill-slate-400" text-anchor="end" x="35" y="179">₹20K</text>
+<!-- Stacked Bars: x intervals (1 Apr to 30 Apr) -->
+<!-- Bar 1 (1 Apr) -->
+<rect fill="#10b981" height="30" rx="2" width="12" x="65" y="145"></rect>
+<rect fill="#3b82f6" height="15" rx="2" width="12" x="65" y="130"></rect>
+<rect fill="#8b5cf6" height="5" rx="2" width="12" x="65" y="125"></rect>
+<!-- Bar 2 (5 Apr) -->
+<rect fill="#10b981" height="40" rx="2" width="12" x="115" y="135"></rect>
+<rect fill="#3b82f6" height="20" rx="2" width="12" x="115" y="115"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="115" y="105"></rect>
+<!-- Bar 3 (10 Apr) -->
+<rect fill="#10b981" height="45" rx="2" width="12" x="165" y="130"></rect>
+<rect fill="#3b82f6" height="25" rx="2" width="12" x="165" y="105"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="165" y="95"></rect>
+<!-- Bar 4 (15 Apr) -->
+<rect fill="#10b981" height="50" rx="2" width="12" x="215" y="125"></rect>
+<rect fill="#3b82f6" height="25" rx="2" width="12" x="215" y="100"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="215" y="90"></rect>
+<!-- Bar 5 (20 Apr) -->
+<rect fill="#10b981" height="55" rx="2" width="12" x="265" y="120"></rect>
+<rect fill="#3b82f6" height="30" rx="2" width="12" x="265" y="90"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="265" y="80"></rect>
+<!-- Bar 6 (25 Apr) -->
+<rect fill="#10b981" height="65" rx="2" width="12" x="315" y="110"></rect>
+<rect fill="#3b82f6" height="25" rx="2" width="12" x="315" y="85"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="315" y="75"></rect>
+<!-- Bar 7 (30 Apr) -->
+<rect fill="#10b981" height="80" rx="2" width="12" x="365" y="95"></rect>
+<rect fill="#3b82f6" height="30" rx="2" width="12" x="365" y="65"></rect>
+<rect fill="#8b5cf6" height="10" rx="2" width="12" x="365" y="55"></rect>
+<!-- Trendline Total Revenue (Green with dots) -->
+<polyline fill="none" points="71,120 121,98 171,90 221,85 271,72 321,68 371,48" stroke="#059669" stroke-width="2.5"></polyline>
+<circle cx="71" cy="120" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="121" cy="98" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="171" cy="90" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="221" cy="85" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="271" cy="72" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="321" cy="68" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<circle cx="371" cy="48" fill="#ffffff" r="3.5" stroke="#059669" stroke-width="2"></circle>
+<!-- X-Axis Labels -->
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="71" y="195">1 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="121" y="195">5 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="171" y="195">10 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="221" y="195">15 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="271" y="195">20 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="321" y="195">25 Apr</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="371" y="195">30 Apr</text>
+</svg>
+</div>
+<!-- Legend -->
+<div class="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-600 pt-2 border-t border-slate-100">
+<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500"></span>Household Sales</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-500"></span>Shop Sales</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-purple-500"></span>Other Income</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-3 h-1 bg-emerald-700"></span>Total Revenue</span>
+</div>
+</div>
+<!-- Milk Sales by Product (Span 4 cols) -->
+<div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="pb-3 border-b border-slate-100">
+<h4 class="font-bold text-slate-900 text-base">Milk Sales by Product</h4>
+<p class="text-xs text-slate-400">Product volume distribution</p>
+</div>
+<div class="grid grid-cols-12 gap-2 items-center py-2">
+<!-- Donut SVG -->
+<div class="col-span-6 flex items-center justify-center relative">
+<svg class="w-36 h-36 -rotate-90 transform" viewBox="0 0 100 100">
+<!-- Background ring -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#f1f5f9" stroke-width="12"></circle>
+<!-- Cow Milk (46%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#10b981" stroke-dasharray="110 240" stroke-dashoffset="0" stroke-width="12"></circle>
+<!-- Buffalo Milk (28%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#0284c7" stroke-dasharray="67 240" stroke-dashoffset="-110" stroke-width="12"></circle>
+<!-- Toned Milk (12%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#f97316" stroke-dasharray="28 240" stroke-dashoffset="-177" stroke-width="12"></circle>
+<!-- Paneer (6%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#ec4899" stroke-dasharray="14 240" stroke-dashoffset="-205" stroke-width="12"></circle>
+<!-- Curd (5%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#06b6d4" stroke-dasharray="12 240" stroke-dashoffset="-219" stroke-width="12"></circle>
+<!-- Ghee (3%) -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#eab308" stroke-dasharray="9 240" stroke-dashoffset="-231" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-sm font-black text-slate-800">12,450 L</span>
+<span class="text-[10px] text-slate-400 uppercase font-medium">Total</span>
+</div>
+</div>
+<!-- Breakdown list -->
+<div class="col-span-6 space-y-1.5 text-xs">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Cow Milk</span>
+<span class="font-semibold text-slate-800">46% <span class="text-slate-400 font-normal">5,727 L</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>Buffalo Milk</span>
+<span class="font-semibold text-slate-800">28% <span class="text-slate-400 font-normal">3,486 L</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>Toned Milk</span>
+<span class="font-semibold text-slate-800">12% <span class="text-slate-400 font-normal">1,494 L</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>Paneer</span>
+<span class="font-semibold text-slate-800">6% <span class="text-slate-400 font-normal">747 L</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>Curd</span>
+<span class="font-semibold text-slate-800">5% <span class="text-slate-400 font-normal">623 L</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>Ghee</span>
+<span class="font-semibold text-slate-800">3% <span class="text-slate-400 font-normal">373 L</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Order Distribution (Span 3 cols) -->
+<div class="lg:col-span-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="pb-3 border-b border-slate-100">
+<h4 class="font-bold text-slate-900 text-base">Order Distribution</h4>
+<p class="text-xs text-slate-400">Channel percentage split</p>
+</div>
+<div class="flex flex-col items-center justify-center my-auto py-2">
+<!-- Center Donut -->
+<div class="relative w-36 h-36 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="36" stroke="#f1f5f9" stroke-width="14"></circle>
+<!-- Household 68% -->
+<circle cx="50" cy="50" fill="transparent" r="36" stroke="#10b981" stroke-dasharray="154 226" stroke-dashoffset="0" stroke-width="14"></circle>
+<!-- Shop Orders 27% -->
+<circle cx="50" cy="50" fill="transparent" r="36" stroke="#3b82f6" stroke-dasharray="61 226" stroke-dashoffset="-154" stroke-width="14"></circle>
+<!-- Bulk 5% -->
+<circle cx="50" cy="50" fill="transparent" r="36" stroke="#a855f7" stroke-dasharray="11 226" stroke-dashoffset="-215" stroke-width="14"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-base font-black text-slate-800">586</span>
+<span class="text-[9px] text-slate-400 uppercase tracking-tight">Total Orders</span>
+</div>
+</div>
+<!-- Compact Legend -->
+<div class="w-full mt-4 space-y-1.5 text-xs">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Household</span>
+<span class="font-bold text-slate-800">68% <span class="font-normal text-slate-400">(598)</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>Shop Orders</span>
+<span class="font-bold text-slate-800">27% <span class="font-normal text-slate-400">(158)</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Bulk Orders</span>
+<span class="font-bold text-slate-800">5% <span class="font-normal text-slate-400">(24)</span></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: ChartsRow1 -->
+<!-- BEGIN: ChartsRow2 -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6" data-purpose="charts-row-lower">
+<!-- Customer Growth -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h4 class="font-bold text-slate-900 text-sm md:text-base">Customer Growth</h4>
+<p class="text-xs text-slate-400">Total vs New accounts</p>
+</div>
+<select class="text-xs font-medium bg-slate-50 border-slate-200 rounded-lg py-1 px-2 text-slate-600">
+<option>Monthly</option>
+<option>Quarterly</option>
+</select>
+</div>
+<div class="relative w-full h-44 mt-3">
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 320 160">
+<!-- Y Grid Lines -->
+<line class="chart-grid-line" x1="30" x2="310" y1="20" y2="20"></line>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="25" y="24">150</text>
+<line class="chart-grid-line" x1="30" x2="310" y1="60" y2="60"></line>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="25" y="64">100</text>
+<line class="chart-grid-line" x1="30" x2="310" y1="100" y2="100"></line>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="25" y="104">50</text>
+<line class="chart-grid-line" x1="30" x2="310" y1="140" y2="140"></line>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="25" y="144">0</text>
+<!-- Lines: Total Customers (Green) -->
+<polyline fill="none" points="50,90 125,75 200,60 275,50" stroke="#059669" stroke-width="2.5"></polyline>
+<circle cx="50" cy="90" fill="#059669" r="3"></circle>
+<circle cx="125" cy="75" fill="#059669" r="3"></circle>
+<circle cx="200" cy="60" fill="#059669" r="3"></circle>
+<circle cx="275" cy="50" fill="#059669" r="3"></circle>
+<!-- Lines: New Customers (Blue) -->
+<polyline fill="none" points="50,110 125,100 200,88 275,78" stroke="#3b82f6" stroke-width="2.5"></polyline>
+<circle cx="50" cy="110" fill="#3b82f6" r="3"></circle>
+<circle cx="125" cy="100" fill="#3b82f6" r="3"></circle>
+<circle cx="200" cy="88" fill="#3b82f6" r="3"></circle>
+<circle cx="275" cy="78" fill="#3b82f6" r="3"></circle>
+<!-- Months Labels -->
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="50" y="155">Jan</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="125" y="155">Feb</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="200" y="155">Mar</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="275" y="155">Apr</text>
+</svg>
+</div>
+<div class="flex items-center justify-center gap-4 text-xs font-medium text-slate-600 pt-2 border-t border-slate-100">
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>New Customers</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>Total Customers</span>
+</div>
+</div>
+<!-- Expenses vs Profit -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h4 class="font-bold text-slate-900 text-sm md:text-base">Expenses vs Profit</h4>
+<p class="text-xs text-slate-400">Monthly comparison</p>
+</div>
+<select class="text-xs font-medium bg-slate-50 border-slate-200 rounded-lg py-1 px-2 text-slate-600">
+<option>Monthly</option>
+<option>Quarterly</option>
+</select>
+</div>
+<div class="relative w-full h-44 mt-3">
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 320 160">
+<!-- Y Axis labels -->
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="28" y="24">₹80K</text>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="28" y="55">₹60K</text>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="28" y="90">₹40K</text>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="28" y="125">₹20K</text>
+<text class="text-[9px] fill-slate-400" text-anchor="end" x="28" y="145">₹0</text>
+<!-- Jan -->
+<rect fill="#f87171" height="48" rx="1.5" width="12" x="45" y="95"></rect>
+<rect fill="#10b981" height="78" rx="1.5" width="12" x="60" y="65"></rect>
+<!-- Feb -->
+<rect fill="#f87171" height="58" rx="1.5" width="12" x="110" y="85"></rect>
+<rect fill="#10b981" height="98" rx="1.5" width="12" x="125" y="45"></rect>
+<!-- Mar -->
+<rect fill="#f87171" height="53" rx="1.5" width="12" x="175" y="90"></rect>
+<rect fill="#10b981" height="73" rx="1.5" width="12" x="190" y="70"></rect>
+<!-- Apr -->
+<rect fill="#f87171" height="53" rx="1.5" width="12" x="240" y="90"></rect>
+<rect fill="#10b981" height="93" rx="1.5" width="12" x="255" y="50"></rect>
+<!-- Profit Margin Line -->
+<polyline fill="none" points="58,110 123,70 190,75 253,55" stroke="#0ea5e9" stroke-width="2"></polyline>
+<circle cx="58" cy="110" fill="#0ea5e9" r="2.5"></circle>
+<circle cx="123" cy="70" fill="#0ea5e9" r="2.5"></circle>
+<circle cx="190" cy="75" fill="#0ea5e9" r="2.5"></circle>
+<circle cx="253" cy="55" fill="#0ea5e9" r="2.5"></circle>
+<!-- Month labels -->
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="58" y="155">Jan</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="123" y="155">Feb</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="190" y="155">Mar</text>
+<text class="text-[10px] fill-slate-400" text-anchor="middle" x="253" y="155">Apr</text>
+</svg>
+</div>
+<div class="flex items-center justify-center gap-4 text-xs font-medium text-slate-600 pt-2 border-t border-slate-100">
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-rose-400"></span>Expenses</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>Profit</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-sky-500"></span>Profit Margin</span>
+</div>
+</div>
+<!-- Delivery Performance -->
+<div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h4 class="font-bold text-slate-900 text-sm md:text-base">Delivery Performance</h4>
+<p class="text-xs text-slate-400">Fulfillment reliability</p>
+</div>
+<select class="text-xs font-medium bg-slate-50 border-slate-200 rounded-lg py-1 px-2 text-slate-600">
+<option>This Month</option>
+<option>Last Month</option>
+</select>
+</div>
+<div class="flex items-center justify-around py-3">
+<!-- 96% Ring Gauge -->
+<div class="relative w-28 h-28 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#f1f5f9" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#10b981" stroke-dasharray="230 240" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-xl font-black text-slate-900 leading-none">96%</span>
+<span class="text-[9px] text-slate-400 font-medium mt-0.5">On-time Delivery</span>
+</div>
+</div>
+<!-- Detailed counts -->
+<div class="space-y-2">
+<div class="flex items-center gap-2 p-1.5 bg-emerald-50/60 rounded-xl">
+<div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">
+                  ✓
+                </div>
+<div>
+<span class="text-xs font-bold text-slate-800">562</span>
+<p class="text-[10px] text-slate-500 leading-tight">Delivered on time</p>
+</div>
+</div>
+<div class="flex items-center gap-2 p-1.5 bg-rose-50/60 rounded-xl">
+<div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs">
+                  ✕
+                </div>
+<div>
+<span class="text-xs font-bold text-slate-800">18</span>
+<p class="text-[10px] text-slate-500 leading-tight">Delayed</p>
+</div>
+</div>
+<div class="flex items-center gap-2 p-1.5 bg-slate-50 rounded-xl">
+<div class="w-6 h-6 rounded-full bg-slate-400 text-white flex items-center justify-center text-xs">
+                  ⊘
+                </div>
+<div>
+<span class="text-xs font-bold text-slate-800">6</span>
+<p class="text-[10px] text-slate-500 leading-tight">Not delivered</p>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-slate-100 text-center">
+<span class="text-xs text-emerald-600 font-semibold">★ Exceeding monthly target of 95%</span>
+</div>
+</div>
+</section>
+<!-- END: ChartsRow2 -->
+<!-- BEGIN: DetailedReportsAndCustomGenerator -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6" data-purpose="table-and-generator-row">
+<!-- Detailed Reports Table (Span 8 Cols) -->
+<div class="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div>
+<!-- Header & Filter Bar -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+<h4 class="font-bold text-slate-900 text-lg">Detailed Reports</h4>
+<div class="flex items-center gap-2.5 w-full sm:w-auto">
+<div class="relative flex-1 sm:w-48">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<input class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500" id="table-search" placeholder="Search report data..." type="text">
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition-colors">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                  Filter
+                </button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition-colors">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                  Download
+                </button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto mt-3">
+<table class="w-full text-left text-xs whitespace-nowrap">
+<thead>
+<tr class="text-slate-400 font-semibold border-b border-slate-100 uppercase text-[10px] tracking-wider">
+<th class="py-3 px-3">#</th>
+<th class="py-3 px-3">Date</th>
+<th class="py-3 px-3">Report Type</th>
+<th class="py-3 px-3">Key Metrics</th>
+<th class="py-3 px-3">Value</th>
+<th class="py-3 px-3">Change</th>
+<th class="py-3 px-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 text-slate-700">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">1</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                        Sales Report
+                      </span>
+</td>
+<td class="py-3 px-3">Revenue</td>
+<td class="py-3 px-3 font-semibold text-slate-900">₹78,450</td>
+<td class="py-3 px-3 font-medium text-emerald-600">↑ 12%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Sales Report', '₹78,450', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">2</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/60">
+                        Milk Inventory
+                      </span>
+</td>
+<td class="py-3 px-3">Milk Sold</td>
+<td class="py-3 px-3 font-semibold text-slate-900">2,450 L</td>
+<td class="py-3 px-3 font-medium text-emerald-600">↑ 8%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Milk Inventory', '2,450 L', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">3</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200/60">
+                        Customer Report
+                      </span>
+</td>
+<td class="py-3 px-3">Active Customers</td>
+<td class="py-3 px-3 font-semibold text-slate-900">124</td>
+<td class="py-3 px-3 font-medium text-emerald-600">↑ 10%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Customer Report', '124 Customers', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">4</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                        Delivery Report
+                      </span>
+</td>
+<td class="py-3 px-3">On-time Delivery</td>
+<td class="py-3 px-3 font-semibold text-slate-900">96%</td>
+<td class="py-3 px-3 font-medium text-emerald-600">↑ 5%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Delivery Report', '96% On-time', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">5</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
+                        Expense Report
+                      </span>
+</td>
+<td class="py-3 px-3">Total Expenses</td>
+<td class="py-3 px-3 font-semibold text-slate-900">₹54,200</td>
+<td class="py-3 px-3 font-medium text-rose-600">↓ 8%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Expense Report', '₹54,200', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">6</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60">
+                        Staff Report
+                      </span>
+</td>
+<td class="py-3 px-3">Active Staff</td>
+<td class="py-3 px-3 font-semibold text-slate-900">12</td>
+<td class="py-3 px-3 font-medium text-slate-400">—</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Staff Report', '12 Active Staff', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-slate-50/70 transition-colors">
+<td class="py-3 px-3 font-medium text-slate-400">7</td>
+<td class="py-3 px-3 font-medium">30 Apr 2025</td>
+<td class="py-3 px-3">
+<span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                        Profit &amp; Loss
+                      </span>
+</td>
+<td class="py-3 px-3">Net Profit</td>
+<td class="py-3 px-3 font-semibold text-slate-900">₹94,300</td>
+<td class="py-3 px-3 font-medium text-emerald-600">↑ 14%</td>
+<td class="py-3 px-3 text-right space-x-2">
+<button class="text-blue-600 hover:text-blue-800 font-semibold" onclick="openModal('Profit &amp; Loss Report', '₹94,300 Net Profit', '30 Apr 2025')">View</button>
+<button class="text-slate-400 hover:text-slate-600">•••</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Pagination Footer -->
+<div class="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+<span>Showing 7 of 28 reports</span>
+<div class="flex gap-1.5">
+<button class="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50">Previous</button>
+<button class="px-2.5 py-1 rounded bg-emerald-600 text-white font-medium">1</button>
+<button class="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50">2</button>
+<button class="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50">Next</button>
+</div>
+</div>
+</div>
+<!-- Generate Custom Report Form (Span 4 Cols) -->
+<div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+<div>
+<h4 class="font-bold text-slate-900 text-lg">Generate Custom Report</h4>
+<p class="text-xs text-slate-400 mt-1">Configure criteria and download instantly.</p>
+<form class="mt-5 space-y-4" id="customReportForm" onsubmit="event.preventDefault(); alert('Report generated successfully!');">
+<!-- Report Type Dropdown -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Report Type <span class="text-red-500">*</span>
+</label>
+<select class="w-full text-xs font-medium bg-slate-50 border-slate-200 rounded-lg p-2.5 text-slate-700 focus:ring-emerald-500 focus:border-emerald-500">
+<option>Sales Report</option>
+<option>Milk Inventory</option>
+<option>Customer Distribution</option>
+<option>Delivery Performance</option>
+<option>Comprehensive Business Review</option>
+</select>
+</div>
+<!-- Date Range Field -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Date Range <span class="text-red-500">*</span>
+</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<input class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:ring-emerald-500 focus:border-emerald-500" type="text" value="01 Apr 2025 - 30 Apr 2025">
+</div>
+</div>
+<!-- Group By Field -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Group By
+                </label>
+<select class="w-full text-xs font-medium bg-slate-50 border-slate-200 rounded-lg p-2.5 text-slate-700 focus:ring-emerald-500 focus:border-emerald-500">
+<option>Daily</option>
+<option>Weekly</option>
+<option>Monthly</option>
+<option>Quarterly</option>
+</select>
+</div>
+<!-- Checkbox Include Options -->
+<div>
+<label class="block text-xs font-semibold text-slate-700 mb-2">
+                  Include
+                </label>
+<div class="space-y-2">
+<label class="flex items-center text-xs text-slate-700 cursor-pointer">
+<input checked="" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mr-2.5 w-4 h-4" type="checkbox">
+                    Household Orders
+                  </label>
+<label class="flex items-center text-xs text-slate-700 cursor-pointer">
+<input checked="" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mr-2.5 w-4 h-4" type="checkbox">
+                    Shop Orders
+                  </label>
+<label class="flex items-center text-xs text-slate-700 cursor-pointer">
+<input checked="" class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mr-2.5 w-4 h-4" type="checkbox">
+                    Expenses
+                  </label>
+<label class="flex items-center text-xs text-slate-700 cursor-pointer">
+<input class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mr-2.5 w-4 h-4" type="checkbox">
+                    Customer Details
+                  </label>
+<label class="flex items-center text-xs text-slate-700 cursor-pointer">
+<input class="rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mr-2.5 w-4 h-4" type="checkbox">
+                    Staff Details
+                  </label>
+</div>
+</div>
+</form>
+</div>
+<!-- Submit Button -->
+<div class="mt-6">
+<button class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2" form="customReportForm" type="submit">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Generate Report</span>
+</button>
+</div>
+</div>
+</section>
+<!-- END: DetailedReportsAndCustomGenerator -->
+</main>
+</div>
+<!-- END: MainContentArea -->
+<!-- BEGIN: ReportDetailsModal -->
+<div aria-modal="true" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden" id="reportModal" role="dialog">
+<div class="bg-white rounded-2xl max-w-lg w-full mx-4 p-6 shadow-2xl border border-slate-200 transform transition-all">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div>
+<h3 class="text-lg font-bold text-slate-900" id="modalTitle">Report Details</h3>
+<p class="text-xs text-slate-500" id="modalDate">Date</p>
+</div>
+<button class="text-slate-400 hover:text-slate-600 p-1 rounded-lg" onclick="closeModal()">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<div class="my-4 space-y-3">
+<div class="p-4 bg-slate-50 rounded-xl flex items-center justify-between">
+<span class="text-xs font-semibold text-slate-500 uppercase">Key Value Recorded</span>
+<span class="text-lg font-extrabold text-emerald-600" id="modalValue">Value</span>
+</div>
+<p class="text-xs text-slate-600 leading-relaxed">
+          This record has been compiled and verified from the primary DairyPulse operational database. Detailed logs and audit history are available for download.
+        </p>
+</div>
+<div class="pt-3 border-t border-slate-100 flex justify-end gap-3">
+<button class="px-4 py-2 border border-slate-200 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-50" onclick="closeModal()">
+          Close
+        </button>
+<button class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs" onclick="alert('Exporting PDF for selected record...'); closeModal();">
+          Download PDF
+        </button>
+</div>
+</div>
+</div>
+<!-- END: ReportDetailsModal -->
+<!-- BEGIN: InteractiveScripts -->
+<script data-purpose="dashboard-interaction">
+    // Simple Modal Toggle
+    function openModal(title, value, date) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalValue').textContent = value;
+      document.getElementById('modalDate').textContent = date;
+      document.getElementById('reportModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('reportModal').classList.add('hidden');
+    }
+
+    // Interactive Tab Highlighting
+    document.querySelectorAll('.border-b button').forEach(button => {
+      button.addEventListener('click', function() {
+        document.querySelectorAll('.border-b button').forEach(b => {
+          b.className = 'inline-block py-3 px-1 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent transition-all';
+        });
+        this.className = 'inline-block py-3 px-1 text-emerald-700 font-bold border-b-2 border-emerald-600 active-tab transition-all';
+      });
+    });
+
+    // Export Reports Notification Trigger
+    document.getElementById('btn-export-reports').addEventListener('click', function() {
+      const originalText = this.innerHTML;
+      this.innerHTML = '<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span> Preparing...';
+      this.classList.add('opacity-80', 'pointer-events-none');
+      
+      setTimeout(() => {
+        this.innerHTML = originalText;
+        this.classList.remove('opacity-80', 'pointer-events-none');
+        alert('All dairy reports for April 2025 have been exported as PDF & CSV successfully.');
+      }, 1000);
+    });
+
+    // Live search filter in detailed table
+    document.getElementById('table-search').addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(term) ? '' : 'none';
+      });
+    });
+  </script>
+<!-- END: InteractiveScripts -->
+</body></html>
