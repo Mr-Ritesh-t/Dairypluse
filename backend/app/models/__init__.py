@@ -11,6 +11,7 @@ from app.models.models import (
     DeliveryTask,
     Invoice,
     Expense,
+    DriverRating,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "DeliveryTask",
     "Invoice",
     "Expense",
+    "DriverRating",
 ]

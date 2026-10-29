@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/navigation';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -14,9 +15,6 @@ import {
   Briefcase,
   Receipt,
   BarChart3,
-  Layers,
-  Smartphone,
-  Sparkles,
 } from 'lucide-react';
 
 const navItems = [
@@ -30,7 +28,6 @@ const navItems = [
   { label: 'Staff Management', href: '/staff', icon: Briefcase },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Reports', href: '/reports', icon: BarChart3 },
-  { label: 'Business Suite', href: '/suite', icon: Layers },
 ];
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
@@ -55,29 +52,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         {/* Top Branding & Navigation */}
         <div>
           {/* Brand Logo & Title */}
-          <div className="px-6 pt-6 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shrink-0">
-              {/* Stylized Cow / Dairy Logo */}
-              <svg
-                className="w-7 h-7"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M19 13.5a5.5 5.5 0 0 1-11 0c0-1.5.5-2.9 1.4-4L9 7l2 1 1-2 1 2 2-1-.4 2.5c.9 1.1 1.4 2.5 1.4 4Z"
-                  fill="#10B981"
-                  fillOpacity="0.2"
-                />
-                <path d="M7 10l-3-2a2 2 0 0 0-2.8 2.2L2 14c.4 2 2 3.5 4 3.5h.5" />
-                <path d="M17 10l3-2a2 2 0 0 1 2.8 2.2L22 14c-.4 2-2 3.5-4 3.5h-.5" />
-                <circle cx="10" cy="13" fill="currentColor" r="1" />
-                <circle cx="14" cy="13" fill="currentColor" r="1" />
-                <path d="M10 17s1 1 2 1 2-1 2-1" />
-              </svg>
+          <div className="px-5 pt-5 pb-4 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="DairyPulse Cow Analytics Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center">
@@ -114,39 +98,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 </a>
               );
             })}
-
-            {/* Mobile Experiences Divider */}
-            <div className="pt-3 pb-1 px-4">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Mobile Interfaces
-              </span>
-            </div>
-
-            <a
-              href="/mobile/delivery"
-              onClick={onClose}
-              className={`flex items-center gap-3.5 px-4 py-2 rounded-xl text-xs transition font-medium ${
-                pathname === '/mobile/delivery'
-                  ? 'bg-blue-100 text-blue-800 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              <Smartphone className="w-4 h-4 text-blue-600" />
-              <span>Delivery Partner App</span>
-            </a>
-
-            <a
-              href="/mobile/customer"
-              onClick={onClose}
-              className={`flex items-center gap-3.5 px-4 py-2 rounded-xl text-xs transition font-medium ${
-                pathname === '/mobile/customer'
-                  ? 'bg-purple-100 text-purple-800 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              <Smartphone className="w-4 h-4 text-purple-600" />
-              <span>Customer Self-Service</span>
-            </a>
           </nav>
         </div>
 

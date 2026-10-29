@@ -12,7 +12,52 @@ import {
   Expense,
   StaffMember,
   MilkVariant,
+  DairyInfo,
+  RouteInfo,
+  RouteBuildPayload,
+  DriverRating,
 } from '@/types';
+import {
+  getProducts,
+  postStockReceipt,
+  postWastage,
+  getCustomers,
+  postCustomer,
+  patchCustomerApi,
+  getSubscriptions,
+  postSubscription,
+  toggleSubscriptionPauseApi,
+  getShopOrders,
+  postShopOrder,
+  getDeliveriesToday,
+  patchDeliveryStatus,
+  getInvoices,
+  postInvoice,
+  postPayment,
+  getExpenses,
+  postExpense,
+  getStaff,
+  postStaff,
+  deleteStaffApi,
+  patchStaffApi,
+  getDairiesApi,
+  postDairyApi,
+  patchDairyApi,
+  postProductApi,
+  patchProductPriceApi,
+  deleteProductApi,
+  postDeliveryTaskApi,
+  patchDeliveryAssignApi,
+  postRouteAssignApi,
+  getRoutesApi,
+  reorderDeliveriesApi,
+  createRouteApi,
+  buildAndDispatchRouteApi,
+  updateDeliveryAddressApi,
+  generateDailyDeliveriesApi,
+  postDriverRatingApi,
+  getDriverRatingsApi,
+} from '@/lib/api';
 
 interface DairyPulseContextType {
   products: Product[];
@@ -24,6 +69,9 @@ interface DairyPulseContextType {
   invoices: Invoice[];
   expenses: Expense[];
   staff: StaffMember[];
+  dairies: DairyInfo[];
+  routes: RouteInfo[];
+  driverRatings: DriverRating[];
   
   // Modals state
   activeModal: string | null;
@@ -31,9 +79,24 @@ interface DairyPulseContextType {
   closeModal: () => void;
 
   // Actions
+  rateDriver: (payload: {
+    driverName: string;
+    driverId?: string;
+    customerId?: string;
+    customerName: string;
+    deliveryId?: string;
+    rating: number;
+    tags?: string[];
+    feedback?: string;
+  }) => Promise<boolean>;
+  getRatingsForDriver: (driverName: string) => DriverRating[];
   addStockReceipt: (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string) => void;
   recordWastage: (variant: MilkVariant, quantity: number, reason: string) => void;
-  addCustomer: (customer: Omit<Customer, 'id' | 'joinedDate'>) => void;
+  addCustomer: (customer: Omit<Customer, 'id' | 'joinedDate'>) => Promise<Customer>;
+  updateCustomer: (id: string, updateData: Partial<Customer>) => Promise<boolean>;
+  addStaff: (member: Omit<StaffMember, 'id' | 'joiningDate'>) => Promise<StaffMember>;
+  updateStaff: (id: string, updateData: Partial<StaffMember>) => Promise<boolean>;
+  deleteStaff: (id: string) => Promise<boolean>;
   addSubscription: (sub: Omit<Subscription, 'id'>) => void;
   toggleSubscriptionPause: (id: string) => void;
   addShopOrder: (order: Omit<ShopOrder, 'id' | 'orderNumber'>) => void;
@@ -41,6 +104,31 @@ interface DairyPulseContextType {
   generateInvoice: (customerId: string, amount: number, period: string) => void;
   recordPayment: (invoiceId: string, amount: number) => void;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
+  addDairy: (dairy: {
+    name: string;
+    ownerName: string;
+    email: string;
+    phone: string;
+    city?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    password?: string;
+  }) => Promise<DairyInfo | null>;
+  updateDairy: (id: string, updateData: Partial<DairyInfo>) => Promise<boolean>;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<Product | null>;
+  updateProductPrice: (productId: string, sellingPrice: number, costPrice?: number) => Promise<boolean>;
+  deleteProduct: (productId: string) => Promise<boolean>;
+  assignDelivery: (deliveryId: string, assignedRider: string, slot?: string, area?: string) => Promise<boolean>;
+  assignRouteToRider: (area: string, assignedRider: string, slot?: string) => Promise<boolean>;
+  addDeliveryTask: (task: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'>) => Promise<DeliveryTask | null>;
+  reorderDeliveries: (stops: { id: string; sequenceOrder: number }[]) => Promise<boolean>;
+  moveDeliveryStop: (id: string, direction: 'UP' | 'DOWN') => Promise<void>;
+  autoSequenceRoute: (area: string) => Promise<void>;
+  createRoute: (route: Omit<RouteInfo, 'id'>) => Promise<RouteInfo | null>;
+  buildAndDispatchRoute: (payload: RouteBuildPayload) => Promise<boolean>;
+  updateDeliveryAddress: (id: string, addrData: { address?: string; flatOrUnit?: string; societyOrLandmark?: string; landmark?: string; area?: string; latitude?: number; longitude?: number; notes?: string }) => Promise<boolean>;
+  generateDailyDeliveries: (deliveryDate?: string, slot?: string) => Promise<{ success: boolean; created_count: number; skipped_duplicates: number; total_stops: number } | null>;
 }
 
 const initialProducts: Product[] = [
@@ -53,9 +141,9 @@ const initialProducts: Product[] = [
     snfContent: 8.5,
     sellingPrice: 62,
     costPrice: 48,
-    availableStock: 1420,
-    lowStockThreshold: 300,
-    status: 'In Stock',
+    availableStock: 0,
+    lowStockThreshold: 100,
+    status: 'Out of Stock',
   },
   {
     id: 'p2',
@@ -66,9 +154,9 @@ const initialProducts: Product[] = [
     snfContent: 9.0,
     sellingPrice: 78,
     costPrice: 60,
-    availableStock: 890,
-    lowStockThreshold: 200,
-    status: 'In Stock',
+    availableStock: 0,
+    lowStockThreshold: 100,
+    status: 'Out of Stock',
   },
   {
     id: 'p3',
@@ -79,9 +167,9 @@ const initialProducts: Product[] = [
     snfContent: 8.5,
     sellingPrice: 54,
     costPrice: 42,
-    availableStock: 650,
-    lowStockThreshold: 150,
-    status: 'In Stock',
+    availableStock: 0,
+    lowStockThreshold: 100,
+    status: 'Out of Stock',
   },
   {
     id: 'p4',
@@ -92,387 +180,25 @@ const initialProducts: Product[] = [
     snfContent: 8.8,
     sellingPrice: 95,
     costPrice: 70,
-    availableStock: 180,
+    availableStock: 0,
     lowStockThreshold: 50,
-    status: 'Low Stock',
+    status: 'Out of Stock',
   },
 ];
 
-const initialMovements: InventoryMovement[] = [
-  {
-    id: 'm1',
-    date: '2026-10-23',
-    type: 'RECEIPT',
-    productVariant: 'Cow Milk',
-    quantity: 850,
-    supplierOrBatch: 'Sahyadri Farmers Dairy Co-Op',
-    ratePerLiter: 48,
-    notes: 'Morning batch intake (Temp: 4.2°C)',
-    timestamp: '05:30 AM',
-  },
-  {
-    id: 'm2',
-    date: '2026-10-23',
-    type: 'RECEIPT',
-    productVariant: 'Buffalo Milk',
-    quantity: 500,
-    supplierOrBatch: 'Baramati Agro Chilling Center',
-    ratePerLiter: 60,
-    notes: 'FAT: 7.1%, SNF: 9.2%',
-    timestamp: '05:45 AM',
-  },
-  {
-    id: 'm3',
-    date: '2026-10-23',
-    type: 'DISPATCH',
-    productVariant: 'Cow Milk',
-    quantity: 420,
-    supplierOrBatch: 'Route 1 & Route 2 Household Morning Runs',
-    timestamp: '06:15 AM',
-  },
-  {
-    id: 'm4',
-    date: '2026-10-23',
-    type: 'WASTAGE',
-    productVariant: 'Cow Milk',
-    quantity: 4.5,
-    supplierOrBatch: 'Pouch packaging line calibration loss',
-    timestamp: '06:40 AM',
-  },
-];
+const initialMovements: InventoryMovement[] = [];
 
-const initialCustomers: Customer[] = [
-  {
-    id: 'c1',
-    name: 'Sharma Sweets & Dairy',
-    type: 'SHOP',
-    phone: '+91 98221 44321',
-    email: 'sharmasweets@gmail.com',
-    address: 'Shop 14, Main Market, MG Road',
-    area: 'Central Market',
-    route: 'Route A - Commercial',
-    balance: 14200,
-    activeSubscriptionsCount: 0,
-    status: 'Active',
-    joinedDate: '2025-06-15',
-  },
-  {
-    id: 'c2',
-    name: 'Priya Kulkarni',
-    type: 'HOUSEHOLD',
-    phone: '+91 94230 77812',
-    email: 'priya.kulkarni@gmail.com',
-    address: 'Flat 402, Green Acre Residency, Baner',
-    area: 'Baner',
-    route: 'Route 1 - Morning Baner',
-    balance: 0,
-    activeSubscriptionsCount: 1,
-    status: 'Active',
-    joinedDate: '2025-09-10',
-  },
-  {
-    id: 'c3',
-    name: 'Rajesh Patil',
-    type: 'HOUSEHOLD',
-    phone: '+91 98901 33214',
-    address: 'B-12, Ganga Satellite, Wanowrie',
-    area: 'Wanowrie',
-    route: 'Route 2 - Camp & Wanowrie',
-    balance: -650, // Advance credit
-    activeSubscriptionsCount: 1,
-    status: 'Active',
-    joinedDate: '2025-11-04',
-  },
-  {
-    id: 'c4',
-    name: 'Hotel Green Park & Cafe',
-    type: 'RESTAURANT',
-    phone: '+91 97654 22109',
-    address: 'Plot 88, Near Highway Junction, Wakad',
-    area: 'Wakad',
-    route: 'Route B - Commercial Bulk',
-    balance: 28500,
-    activeSubscriptionsCount: 0,
-    status: 'Active',
-    joinedDate: '2026-01-18',
-  },
-  {
-    id: 'c5',
-    name: 'Ananya Deshmukh',
-    type: 'HOUSEHOLD',
-    phone: '+91 99234 55678',
-    address: 'Villa 7, Clover Highlands, NIBM',
-    area: 'NIBM',
-    route: 'Route 3 - South Hub',
-    balance: 1240,
-    activeSubscriptionsCount: 1,
-    status: 'Paused',
-    joinedDate: '2026-02-12',
-  },
-];
+const initialCustomers: Customer[] = [];
 
-const initialSubscriptions: Subscription[] = [
-  {
-    id: 'sub1',
-    customerId: 'c2',
-    customerName: 'Priya Kulkarni',
-    productVariant: 'Cow Milk',
-    quantityLiters: 1.5,
-    timeSlot: 'Morning (6:00 AM - 7:30 AM)',
-    frequency: 'Daily',
-    unitPrice: 62,
-    startDate: '2025-09-15',
-    status: 'Active',
-  },
-  {
-    id: 'sub2',
-    customerId: 'c3',
-    customerName: 'Rajesh Patil',
-    productVariant: 'Buffalo Milk',
-    quantityLiters: 2.0,
-    timeSlot: 'Morning (6:00 AM - 7:30 AM)',
-    frequency: 'Daily',
-    unitPrice: 78,
-    startDate: '2025-11-10',
-    status: 'Active',
-  },
-  {
-    id: 'sub3',
-    customerId: 'c5',
-    customerName: 'Ananya Deshmukh',
-    productVariant: 'A2 Desi Cow Milk',
-    quantityLiters: 1.0,
-    timeSlot: 'Morning (6:00 AM - 7:30 AM)',
-    frequency: 'Daily',
-    unitPrice: 95,
-    startDate: '2026-02-15',
-    status: 'Paused',
-    pausedUntil: '2026-10-28',
-  },
-];
+const initialSubscriptions: Subscription[] = [];
 
-const initialShopOrders: ShopOrder[] = [
-  {
-    id: 'ord1',
-    orderNumber: 'SO-1001',
-    shopName: 'Sharma Sweets & Dairy',
-    contactPerson: 'Ramesh Sharma',
-    phone: '+91 98221 44321',
-    orderDate: '2026-10-23',
-    deliveryDate: '2026-10-23',
-    status: 'Dispatched',
-    paymentStatus: 'Partial',
-    totalAmount: 9360,
-    paidAmount: 5000,
-    items: [
-      { productVariant: 'Buffalo Milk', quantity: 120, unit: 'Liter', unitPrice: 78, total: 9360 },
-    ],
-  },
-  {
-    id: 'ord2',
-    orderNumber: 'SO-1002',
-    shopName: 'Hotel Green Park & Cafe',
-    contactPerson: 'Chef Anand',
-    phone: '+91 97654 22109',
-    orderDate: '2026-10-23',
-    deliveryDate: '2026-10-23',
-    status: 'Pending',
-    paymentStatus: 'Pending',
-    totalAmount: 12400,
-    paidAmount: 0,
-    items: [
-      { productVariant: 'Cow Milk', quantity: 200, unit: 'Liter', unitPrice: 62, total: 12400 },
-    ],
-  },
-];
+const initialShopOrders: ShopOrder[] = [];
 
-const initialDeliveries: DeliveryTask[] = [
-  {
-    id: 'd1',
-    deliveryNumber: 'DEL-2026-01',
-    customerName: 'Priya Kulkarni',
-    customerPhone: '+91 94230 77812',
-    address: 'Flat 402, Green Acre Residency, Baner',
-    area: 'Baner',
-    productVariant: 'Cow Milk',
-    quantityLiters: 1.5,
-    slot: 'Morning',
-    assignedRider: 'Rahul Deshmukh',
-    status: 'Delivered',
-    deliveredAt: '06:42 AM',
-    notes: 'Left at doorstep milk bag ring',
-  },
-  {
-    id: 'd2',
-    deliveryNumber: 'DEL-2026-02',
-    customerName: 'Rajesh Patil',
-    customerPhone: '+91 98901 33214',
-    address: 'B-12, Ganga Satellite, Wanowrie',
-    area: 'Wanowrie',
-    productVariant: 'Buffalo Milk',
-    quantityLiters: 2.0,
-    slot: 'Morning',
-    assignedRider: 'Amit Shinde',
-    status: 'Delivered',
-    deliveredAt: '06:55 AM',
-  },
-  {
-    id: 'd3',
-    deliveryNumber: 'DEL-2026-03',
-    customerName: 'Sharma Sweets & Dairy',
-    customerPhone: '+91 98221 44321',
-    address: 'Shop 14, Main Market, MG Road',
-    area: 'Central Market',
-    productVariant: 'Buffalo Milk',
-    quantityLiters: 120,
-    slot: 'Morning',
-    assignedRider: 'Rahul Deshmukh',
-    status: 'In Progress',
-    notes: '2 Cans of 60L each',
-  },
-  {
-    id: 'd4',
-    deliveryNumber: 'DEL-2026-04',
-    customerName: 'Hotel Green Park & Cafe',
-    customerPhone: '+91 97654 22109',
-    address: 'Plot 88, Near Highway Junction, Wakad',
-    area: 'Wakad',
-    productVariant: 'Cow Milk',
-    quantityLiters: 200,
-    slot: 'Morning',
-    assignedRider: 'Sachin Kamble',
-    status: 'Pending',
-    notes: 'Scheduled for 08:30 AM delivery slot',
-  },
-];
+const initialDeliveries: DeliveryTask[] = [];
 
-const initialInvoices: Invoice[] = [
-  {
-    id: 'inv1',
-    invoiceNumber: 'INV-2026-089',
-    customerId: 'c1',
-    customerName: 'Sharma Sweets & Dairy',
-    customerType: 'SHOP',
-    billingPeriod: '15 Oct - 22 Oct 2026',
-    issueDate: '2026-10-22',
-    dueDate: '2026-10-29',
-    totalAmount: 28500,
-    paidAmount: 14300,
-    status: 'Partial',
-  },
-  {
-    id: 'inv2',
-    invoiceNumber: 'INV-2026-088',
-    customerId: 'c2',
-    customerName: 'Priya Kulkarni',
-    customerType: 'HOUSEHOLD',
-    billingPeriod: '01 Oct - 15 Oct 2026',
-    issueDate: '2026-10-16',
-    dueDate: '2026-10-23',
-    totalAmount: 2790,
-    paidAmount: 2790,
-    status: 'Paid',
-  },
-  {
-    id: 'inv3',
-    invoiceNumber: 'INV-2026-087',
-    customerId: 'c4',
-    customerName: 'Hotel Green Park & Cafe',
-    customerType: 'SHOP',
-    billingPeriod: '01 Oct - 15 Oct 2026',
-    issueDate: '2026-10-16',
-    dueDate: '2026-10-23',
-    totalAmount: 48000,
-    paidAmount: 19500,
-    status: 'Overdue',
-  },
-];
-
-const initialExpenses: Expense[] = [
-  {
-    id: 'e1',
-    category: 'Cattle Feed',
-    amount: 32000,
-    date: '2026-10-22',
-    vendor: 'Godrej Agrovet Cattle Feeds',
-    paymentMethod: 'Bank Transfer',
-    notes: '40 Bags High-Yield Dairy Cattle Pellet Feed',
-  },
-  {
-    id: 'e2',
-    category: 'Fuel & Transport',
-    amount: 4500,
-    date: '2026-10-21',
-    vendor: 'Indian Oil Petrol Pump, Highway',
-    paymentMethod: 'UPI',
-    notes: 'Diesel for delivery bolero pickup van #1 and #2',
-  },
-  {
-    id: 'e3',
-    category: 'Packaging Pouches',
-    amount: 11200,
-    date: '2026-10-20',
-    vendor: 'Shree Polyfilms & Packaging',
-    paymentMethod: 'UPI',
-    notes: '20,000 Food-Grade Virgin Milk Pouches 500ml/1000ml',
-  },
-  {
-    id: 'e4',
-    category: 'Cold Storage Electricity',
-    amount: 18450,
-    date: '2026-10-18',
-    vendor: 'MSEDCL Maharashtra State Electricity',
-    paymentMethod: 'Bank Transfer',
-    notes: 'Chilling Plant & Cold Room Commercial Meter Bill',
-  },
-];
-
-const initialStaff: StaffMember[] = [
-  {
-    id: 'st1',
-    name: 'Rahul Deshmukh',
-    role: 'Delivery Rider',
-    phone: '+91 98220 11984',
-    assignedArea: 'Baner & Central Market',
-    status: 'On Duty',
-    deliveriesToday: 24,
-    rating: 4.9,
-    joiningDate: '2024-03-15',
-  },
-  {
-    id: 'st2',
-    name: 'Amit Shinde',
-    role: 'Delivery Rider',
-    phone: '+91 94220 88712',
-    assignedArea: 'Camp & Wanowrie',
-    status: 'On Duty',
-    deliveriesToday: 18,
-    rating: 4.8,
-    joiningDate: '2024-07-20',
-  },
-  {
-    id: 'st3',
-    name: 'Sachin Kamble',
-    role: 'Delivery Rider',
-    phone: '+91 99210 33456',
-    assignedArea: 'Wakad & Hinjawadi',
-    status: 'On Duty',
-    deliveriesToday: 14,
-    rating: 4.7,
-    joiningDate: '2025-01-10',
-  },
-  {
-    id: 'st4',
-    name: 'Ganesh More',
-    role: 'Dairy Plant Operator',
-    phone: '+91 97630 44512',
-    assignedArea: 'Central Processing Plant',
-    status: 'On Duty',
-    deliveriesToday: 0,
-    rating: 5.0,
-    joiningDate: '2023-11-01',
-  },
-];
+const initialInvoices: Invoice[] = [];
+const initialExpenses: Expense[] = [];
+const initialStaff: StaffMember[] = [];
 
 const DairyPulseContext = createContext<DairyPulseContextType | undefined>(undefined);
 
@@ -486,13 +212,60 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [staff, setStaff] = useState<StaffMember[]>(initialStaff);
+  const [dairies, setDairies] = useState<DairyInfo[]>([
+    { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', rating: 4.9 },
+    { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', rating: 4.8 },
+    { id: 'dairy-3', name: 'Gir Organic Farms', ownerName: 'Mahesh Deshmukh', email: 'gir@dairy.com', phone: '+91 97654 32109', city: 'Mumbai', rating: 4.95 },
+  ]);
+  const [routes, setRoutes] = useState<RouteInfo[]>([]);
+  const [driverRatings, setDriverRatings] = useState<DriverRating[]>([]);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const openModal = (name: string) => setActiveModal(name);
   const closeModal = () => setActiveModal(null);
 
+  // Sync state with FastAPI backend if online
+  useEffect(() => {
+    getProducts().then((data) => {
+      if (data && Array.isArray(data)) setProducts(data);
+    });
+    getCustomers().then((data) => {
+      if (data && Array.isArray(data)) setCustomers(data);
+    });
+    getSubscriptions().then((data) => {
+      if (data && Array.isArray(data)) setSubscriptions(data);
+    });
+    getShopOrders().then((data) => {
+      if (data && Array.isArray(data)) setShopOrders(data);
+    });
+    getDeliveriesToday().then((data) => {
+      if (data && Array.isArray(data)) {
+        const sorted = [...data].sort((a: any, b: any) => (a.sequenceOrder || 1) - (b.sequenceOrder || 1));
+        setDeliveries(sorted);
+      }
+    });
+    getInvoices().then((data) => {
+      if (data && Array.isArray(data)) setInvoices(data);
+    });
+    getExpenses().then((data) => {
+      if (data && Array.isArray(data)) setExpenses(data);
+    });
+    getStaff().then((data) => {
+      if (data && Array.isArray(data)) setStaff(data);
+    });
+    getDairiesApi().then((data) => {
+      if (data && Array.isArray(data) && data.length > 0) setDairies(data);
+    });
+    getRoutesApi().then((data) => {
+      if (data && Array.isArray(data)) setRoutes(data);
+    });
+    getDriverRatingsApi().then((data) => {
+      if (data && Array.isArray(data)) setDriverRatings(data);
+    });
+  }, []);
+
   const addStockReceipt = (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string) => {
-    // 1. Update stock
+    // 1. Update stock optimistically
     setProducts((prev) =>
       prev.map((p) => {
         if (p.variant === variant) {
@@ -520,6 +293,9 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setMovements((prev) => [newMovement, ...prev]);
+
+    // 3. Sync with backend API
+    postStockReceipt({ variant, quantity, supplier, rate, notes });
   };
 
   const recordWastage = (variant: MilkVariant, quantity: number, reason: string) => {
@@ -547,15 +323,101 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setMovements((prev) => [newMovement, ...prev]);
+
+    // Backend sync
+    postWastage({ variant, quantity, reason });
   };
 
-  const addCustomer = (customerData: Omit<Customer, 'id' | 'joinedDate'>) => {
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'>): Promise<Customer> => {
     const newCustomer: Customer = {
       ...customerData,
       id: `c_${Date.now()}`,
       joinedDate: new Date().toISOString().split('T')[0],
     };
     setCustomers((prev) => [newCustomer, ...prev]);
+
+    // Backend sync
+    const res = await postCustomer(customerData);
+    if (res && res.id) {
+      newCustomer.id = res.id;
+    }
+    return newCustomer;
+  };
+
+  const updateCustomer = async (id: string, updateData: Partial<Customer>): Promise<boolean> => {
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updateData } : c))
+    );
+    if (updateData.address || updateData.latitude !== undefined || updateData.longitude !== undefined) {
+      setDeliveries((prev) =>
+        prev.map((d) => {
+          if (d.customerId === id || d.customerName === updateData.name) {
+            return {
+              ...d,
+              ...(updateData.address ? { address: updateData.address } : {}),
+              ...(updateData.area ? { area: updateData.area } : {}),
+              ...(updateData.latitude !== undefined ? { latitude: updateData.latitude } : {}),
+              ...(updateData.longitude !== undefined ? { longitude: updateData.longitude } : {}),
+            };
+          }
+          return d;
+        })
+      );
+    }
+    const res = await patchCustomerApi(id, {
+      name: updateData.name,
+      phone: updateData.phone,
+      email: updateData.email,
+      address: updateData.address,
+      area: updateData.area,
+      route: updateData.route,
+      latitude: updateData.latitude,
+      longitude: updateData.longitude,
+      preferredTime: updateData.preferredTime,
+    });
+    return !!res;
+  };
+
+  const addStaff = async (memberData: Omit<StaffMember, 'id' | 'joiningDate'>): Promise<StaffMember> => {
+    const today = new Date().toISOString().split('T')[0];
+    const newMember: StaffMember = {
+      ...memberData,
+      id: `st_${Date.now()}`,
+      joiningDate: today,
+      rating: 5.0,
+      deliveriesToday: 0,
+    };
+    setStaff((prev) => [newMember, ...prev]);
+
+    // Backend sync
+    const res = await postStaff({
+      name: memberData.name,
+      role: memberData.role,
+      phone: memberData.phone,
+      assignedArea: memberData.assignedArea,
+      status: memberData.status,
+    });
+    return (res as StaffMember) || newMember;
+  };
+
+  const updateStaff = async (id: string, updateData: Partial<StaffMember>): Promise<boolean> => {
+    setStaff((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updateData } : s))
+    );
+    const updated = await patchStaffApi(id, {
+      status: updateData.status,
+      assignedArea: updateData.assignedArea,
+      phone: updateData.phone,
+      role: updateData.role,
+      rating: updateData.rating,
+    });
+    return !!updated;
+  };
+
+  const deleteStaff = async (id: string): Promise<boolean> => {
+    setStaff((prev) => prev.filter((s) => s.id !== id));
+    const success = await deleteStaffApi(id);
+    return success;
   };
 
   const addSubscription = (subData: Omit<Subscription, 'id'>) => {
@@ -564,12 +426,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       id: `sub_${Date.now()}`,
     };
     setSubscriptions((prev) => [newSub, ...prev]);
+
+    // Backend sync
+    postSubscription(subData);
   };
 
   const toggleSubscriptionPause = (id: string) => {
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: s.status === 'Active' ? 'Paused' : 'Active' } : s))
     );
+
+    // Backend sync
+    toggleSubscriptionPauseApi(id);
   };
 
   const addShopOrder = (orderData: Omit<ShopOrder, 'id' | 'orderNumber'>) => {
@@ -579,22 +447,85 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       orderNumber: `SO-${1000 + shopOrders.length + 1}`,
     };
     setShopOrders((prev) => [newOrder, ...prev]);
+
+    // Backend sync
+    postShopOrder({
+      shopName: orderData.shopName,
+      contactPerson: orderData.contactPerson,
+      phone: orderData.phone,
+      totalAmount: orderData.totalAmount,
+      deliveryDate: orderData.deliveryDate,
+      items: orderData.items,
+    });
   };
 
   const updateDeliveryStatus = (id: string, status: DeliveryTask['status'], failureReason?: string) => {
+    let affectedTask: DeliveryTask | undefined;
+
     setDeliveries((prev) =>
       prev.map((d) => {
         if (d.id === id) {
+          affectedTask = d;
           return {
             ...d,
             status,
             failedReason: failureReason,
-            deliveredAt: status === 'Delivered' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+            deliveredAt:
+              status === 'Delivered'
+                ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : undefined,
           };
         }
         return d;
       })
     );
+
+    // If marked Delivered, update rider deliveriesToday and deduct product stock
+    if (status === 'Delivered') {
+      if (affectedTask?.assignedRider) {
+        setStaff((prev) =>
+          prev.map((s) =>
+            s.name.toLowerCase() === affectedTask!.assignedRider.toLowerCase()
+              ? { ...s, deliveriesToday: (s.deliveriesToday || 0) + 1 }
+              : s
+          )
+        );
+      }
+
+      if (affectedTask?.productVariant && affectedTask.quantityLiters > 0) {
+        setProducts((prev) =>
+          prev.map((p) => {
+            if (p.variant === affectedTask!.productVariant) {
+              const newStock = Math.max(0, Number((p.availableStock - affectedTask!.quantityLiters).toFixed(1)));
+              return {
+                ...p,
+                availableStock: newStock,
+                status: newStock <= 0 ? 'Out of Stock' : newStock <= p.lowStockThreshold ? 'Low Stock' : 'In Stock',
+              };
+            }
+            return p;
+          })
+        );
+
+        // Record dispatch movement in inventory ledger
+        setMovements((prev) => [
+          {
+            id: `m_dispatch_${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'DISPATCH',
+            productVariant: affectedTask!.productVariant,
+            quantity: affectedTask!.quantityLiters,
+            supplierOrBatch: `Doorstep Run (${affectedTask!.customerName})`,
+            notes: `Delivered by ${affectedTask!.assignedRider || 'Rider'}`,
+          },
+          ...prev,
+        ]);
+      }
+    }
+
+    // Backend sync
+    patchDeliveryStatus(id, status, failureReason);
   };
 
   const generateInvoice = (customerId: string, amount: number, period: string) => {
@@ -606,7 +537,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
 
     const newInvoice: Invoice = {
       id: `inv_${Date.now()}`,
-      invoiceNumber: `INV-${today.getFullYear()}-${String(invoices.length + 90).padStart(3, '0')}`,
+      invoiceNumber: `INV-${today.getFullYear()}-${String(invoices.length + 1).padStart(3, '0')}`,
       customerId,
       customerName: customer.name,
       customerType: customer.type === 'SHOP' || customer.type === 'RESTAURANT' ? 'SHOP' : 'HOUSEHOLD',
@@ -618,12 +549,28 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       status: 'Unpaid',
     };
     setInvoices((prev) => [newInvoice, ...prev]);
+
+    // Update customer balance
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === customerId ? { ...c, balance: (c.balance || 0) + amount } : c))
+    );
+
+    // Backend sync
+    postInvoice({
+      customerId,
+      totalAmount: amount,
+      billingPeriod: period,
+      dueDate: dueDate.toISOString().split('T')[0],
+    });
   };
 
   const recordPayment = (invoiceId: string, amount: number) => {
+    let matchedCustomerId: string | undefined;
+
     setInvoices((prev) =>
       prev.map((inv) => {
         if (inv.id === invoiceId) {
+          matchedCustomerId = inv.customerId;
           const newPaid = inv.paidAmount + amount;
           const status = newPaid >= inv.totalAmount ? 'Paid' : newPaid > 0 ? 'Partial' : 'Unpaid';
           return { ...inv, paidAmount: newPaid, status };
@@ -631,6 +578,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         return inv;
       })
     );
+
+    // Deduct customer balance
+    if (matchedCustomerId) {
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === matchedCustomerId ? { ...c, balance: Math.max(0, (c.balance || 0) - amount) } : c
+        )
+      );
+    }
+
+    // Backend sync
+    postPayment(invoiceId, amount);
   };
 
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
@@ -639,6 +598,356 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       id: `e_${Date.now()}`,
     };
     setExpenses((prev) => [newExpense, ...prev]);
+
+    // Backend sync
+    postExpense(expenseData);
+  };
+
+  const addDairy = async (dairyData: {
+    name: string;
+    ownerName: string;
+    email: string;
+    phone: string;
+    city?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    password?: string;
+  }): Promise<DairyInfo | null> => {
+    const newDairy: DairyInfo = {
+      id: `dairy_${Date.now()}`,
+      name: dairyData.name,
+      ownerName: dairyData.ownerName,
+      email: dairyData.email,
+      phone: dairyData.phone,
+      city: dairyData.city || 'Pune',
+      address: dairyData.address || '',
+      latitude: dairyData.latitude || 18.5520,
+      longitude: dairyData.longitude || 73.7880,
+      rating: 5.0,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setDairies((prev) => [newDairy, ...prev]);
+
+    const res = await postDairyApi(dairyData);
+    if (res && res.id) {
+      newDairy.id = res.id;
+      return res;
+    }
+    return newDairy;
+  };
+
+  const updateDairy = async (id: string, updateData: Partial<DairyInfo>): Promise<boolean> => {
+    setDairies((prev) =>
+      prev.map((d) => (d.id === id || d.name === id ? { ...d, ...updateData } : d))
+    );
+    const res = await patchDairyApi(id, {
+      name: updateData.name,
+      ownerName: updateData.ownerName || updateData.owner_name,
+      email: updateData.email,
+      phone: updateData.phone,
+      city: updateData.city,
+      address: updateData.address,
+      latitude: updateData.latitude,
+      longitude: updateData.longitude,
+    });
+    return !!res;
+  };
+
+  const addProduct = async (prodData: Omit<Product, 'id'>): Promise<Product | null> => {
+    const newProduct: Product = {
+      ...prodData,
+      id: `p_${Date.now()}`,
+    };
+    setProducts((prev) => [...prev, newProduct]);
+
+    const res = await postProductApi(prodData);
+    if (res && res.id) {
+      newProduct.id = res.id;
+      return res as Product;
+    }
+    return newProduct;
+  };
+
+  const updateProductPrice = async (productId: string, sellingPrice: number, costPrice?: number): Promise<boolean> => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            sellingPrice,
+            costPrice: costPrice !== undefined ? costPrice : p.costPrice,
+          };
+        }
+        return p;
+      })
+    );
+
+    const res = await patchProductPriceApi(productId, { sellingPrice, costPrice });
+    return !!res;
+  };
+
+  const deleteProduct = async (productId: string): Promise<boolean> => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    const res = await deleteProductApi(productId);
+    return !!res;
+  };
+
+  const assignDelivery = async (deliveryId: string, assignedRider: string, slot?: string, area?: string): Promise<boolean> => {
+    setDeliveries((prev) =>
+      prev.map((d) => {
+        if (d.id === deliveryId) {
+          return {
+            ...d,
+            assignedRider,
+            slot: slot || d.slot,
+            area: area || d.area,
+          };
+        }
+        return d;
+      })
+    );
+    const res = await patchDeliveryAssignApi(deliveryId, { assignedRider, slot, area });
+    return !!res;
+  };
+
+  const assignRouteToRider = async (area: string, assignedRider: string, slot?: string): Promise<boolean> => {
+    setDeliveries((prev) =>
+      prev.map((d) => {
+        if (d.area === area) {
+          return {
+            ...d,
+            assignedRider,
+            slot: slot || d.slot,
+          };
+        }
+        return d;
+      })
+    );
+    const res = await postRouteAssignApi({ area, assignedRider, slot });
+    return !!res;
+  };
+
+  const addDeliveryTask = async (taskData: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'>): Promise<DeliveryTask | null> => {
+    const count = deliveries.length + 1;
+    const newTask: DeliveryTask = {
+      ...taskData,
+      id: `del_${Date.now()}`,
+      deliveryNumber: `DEL-2026-${String(count).padStart(3, '0')}`,
+      sequenceOrder: count,
+      societyOrLandmark: taskData.societyOrLandmark || (taskData.address ? taskData.address.split(',')[1]?.trim() || taskData.address.split(' ')[0] : 'Locality'),
+      status: 'Pending',
+    };
+    setDeliveries((prev) => [...prev, newTask]);
+    const res = await postDeliveryTaskApi(taskData);
+    if (res && res.id) {
+      newTask.id = res.id;
+      return res as DeliveryTask;
+    }
+    return newTask;
+  };
+
+  const reorderDeliveries = async (stops: { id: string; sequenceOrder: number }[]): Promise<boolean> => {
+    const orderMap = new Map(stops.map((s) => [s.id, s.sequenceOrder]));
+    setDeliveries((prev) => {
+      const updated = prev.map((d) => {
+        if (orderMap.has(d.id)) {
+          return { ...d, sequenceOrder: orderMap.get(d.id)! };
+        }
+        return d;
+      });
+      return [...updated].sort((a, b) => (a.sequenceOrder || 1) - (b.sequenceOrder || 1));
+    });
+    const res = await reorderDeliveriesApi(stops);
+    return !!res;
+  };
+
+  const moveDeliveryStop = async (id: string, direction: 'UP' | 'DOWN'): Promise<void> => {
+    const sorted = [...deliveries].sort((a, b) => (a.sequenceOrder || 1) - (b.sequenceOrder || 1));
+    const idx = sorted.findIndex((d) => d.id === id);
+    if (idx === -1) return;
+    if (direction === 'UP' && idx === 0) return;
+    if (direction === 'DOWN' && idx === sorted.length - 1) return;
+
+    const swapIdx = direction === 'UP' ? idx - 1 : idx + 1;
+    const current = sorted[idx];
+    const target = sorted[swapIdx];
+
+    const currentOrder = current.sequenceOrder || (idx + 1);
+    const targetOrder = target.sequenceOrder || (swapIdx + 1);
+
+    await reorderDeliveries([
+      { id: current.id, sequenceOrder: targetOrder },
+      { id: target.id, sequenceOrder: currentOrder },
+    ]);
+  };
+
+  const autoSequenceRoute = async (area: string): Promise<void> => {
+    // Cluster stops in this area by societyOrLandmark or address keywords
+    const areaDeliveries = deliveries.filter((d) => d.area === area);
+    const sortedArea = [...areaDeliveries].sort((a, b) => {
+      const socA = (a.societyOrLandmark || a.address || '').toLowerCase();
+      const socB = (b.societyOrLandmark || b.address || '').toLowerCase();
+      return socA.localeCompare(socB);
+    });
+
+    const updates = sortedArea.map((d, i) => ({
+      id: d.id,
+      sequenceOrder: i + 1,
+    }));
+
+    await reorderDeliveries(updates);
+  };
+
+  const createRoute = async (routeData: Omit<RouteInfo, 'id'>): Promise<RouteInfo | null> => {
+    const newRoute: RouteInfo = {
+      ...routeData,
+      id: `rt-${Date.now()}`,
+      totalStops: routeData.totalStops || 0,
+      totalLiters: routeData.totalLiters || 0,
+      maxCapacityLiters: routeData.maxCapacityLiters || 60.0,
+    };
+    setRoutes((prev) => [...prev, newRoute]);
+    const res = await createRouteApi({
+      routeCode: routeData.routeCode,
+      name: routeData.name,
+      area: routeData.area,
+      assignedRider: routeData.assignedRider,
+      slot: routeData.slot,
+      societies: typeof routeData.societies === 'string' ? routeData.societies : Array.isArray(routeData.societies) ? routeData.societies.join(', ') : undefined,
+      maxCapacityLiters: routeData.maxCapacityLiters,
+    });
+    if (res && res.id) {
+      newRoute.id = res.id;
+      return res;
+    }
+    return newRoute;
+  };
+
+  const updateDeliveryAddress = async (
+    id: string,
+    addrData: { address?: string; flatOrUnit?: string; societyOrLandmark?: string; landmark?: string; area?: string; latitude?: number; longitude?: number; notes?: string }
+  ): Promise<boolean> => {
+    setDeliveries((prev) =>
+      prev.map((d) => {
+        if (d.id === id) {
+          return {
+            ...d,
+            address: addrData.address || d.address,
+            flatOrUnit: addrData.flatOrUnit || d.flatOrUnit,
+            societyOrLandmark: addrData.societyOrLandmark || d.societyOrLandmark,
+            landmark: addrData.landmark || d.landmark,
+            area: addrData.area || d.area,
+            latitude: addrData.latitude !== undefined ? addrData.latitude : d.latitude,
+            longitude: addrData.longitude !== undefined ? addrData.longitude : d.longitude,
+            notes: addrData.notes || d.notes,
+          };
+        }
+        return d;
+      })
+    );
+    const res = await updateDeliveryAddressApi(id, addrData);
+    return !!res;
+  };
+
+  const buildAndDispatchRoute = async (payload: RouteBuildPayload) => {
+    const res = await buildAndDispatchRouteApi(payload);
+    if (res && res.success) {
+      const freshDeliveries = await getDeliveriesToday();
+      if (freshDeliveries) setDeliveries(freshDeliveries);
+      const freshRoutes = await getRoutesApi();
+      if (freshRoutes) setRoutes(freshRoutes);
+      const freshCustomers = await getCustomers();
+      if (freshCustomers) setCustomers(freshCustomers);
+      return true;
+    }
+    return false;
+  };
+
+  const generateDailyDeliveries = async (deliveryDate?: string, slot?: string) => {
+    const res = await generateDailyDeliveriesApi({ deliveryDate, slot });
+    if (res && res.success) {
+      const freshDeliveries = await getDeliveriesToday();
+      if (freshDeliveries) setDeliveries(freshDeliveries);
+      const freshRoutes = await getRoutesApi();
+      if (freshRoutes) setRoutes(freshRoutes);
+      return res;
+    }
+    return null;
+  };
+
+  const rateDriver = async (payload: {
+    driverName: string;
+    driverId?: string;
+    customerId?: string;
+    customerName: string;
+    deliveryId?: string;
+    rating: number;
+    tags?: string[];
+    feedback?: string;
+  }): Promise<boolean> => {
+    const clampedRating = Math.max(1, Math.min(5, Math.round(payload.rating)));
+    const newRatingObj: DriverRating = {
+      id: `rating_${Date.now()}`,
+      driverName: payload.driverName,
+      driverId: payload.driverId,
+      customerId: payload.customerId,
+      customerName: payload.customerName,
+      deliveryId: payload.deliveryId,
+      rating: clampedRating,
+      tags: payload.tags?.join(', '),
+      feedback: payload.feedback,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 1. Optimistically append to state
+    setDriverRatings((prev) => [newRatingObj, ...prev]);
+
+    // 2. If delivery task is provided, update its rating info
+    if (payload.deliveryId) {
+      setDeliveries((prev) =>
+        prev.map((d) =>
+          d.id === payload.deliveryId
+            ? {
+                ...d,
+                driverRating: clampedRating,
+                driverRatingFeedback: payload.feedback || payload.tags?.join(', '),
+                ratedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              }
+            : d
+        )
+      );
+    }
+
+    // 3. Recalculate average rating for this driver in staff state
+    const existingDriverRatings = driverRatings.filter(
+      (r) => r.driverName.toLowerCase() === payload.driverName.toLowerCase()
+    );
+    const allRatingsList = [...existingDriverRatings.map((r) => r.rating), clampedRating];
+    const avgRating = Number(
+      (allRatingsList.reduce((acc, curr) => acc + curr, 0) / allRatingsList.length).toFixed(1)
+    );
+
+    const matchingStaff = staff.find(
+      (s) =>
+        s.name.toLowerCase() === payload.driverName.toLowerCase() ||
+        (payload.driverId && s.id === payload.driverId)
+    );
+    if (matchingStaff) {
+      updateStaff(matchingStaff.id, { rating: avgRating });
+    }
+
+    // 4. Call backend API
+    await postDriverRatingApi({
+      ...payload,
+      rating: clampedRating,
+    });
+
+    return true;
+  };
+
+  const getRatingsForDriver = (driverName: string): DriverRating[] => {
+    return driverRatings.filter((r) => r.driverName.toLowerCase() === driverName.toLowerCase());
   };
 
   return (
@@ -653,12 +962,21 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         invoices,
         expenses,
         staff,
+        dairies,
+        routes,
+        driverRatings,
+        rateDriver,
+        getRatingsForDriver,
         activeModal,
         openModal,
         closeModal,
         addStockReceipt,
         recordWastage,
         addCustomer,
+        updateCustomer,
+        addStaff,
+        updateStaff,
+        deleteStaff,
         addSubscription,
         toggleSubscriptionPause,
         addShopOrder,
@@ -666,6 +984,21 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         generateInvoice,
         recordPayment,
         addExpense,
+        addDairy,
+        updateDairy,
+        addProduct,
+        updateProductPrice,
+        deleteProduct,
+        assignDelivery,
+        assignRouteToRider,
+        addDeliveryTask,
+        reorderDeliveries,
+        moveDeliveryStop,
+        autoSequenceRoute,
+        createRoute,
+        buildAndDispatchRoute,
+        updateDeliveryAddress,
+        generateDailyDeliveries,
       }}
     >
       {children}

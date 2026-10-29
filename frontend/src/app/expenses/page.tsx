@@ -42,7 +42,7 @@ export default function ExpensesPage() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Total Monthly Expenses</p>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
@@ -52,21 +52,21 @@ export default function ExpensesPage() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Cattle Feed & Nutrition</p>
-          <h3 className="text-2xl font-extrabold text-amber-600 mt-1 tabular-nums">₹32,000</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Godrej Agrovet high-yield pellet feed</p>
+          <p className="text-xs font-medium text-slate-500">Logged Expense Entries</p>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+            {expenses.length}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {expenses.length === 1 ? '1 active transaction' : `${expenses.length} active transactions`}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Chilling & Cold Storage</p>
-          <h3 className="text-2xl font-extrabold text-blue-600 mt-1 tabular-nums">₹18,450</h3>
-          <p className="text-[11px] text-slate-400 mt-1">MSEDCL electricity power tariff</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Packaging Pouches & Cans</p>
-          <h3 className="text-2xl font-extrabold text-purple-600 mt-1 tabular-nums">₹11,200</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Food grade 500ml/1000ml rolls</p>
+          <p className="text-xs font-medium text-slate-500">Active Categories</p>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+            {new Set(expenses.map((e) => e.category)).size}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-1">Feed, utilities, fuel & logistics</p>
         </div>
       </section>
 
@@ -106,22 +106,33 @@ export default function ExpensesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredExpenses.map((exp) => (
-                <tr key={exp.id} className="hover:bg-slate-50/60 transition">
-                  <td className="py-3.5 font-semibold text-slate-700">{exp.date}</td>
-                  <td className="py-3.5">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-800">
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td className="py-3.5 font-semibold text-slate-900">{exp.vendor}</td>
-                  <td className="py-3.5 text-slate-600">{exp.paymentMethod}</td>
-                  <td className="py-3.5 text-slate-500">{exp.notes || '—'}</td>
-                  <td className="py-3.5 text-right font-extrabold text-slate-900 tabular-nums">
-                    ₹{exp.amount.toLocaleString()}
+              {filteredExpenses.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <span className="font-semibold text-sm text-slate-600">No operational expenses logged yet</span>
+                      <span className="text-xs text-slate-400">Click &apos;+ Record Expense&apos; above to log feed, fuel, or packaging costs</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredExpenses.map((exp) => (
+                  <tr key={exp.id} className="hover:bg-slate-50/60 transition">
+                    <td className="py-3.5 font-semibold text-slate-700">{exp.date}</td>
+                    <td className="py-3.5">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-800">
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td className="py-3.5 font-semibold text-slate-900">{exp.vendor}</td>
+                    <td className="py-3.5 text-slate-600">{exp.paymentMethod}</td>
+                    <td className="py-3.5 text-slate-500">{exp.notes || '—'}</td>
+                    <td className="py-3.5 text-right font-extrabold text-slate-900 tabular-nums">
+                      ₹{exp.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

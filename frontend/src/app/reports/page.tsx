@@ -13,12 +13,53 @@ import {
 import { useDairyPulse } from '@/context/DairyPulseContext';
 
 export default function ReportsDashboardPage() {
-  const { products, invoices, expenses, deliveries } = useDairyPulse();
+  const { products, invoices, expenses, deliveries, shopOrders } = useDairyPulse();
 
-  const totalRevenue = 248500;
-  const totalLitersSold = 12450;
-  const totalCost = expenses.reduce((acc, e) => acc + e.amount, 0) + 120000; // feed, procurement, operations
+  const invoiceRevenue = invoices.reduce((acc, inv) => acc + (inv.paidAmount || 0), 0);
+  const shopRevenue = shopOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+  const totalRevenue = invoiceRevenue + shopRevenue;
+  const totalLitersSold = deliveries
+    .filter((d) => d.status === 'Delivered')
+    .reduce((acc, d) => acc + d.quantityLiters, 0);
+  const totalCost = expenses.reduce((acc, e) => acc + e.amount, 0);
   const netEstimatedProfit = totalRevenue - totalCost;
+
+  const handleExportCsv = () => {
+    const rows = [
+      ['DairyPulse Enterprise Operational & Financial Report'],
+      ['Generated On', new Date().toLocaleDateString('en-IN')],
+      [],
+      ['=== INVOICES SUMMARY ==='],
+      ['Invoice Number', 'Customer', 'Type', 'Period', 'Amount (INR)', 'Paid (INR)', 'Status'],
+      ...invoices.map((inv) => [
+        inv.invoiceNumber,
+        `"${inv.customerName}"`,
+        inv.customerType,
+        `"${inv.billingPeriod}"`,
+        inv.totalAmount,
+        inv.paidAmount,
+        inv.status,
+      ]),
+      [],
+      ['=== EXPENSES SUMMARY ==='],
+      ['Category', 'Amount (INR)', 'Vendor', 'Date', 'Payment Method'],
+      ...expenses.map((e) => [
+        `"${e.category}"`,
+        e.amount,
+        `"${e.vendor}"`,
+        e.date,
+        e.paymentMethod,
+      ]),
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `dairypulse_audit_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
@@ -32,18 +73,18 @@ export default function ReportsDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => alert('Exporting Reconciled DairyPulse Report as CSV...')}
+            onClick={handleExportCsv}
             className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs hover:bg-slate-50 transition cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Export CSV</span>
           </button>
           <button
-            onClick={() => alert('Generating formal monthly audit PDF report...')}
+            onClick={() => window.print()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Download PDF Report</span>
+            <span>Print / Save PDF</span>
           </button>
         </div>
       </section>
@@ -55,7 +96,9 @@ export default function ReportsDashboardPage() {
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             ₹{totalRevenue.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-1">↑ 18.4% YoY growth</p>
+          <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+            {totalRevenue > 0 ? 'Live recorded collections' : 'No collections logged yet'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -63,7 +106,9 @@ export default function ReportsDashboardPage() {
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             {totalLitersSold.toLocaleString()} L
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Daily avg: 415 L/day</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {totalLitersSold > 0 ? 'Delivered across routes' : 'Awaiting delivery runs'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -79,7 +124,9 @@ export default function ReportsDashboardPage() {
           <h3 className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">
             ₹{netEstimatedProfit.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">25.8% Operating Margin</p>
+          <p className="text-[11px] text-emerald-600 font-medium mt-1">
+            {totalRevenue > 0 ? `${Math.round((netEstimatedProfit / totalRevenue) * 100)}% Operating Margin` : 'Net operational balance'}
+          </p>
         </div>
       </section>
 

@@ -16,6 +16,21 @@ from app.database import Base
 def generate_uuid():
     return str(uuid.uuid4())
 
+class Dairy(Base):
+    __tablename__ = "dairies"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    owner_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    city = Column(String, default="Pune")
+    address = Column(String, nullable=True)
+    latitude = Column(Float, nullable=True, default=18.5520)
+    longitude = Column(Float, nullable=True, default=73.7880)
+    rating = Column(Float, default=4.9)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -25,6 +40,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     role = Column(String, default="OWNER")  # OWNER, STAFF, CUSTOMER
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -36,6 +52,7 @@ class Staff(Base):
     role = Column(String, nullable=False)  # Delivery Rider, Plant Operator, Manager
     phone = Column(String, nullable=False)
     assigned_area = Column(String, nullable=False)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     status = Column(String, default="On Duty")  # On Duty, Off Duty, On Leave
     deliveries_today = Column(Integer, default=0)
     rating = Column(Float, default=4.9)
@@ -53,6 +70,10 @@ class Customer(Base):
     address = Column(String, nullable=False)
     area = Column(String, nullable=False)
     route = Column(String, nullable=False)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    preferred_time = Column(String, default="6:00 AM - 7:30 AM", nullable=True)
     balance = Column(Float, default=0.0)
     status = Column(String, default="Active")  # Active, Paused, Inactive
     joined_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
@@ -112,6 +133,7 @@ class Subscription(Base):
     time_slot = Column(String, default="Morning (6:00 AM - 7:30 AM)")
     frequency = Column(String, default="Daily")
     unit_price = Column(Float, nullable=False)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     start_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
     status = Column(String, default="Active")  # Active, Paused, Expired
     paused_until = Column(String, nullable=True)
@@ -158,15 +180,55 @@ class DeliveryTask(Base):
     customer_name = Column(String, nullable=False)
     customer_phone = Column(String, nullable=False)
     address = Column(String, nullable=False)
+    flat_or_unit = Column(String, nullable=True)
+    society_or_landmark = Column(String, nullable=True)
+    landmark = Column(String, nullable=True)
     area = Column(String, nullable=False)
     product_variant = Column(String, nullable=False)
     quantity_liters = Column(Float, nullable=False)
     slot = Column(String, default="Morning")
     assigned_rider = Column(String, nullable=False)
-    status = Column(String, default="Pending")  # Pending, In Progress, Delivered, Failed
+    status = Column(String, default="Pending")  # Pending, Assigned, Out for Delivery, Delivered, Failed
     failed_reason = Column(String, nullable=True)
     delivered_at = Column(String, nullable=True)
+    sequence_order = Column(Integer, default=1)
+    delivery_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"), nullable=True)
+    is_extra_order = Column(Boolean, default=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
+    driver_rating = Column(Integer, nullable=True)
+    driver_rating_feedback = Column(Text, nullable=True)
+    rated_at = Column(String, nullable=True)
+
+class DriverRating(Base):
+    __tablename__ = "driver_ratings"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    driver_name = Column(String, nullable=False)
+    driver_id = Column(String, nullable=True)
+    customer_id = Column(String, nullable=True)
+    customer_name = Column(String, nullable=False)
+    delivery_id = Column(String, nullable=True)
+    rating = Column(Integer, nullable=False)  # 1 to 5
+    tags = Column(String, nullable=True)  # e.g. "On Time, Polite"
+    feedback = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Route(Base):
+    __tablename__ = "routes"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    route_code = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    area = Column(String, nullable=False)
+    assigned_rider = Column(String, nullable=False)
+    slot = Column(String, default="Morning (6:00 AM - 7:30 AM)")
+    societies = Column(String, nullable=True)
+    total_stops = Column(Integer, default=0)
+    total_liters = Column(Float, default=0.0)
+    max_capacity_liters = Column(Float, default=60.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Invoice(Base):
     __tablename__ = "invoices"

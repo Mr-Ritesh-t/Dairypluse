@@ -11,15 +11,19 @@ import {
   Calendar,
   CreditCard,
   Plus,
+  Users,
 } from 'lucide-react';
+import { Customer, Subscription } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { Customer } from '@/types';
+import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
+import { Settings2 } from 'lucide-react';
 
 export default function CustomersPage() {
-  const { customers, openModal } = useDairyPulse();
+  const { customers, subscriptions, openModal } = useDairyPulse();
   const [filterType, setFilterType] = useState<'ALL' | 'HOUSEHOLD' | 'SHOP' | 'RESTAURANT'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
+  const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
 
   const totalDues = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
   const householdCount = customers.filter((c) => c.type === 'HOUSEHOLD').length;
@@ -56,20 +60,20 @@ export default function CustomersPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Total Registered Clients</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{customers.length + 80}</h3>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{customers.length}</h3>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">Active customer directory</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Household Subscribers</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{householdCount + 68}</h3>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{householdCount}</h3>
           <p className="text-[11px] text-slate-400 mt-1">Daily recurring doorstep runs</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Commercial / B2B Accounts</p>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
-            {commercialCount + 12}
+            {commercialCount}
           </h3>
           <p className="text-[11px] text-slate-400 mt-1">Bakeries, sweet shops, cafes</p>
         </div>
@@ -140,56 +144,68 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCustomers.map((c) => {
-                  const isSelected = selectedCust?.id === c.id;
-                  return (
-                    <tr
-                      key={c.id}
-                      onClick={() => setSelectedCust(c)}
-                      className={`cursor-pointer transition ${
-                        isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
-                      }`}
-                    >
-                      <td className="py-3.5 font-semibold text-slate-800">
-                        <div>{c.name}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">{c.address}</div>
-                      </td>
-                      <td className="py-3.5">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            c.type === 'HOUSEHOLD'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-blue-50 text-blue-700'
-                          }`}
-                        >
-                          {c.type}
-                        </span>
-                      </td>
-                      <td className="py-3.5 text-slate-600 font-medium">{c.phone}</td>
-                      <td className="py-3.5 text-slate-600">{c.area}</td>
-                      <td className="py-3.5 font-bold tabular-nums">
-                        {c.balance > 0 ? (
-                          <span className="text-rose-600">₹{c.balance.toLocaleString()} (Due)</span>
-                        ) : c.balance < 0 ? (
-                          <span className="text-emerald-600">₹{Math.abs(c.balance)} (Credit)</span>
-                        ) : (
-                          <span className="text-slate-400">₹0</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 text-right">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            c.status === 'Active'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {c.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredCustomers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Users className="w-8 h-8 text-slate-300" />
+                        <span className="font-semibold text-sm text-slate-600">No customers registered yet</span>
+                        <span className="text-xs text-slate-400">Click &apos;+ Add Customer&apos; above or register from the Customer Portal to begin</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCustomers.map((c) => {
+                    const isSelected = selectedCust?.id === c.id;
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelectedCust(c)}
+                        className={`cursor-pointer transition ${
+                          isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        <td className="py-3.5 font-semibold text-slate-800">
+                          <div>{c.name}</div>
+                          <div className="text-[10px] text-slate-400 font-normal">{c.address}</div>
+                        </td>
+                        <td className="py-3.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              c.type === 'HOUSEHOLD'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-blue-50 text-blue-700'
+                            }`}
+                          >
+                            {c.type}
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-slate-600 font-medium">{c.phone}</td>
+                        <td className="py-3.5 text-slate-600">{c.area}</td>
+                        <td className="py-3.5 font-bold tabular-nums">
+                          {c.balance > 0 ? (
+                            <span className="text-rose-600">₹{c.balance.toLocaleString()} (Due)</span>
+                          ) : c.balance < 0 ? (
+                            <span className="text-emerald-600">₹{Math.abs(c.balance)} (Credit)</span>
+                          ) : (
+                            <span className="text-slate-400">₹0</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 text-right">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                              c.status === 'Active'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            {c.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -252,6 +268,29 @@ export default function CustomersPage() {
               </div>
 
               <div className="pt-2 flex flex-col gap-2">
+                {selectedCust.type === 'HOUSEHOLD' && (
+                  <button
+                    onClick={() => {
+                      const sub: Subscription = subscriptions.find((s) => s.customerId === selectedCust.id) || {
+                        id: `sub-${selectedCust.id}`,
+                        customerId: selectedCust.id,
+                        customerName: selectedCust.name,
+                        productVariant: 'Cow Milk',
+                        quantityLiters: 1.5,
+                        frequency: 'Daily',
+                        timeSlot: 'Morning (6:00 AM - 7:30 AM)',
+                        unitPrice: 62.0,
+                        status: 'Active',
+                        startDate: '2026-09-01',
+                      };
+                      setSelectedSubForManage(sub);
+                    }}
+                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Settings2 className="w-3.5 h-3.5" />
+                    <span>Manage Daily Milk (Skip / Extra / Qty)</span>
+                  </button>
+                )}
                 <button
                   onClick={() => openModal('generateBill')}
                   className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
@@ -267,6 +306,19 @@ export default function CustomersPage() {
           )}
         </div>
       </div>
+
+      {/* Flexible Subscription Modal for Customer */}
+      {selectedSubForManage && (
+        <FlexibleSubscriptionModal
+          isOpen={!!selectedSubForManage}
+          onClose={() => setSelectedSubForManage(null)}
+          subscriptionId={selectedSubForManage.id}
+          customerName={selectedSubForManage.customerName}
+          currentQuantity={selectedSubForManage.quantityLiters}
+          productVariant={selectedSubForManage.productVariant}
+          unitPrice={selectedSubForManage.unitPrice}
+        />
+      )}
     </div>
   );
 }

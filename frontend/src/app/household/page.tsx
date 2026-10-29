@@ -11,15 +11,18 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Settings2,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { MilkVariant } from '@/types';
+import { MilkVariant, Subscription } from '@/types';
+import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
 
 export default function HouseholdSubscriptionsPage() {
   const { subscriptions, toggleSubscriptionPause, addSubscription, customers } = useDairyPulse();
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'PAUSED'>('ALL');
   const [search, setSearch] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
 
   // New Subscription state
   const [subCustomer, setSubCustomer] = useState(customers[1]?.id || '');
@@ -63,29 +66,35 @@ export default function HouseholdSubscriptionsPage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Active Subscribers</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{activeCount + 83}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Daily morning doorstep run</p>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{activeCount}</h3>
+          <p className="text-[11px] text-emerald-600 font-medium mt-1">
+            {activeCount > 0 ? 'Daily morning doorstep run' : 'No active subscribers'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Committed Daily Volume</p>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            {(totalDailyLiters + 108.5).toFixed(1)} L
+            {totalDailyLiters.toFixed(1)} L
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Morning & Evening dispatch</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {totalDailyLiters > 0 ? 'Morning & Evening dispatch' : 'No recurring volume committed'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Paused (On Vacation)</p>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
-            {pausedCount + 7}
+            {pausedCount}
           </h3>
           <p className="text-[11px] text-slate-400 mt-1">Temporary hold active</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Extra Milk Requests</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">12</h3>
+          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
+            {subscriptions.filter((s: any) => s.isExtraOrder || s.extraLitres).length}
+          </h3>
           <p className="text-[11px] text-slate-400 mt-1">Festival & guest add-ons</p>
         </div>
       </section>
@@ -220,7 +229,18 @@ export default function HouseholdSubscriptionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredSubs.map((sub) => (
+              {filteredSubs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Calendar className="w-8 h-8 text-slate-300" />
+                      <span className="font-semibold text-sm text-slate-600">No household subscriptions yet</span>
+                      <span className="text-xs text-slate-400">Click &apos;+ New Subscription&apos; above or subscribe customers from their profiles</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredSubs.map((sub) => (
                 <tr key={sub.id} className="hover:bg-slate-50/60 transition">
                   <td className="py-3.5 font-semibold text-slate-800">
                     <div>{sub.customerName}</div>
@@ -249,23 +269,47 @@ export default function HouseholdSubscriptionsPage() {
                     </span>
                   </td>
                   <td className="py-3.5 text-right">
-                    <button
-                      onClick={() => toggleSubscriptionPause(sub.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
-                        sub.status === 'Active'
-                          ? 'bg-amber-50 hover:bg-amber-100 text-amber-700'
-                          : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                      }`}
-                    >
-                      {sub.status === 'Active' ? 'Pause Delivery' : 'Resume Delivery'}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => setSelectedSubForManage(sub)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Settings2 className="w-3 h-3 text-slate-500" />
+                        <span>Manage</span>
+                      </button>
+                      <button
+                        onClick={() => toggleSubscriptionPause(sub.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                          sub.status === 'Active'
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-700'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        {sub.status === 'Active' ? 'Pause' : 'Resume'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
       </section>
+
+      {/* Flexible Subscription Modal */}
+      {selectedSubForManage && (
+        <FlexibleSubscriptionModal
+          isOpen={!!selectedSubForManage}
+          onClose={() => setSelectedSubForManage(null)}
+          subscriptionId={selectedSubForManage.id}
+          customerName={selectedSubForManage.customerName}
+          currentQuantity={selectedSubForManage.quantityLiters}
+          productVariant={selectedSubForManage.productVariant}
+          unitPrice={selectedSubForManage.unitPrice}
+        />
+      )}
     </div>
   );
 }
+

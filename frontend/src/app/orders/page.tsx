@@ -111,64 +111,76 @@ export default function ShopOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredOrders.map((ord) => {
-                  const isSelected = selectedOrder?.id === ord.id;
-                  const totalLitres = ord.items.reduce((s, i) => s + i.quantity, 0);
-                  return (
-                    <tr
-                      key={ord.id}
-                      onClick={() => setSelectedOrder(ord)}
-                      className={`cursor-pointer transition ${
-                        isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
-                      }`}
-                    >
-                      <td className="py-3.5 font-bold text-emerald-700">{ord.orderNumber}</td>
-                      <td className="py-3.5 font-semibold text-slate-800">
-                        <div>{ord.shopName}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">{ord.contactPerson}</div>
-                      </td>
-                      <td className="py-3.5 font-bold text-slate-700 tabular-nums">{totalLitres} L</td>
-                      <td className="py-3.5 font-extrabold text-slate-900 tabular-nums">
-                        ₹{ord.totalAmount.toLocaleString()}
-                      </td>
-                      <td className="py-3.5">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            ord.paymentStatus === 'Paid'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : ord.paymentStatus === 'Partial'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {ord.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="py-3.5 text-right">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                            ord.status === 'Delivered'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : ord.status === 'Dispatched'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <ShoppingBag className="w-8 h-8 text-slate-300" />
+                        <span className="font-semibold text-sm text-slate-600">No commercial orders logged yet</span>
+                        <span className="text-xs text-slate-400">Click &apos;+ Create Order&apos; above to record wholesale bulk orders</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOrders.map((ord) => {
+                    const isSelected = selectedOrder?.id === ord.id;
+                    const totalLitres = ord.items.reduce((s, i) => s + i.quantity, 0);
+                    return (
+                      <tr
+                        key={ord.id}
+                        onClick={() => setSelectedOrder(ord)}
+                        className={`cursor-pointer transition ${
+                          isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        <td className="py-3.5 font-bold text-emerald-700">{ord.orderNumber}</td>
+                        <td className="py-3.5 font-semibold text-slate-800">
+                          <div>{ord.shopName}</div>
+                          <div className="text-[10px] text-slate-400 font-normal">{ord.contactPerson}</div>
+                        </td>
+                        <td className="py-3.5 font-bold text-slate-700 tabular-nums">{totalLitres} L</td>
+                        <td className="py-3.5 font-extrabold text-slate-900 tabular-nums">
+                          ₹{ord.totalAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3.5">
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              ord.status === 'Delivered'
-                                ? 'bg-emerald-500'
-                                : ord.status === 'Dispatched'
-                                ? 'bg-blue-500'
-                                : 'bg-amber-500'
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              ord.paymentStatus === 'Paid'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : ord.paymentStatus === 'Partial'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-amber-100 text-amber-800'
                             }`}
-                          ></span>
-                          {ord.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                          >
+                            {ord.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-right">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                              ord.status === 'Delivered'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : ord.status === 'Dispatched'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                ord.status === 'Delivered'
+                                  ? 'bg-emerald-500'
+                                  : ord.status === 'Dispatched'
+                                  ? 'bg-blue-500'
+                                  : 'bg-amber-500'
+                              }`}
+                            ></span>
+                            {ord.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

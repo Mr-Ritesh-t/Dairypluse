@@ -58,7 +58,9 @@ export default function BillingPaymentsPage() {
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             ₹{totalInvoiced.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Across 124 subscriber bills</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {invoices.length > 0 ? `Across ${invoices.length} customer invoices` : 'No invoices generated yet'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -130,7 +132,18 @@ export default function BillingPaymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredInvoices.map((inv) => {
+              {filteredInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Receipt className="w-8 h-8 text-slate-300" />
+                      <span className="font-semibold text-sm text-slate-600">No invoices generated yet</span>
+                      <span className="text-xs text-slate-400">Click &apos;+ Generate Bill&apos; above to create a customer invoice</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredInvoices.map((inv) => {
                 const balanceDue = inv.totalAmount - inv.paidAmount;
                 return (
                   <tr key={inv.id} className="hover:bg-slate-50/60 transition">
@@ -186,7 +199,8 @@ export default function BillingPaymentsPage() {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
