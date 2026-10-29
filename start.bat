@@ -4,7 +4,11 @@ echo   DairyPulse Enterprise Platform - Starting Fullstack Dev
 echo ========================================================
 
 echo [1/2] Starting FastAPI Backend on http://127.0.0.1:8000...
-start "DairyPulse FastAPI Backend" cmd /k "cd /d %~dp0backend && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000 --host 127.0.0.1 --reload"
+if exist "%~dp0backend\.venv\Scripts\python.exe" (
+    start "DairyPulse FastAPI Backend" cmd /k "cd /d %~dp0backend && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000 --host 127.0.0.1 --reload"
+) else (
+    start "DairyPulse FastAPI Backend" cmd /k "cd /d %~dp0backend && python -m uvicorn app.main:app --port 8000 --host 127.0.0.1 --reload"
+)
 
 echo [2/2] Starting Next.js Frontend on http://localhost:3000...
 start "DairyPulse Next.js Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"

@@ -16,6 +16,7 @@ from app.models.models import (
     Staff,
     StockReceipt,
     InventoryTransaction,
+    DriverRating,
 )
 
 def seed_database(clear_existing=True, db_session=None):
@@ -30,6 +31,7 @@ def seed_database(clear_existing=True, db_session=None):
     if clear_existing:
         print("Clearing old data from all tables...")
         # Clear child tables first to respect foreign keys
+        db.query(DriverRating).delete()
         db.query(OrderItem).delete()
         db.query(Order).delete()
         db.query(Subscription).delete()

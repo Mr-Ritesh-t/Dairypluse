@@ -119,10 +119,9 @@ dairypluse/
 │   │   ├── schemas/schemas.py    # Pydantic Request & Response Schemas
 │   │   ├── routers/api_v1.py     # Clean REST Endpoints for all operations
 │   │   ├── database.py           # Database connection & session factory
-│   │   ├── seed.py               # Seed data for realistic Indian dairy operations
+│   │   ├── seed.py               # Optional seed data for Indian dairy operations
 │   │   └── main.py               # FastAPI application setup & CORS configuration
-│   └── tests/test_api.py         # Pytest test suite (28/28 passing)
-├── stitch_designs/               # Reference HTML UI templates
+│   └── tests/test_api.py         # Pytest test suite (29/29 passing)
 └── start.bat                     # 1-click startup script for both services
 ```
 
@@ -130,13 +129,13 @@ dairypluse/
 
 ## 🧪 Automated Testing
 
-The backend includes a comprehensive automated test suite verifying all 28 critical paths (inventory receipts, delivery assignment & real-time tracking, milk variety lifecycle, price editing & removal, multi-dairy registration, customer 3-step onboarding, rider creation, order processing, and authentication):
+The backend includes a comprehensive automated test suite verifying all 29 critical paths (inventory receipts, delivery assignment & real-time tracking, milk variety lifecycle, price editing & removal, multi-dairy registration, customer 3-step onboarding, rider creation, driver rating lifecycle, order processing, and authentication):
 
 ```bash
 cd backend
 .\.venv\Scripts\pytest tests -v
 ```
-*(Result: **28 passed in ~1 second**)*
+*(Result: **29 passed in ~1 second**)*
 
 ---
 
@@ -162,4 +161,3 @@ Common questions your teacher or examiner might ask and simple answers:
 **Q6: How does route structuring and stop ordering work when customers have different addresses?**  
 > *"In real-world milk delivery, customer addresses naturally cluster into residential housing societies, apartment complexes, and streets (e.g., Marvel Zephyr, Rohan Nilay, Green Glen). DairyPulse groups customer doorsteps by geographic area into fixed Routes (e.g., R-04 Baner, A-01 Aundh), attaches a society/building tag to each address, and automatically sequences the stops so all flats in the same building are delivered consecutively. The admin can also re-order stops with one-click Up/Down controls, and the sequence immediately synchronizes to the rider's mobile delivery app."*
 
-"# Dairypluse" 
