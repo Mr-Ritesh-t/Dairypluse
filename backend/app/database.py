@@ -2,10 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
-# Normalize postgres:// to postgresql:// for SQLAlchemy 1.4+ / 2.0+
+# Normalize postgres:// or postgresql:// to postgresql+psycopg2:// for SQLAlchemy
 db_url = settings.DATABASE_URL
 if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 is_sqlite = db_url.startswith("sqlite")
 
