@@ -25,8 +25,8 @@ export function ModalContainer() {
 
   // Add Stock Form State
   const [stockVariant, setStockVariant] = useState<MilkVariant>('Cow Milk');
-  const [stockQty, setStockQty] = useState('500');
-  const [supplier, setSupplier] = useState('Sahyadri Farmers Co-Op');
+  const [stockQty, setStockQty] = useState('100');
+  const [supplier, setSupplier] = useState('');
   const [rate, setRate] = useState('48');
   const [stockNotes, setStockNotes] = useState('FAT 4.2%, SNF 8.6% tested ok');
 
@@ -53,11 +53,11 @@ export function ModalContainer() {
   const [expNotes, setExpNotes] = useState('');
 
   // Create Order State
-  const [orderShopName, setOrderShopName] = useState('Central Creamery & Cafe');
-  const [orderContact, setOrderContact] = useState('Suresh Patil');
-  const [orderPhone, setOrderPhone] = useState('+91 98877 66554');
+  const [orderShopName, setOrderShopName] = useState('');
+  const [orderContact, setOrderContact] = useState('');
+  const [orderPhone, setOrderPhone] = useState('');
   const [orderVariant, setOrderVariant] = useState<MilkVariant>('Cow Milk');
-  const [orderQty, setOrderQty] = useState('100');
+  const [orderQty, setOrderQty] = useState('50');
   const [orderRate, setOrderRate] = useState('62');
 
   // Log Wastage State
@@ -605,6 +605,35 @@ export function ModalContainer() {
               }}
               className="space-y-4"
             >
+              {customers.filter((c) => c.type === 'SHOP' || c.type === 'RESTAURANT').length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Select Commercial Client (or type new below)
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      const selected = customers.find((c) => c.id === e.target.value);
+                      if (selected) {
+                        setOrderShopName(selected.name);
+                        setOrderContact(selected.name);
+                        setOrderPhone(selected.phone);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-purple-50/60 border border-purple-200 rounded-xl text-xs text-purple-900 font-medium focus:ring-2 focus:ring-purple-500"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>-- Select a registered commercial client --</option>
+                    {customers
+                      .filter((c) => c.type === 'SHOP' || c.type === 'RESTAURANT')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.type}) — {c.phone}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Shop / Restaurant Name</label>
                 <input
@@ -613,7 +642,7 @@ export function ModalContainer() {
                   value={orderShopName}
                   onChange={(e) => setOrderShopName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500"
-                  placeholder="e.g. Central Creamery & Cafe"
+                  placeholder="e.g. Chitale Sweets & Bakery"
                 />
               </div>
 
@@ -626,7 +655,7 @@ export function ModalContainer() {
                     value={orderContact}
                     onChange={(e) => setOrderContact(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500"
-                    placeholder="e.g. Suresh Patil"
+                    placeholder="e.g. Anand Chitale"
                   />
                 </div>
                 <div>
@@ -637,7 +666,7 @@ export function ModalContainer() {
                     value={orderPhone}
                     onChange={(e) => setOrderPhone(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500"
-                    placeholder="+91 98877 66554"
+                    placeholder="e.g. +91 98220 12345"
                   />
                 </div>
               </div>
