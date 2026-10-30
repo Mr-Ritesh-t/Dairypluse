@@ -242,11 +242,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         }
       } catch (e) {}
     }
-    return [
-      { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', rating: 4.9 },
-      { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', rating: 4.8 },
-      { id: 'dairy-3', name: 'Gir Organic Farms', ownerName: 'Mahesh Deshmukh', email: 'gir@dairy.com', phone: '+91 97654 32109', city: 'Pune', rating: 4.95 },
-    ];
+    return [];
   });
   const [selectedActiveDairy, setSelectedActiveDairy] = useState<DairyInfo | null>(null);
 

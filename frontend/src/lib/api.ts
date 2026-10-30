@@ -1041,21 +1041,41 @@ export async function loginApi(credentials: {
   password?: string;
   role: string;
 }) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'Authentication failed');
-    }
-    return await res.json();
-  } catch (err: any) {
-    console.warn('Backend login unavailable, fallback allowed:', err);
-    return null;
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const error: any = new Error(errData.detail || 'Authentication failed');
+    error.status = res.status;
+    throw error;
   }
+  return await res.json();
+}
+
+export async function syncSupabaseAuthApi(payload: {
+  email?: string;
+  phone?: string;
+  name?: string;
+  role?: string;
+  dairy_name?: string;
+  supabase_id?: string;
+  provider?: string;
+}) {
+  const res = await fetch(`${API_BASE_URL}/auth/supabase-sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const error: any = new Error(errData.detail || 'Failed to sync authentication profile');
+    error.status = res.status;
+    throw error;
+  }
+  return await res.json();
 }
 
 // ----------------- 1. AI DEMAND FORECASTING API -----------------
@@ -1736,11 +1756,7 @@ export async function getDairiesApi(): Promise<DairyInfo[]> {
         }
       } catch (e) {}
     }
-    return [
-      { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', address: 'Hadapsar Chilling Center, Pune', latitude: 18.5089, longitude: 73.9259, rating: 4.9 },
-      { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', address: 'Kothrud Depot, Pune', latitude: 18.5074, longitude: 73.8077, rating: 4.8 },
-      { id: 'dairy-3', name: 'Gir Organic Farms', ownerName: 'Mahesh Deshmukh', email: 'gir@dairy.com', phone: '+91 97654 32109', city: 'Pune', address: 'Bavdhan Valley, Pune', latitude: 18.5140, longitude: 73.7710, rating: 4.95 },
-    ];
+    return [];
   }
 }
 

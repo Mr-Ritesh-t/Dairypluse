@@ -92,12 +92,20 @@ python seed_supabase.py
    - **Framework Preset**: `Next.js`
    - **Root Directory**: Click **Edit** and choose `frontend` *(CRITICAL: do not leave at root)*
 5. Expand **Environment Variables** and add:
-   | Key | Value |
-   | :--- | :--- |
-   | `NEXT_PUBLIC_API_URL` | `https://dairypulse-backend.onrender.com/api/v1` |
-   *(Replace with your actual Render URL from Step 2 followed by `/api/v1`)*
-6. Click **Deploy**.
-7. In ~60 seconds, Vercel will give you a live production URL (e.g., `https://dairypulse.vercel.app`).
+   | Key | Value | Notes |
+   | :--- | :--- | :--- |
+   | `NEXT_PUBLIC_API_URL` | `https://dairypulse-backend.onrender.com/api/v1` | Your Render FastAPI backend URL |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://vgpflayyocspsrakuvvs.supabase.co` | Supabase Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | *(your-supabase-anon-key)* | From Supabase -> Project Settings -> API (`anon` `public` key) |
+
+6. **Google OAuth & Phone Auth Setup (Optional in Supabase Dashboard)**:
+   - In [Supabase Dashboard](https://supabase.com/dashboard/project/vgpflayyocspsrakuvvs) -> **Authentication** -> **Providers**:
+     - **Google**: Enable and enter your Google Cloud OAuth Client ID & Secret.
+     - **Phone**: Enable SMS provider (Twilio or MessageBird) for real SMS OTP.
+   - Set Redirect URL in Supabase Auth Settings to `https://your-vercel-domain.vercel.app/login`.
+
+7. Click **Deploy**.
+8. In ~60 seconds, Vercel will give you a live production URL (e.g., `https://dairypulse.vercel.app`).
 
 ---
 
@@ -105,12 +113,11 @@ python seed_supabase.py
 
 1. Open your new Vercel deployment URL in your browser.
 2. The Top Navbar will display **FastAPI v1 Live** with a pulsing green indicator.
-3. Log in with the default seeded owner credentials:
-   - **Role**: Dairy Owner / Farm Admin
-   - **Email / Phone**: `admin@dairypulse.farm`
-   - **Password**: `admin123`
-4. Or register a new dairy / customer directly from the live app!
-5. All records, routes, deliveries, and subscriptions are now securely saved in your cloud **Supabase PostgreSQL** database.
+3. Sign in or create a real account:
+   - **Dairy Owner**: Register your real dairy farm under **Register Dairy**.
+   - **Customer**: Sign up under **Customer Sign Up** or use **Sign in with Google**.
+   - **Delivery Rider**: Added directly by the dairy owner with login credentials.
+4. All records, routes, deliveries, and subscriptions are securely synchronized with your cloud **Supabase PostgreSQL** database.
 
 ---
 

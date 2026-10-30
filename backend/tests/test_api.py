@@ -220,6 +220,20 @@ def test_auth_login_delivery():
     assert "token" in data
 
 def test_auth_login_customer():
+    # Create customer first
+    cust_payload = {
+        "name": "Priya Kulkarni",
+        "customer_type": "HOUSEHOLD",
+        "phone": "+91 98200 44551",
+        "email": "priya.k@example.com",
+        "address": "Flat 302, Green Acres",
+        "area": "Aundh",
+        "route": "Route A-1",
+        "dairy_name": "DairyPulse Farm HQ"
+    }
+    create_res = client.post("/api/v1/customers", json=cust_payload)
+    assert create_res.status_code == 200
+
     payload = {
         "login_id": "+91 98200 44551",
         "role": "CUSTOMER"
@@ -229,6 +243,30 @@ def test_auth_login_customer():
     data = res.json()
     assert data["role"] == "CUSTOMER"
     assert "token" in data
+
+def test_auth_login_not_found():
+    payload = {
+        "login_id": "nonexistent@example.com",
+        "role": "CUSTOMER"
+    }
+    res = client.post("/api/v1/auth/login", json=payload)
+    assert res.status_code == 404
+    assert "No customer account found" in res.json()["detail"]
+
+def test_supabase_auth_sync():
+    sync_payload = {
+        "email": "googleuser@gmail.com",
+        "name": "Google Test User",
+        "role": "CUSTOMER",
+        "supabase_id": "sb-user-123",
+        "provider": "google"
+    }
+    res = client.post("/api/v1/auth/supabase-sync", json=sync_payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["email"] == "googleuser@gmail.com"
+    assert data["role"] == "CUSTOMER"
+    assert "dp_sb_" in data["token"]
 
 def test_auth_login_invalid_role():
     payload = {

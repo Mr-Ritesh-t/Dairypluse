@@ -58,6 +58,7 @@ from app.schemas.schemas import (
     DairyResponse,
     DairyUpdate,
     LoginRequest,
+    SupabaseAuthSyncRequest,
     AuthUserResponse,
     DemandForecastResponse,
     VariantForecast,
@@ -1128,63 +1129,67 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     role = (login_req.role or "OWNER").upper()
     login_id = (login_req.login_id or "").strip()
 
+    if not login_id:
+        raise HTTPException(status_code=400, detail="Please enter your email or phone number to sign in.")
+
     # 1. OWNER / ADMIN ROLE
     if role in ["OWNER", "ADMIN"]:
-        user = None
-        if login_id:
-            user = db.query(User).filter(
-                (User.email.ilike(login_id)) | (User.phone == login_id)
-            ).first()
-        if user:
-            # Check if this user owns a registered dairy
-            dairy = db.query(Dairy).filter((Dairy.email == user.email) | (Dairy.phone == user.phone)).first()
-            d_name = dairy.name if dairy else (user.dairy_name or "DairyPulse Farm HQ")
-            return AuthUserResponse(
-                id=user.id,
-                name=user.full_name,
-                role="OWNER",
-                login_id=user.email or user.phone or login_id,
-                phone=user.phone or "+91 98765 43210",
-                email=user.email or "admin@dairypulse.farm",
-                assigned_area_or_route="HQ Farm & Chilling Center",
-                dairy_name=d_name,
-                token=f"dp_owner_{user.id[:8]}",
+        user = db.query(User).filter(
+            (User.email.ilike(login_id)) | (User.phone == login_id)
+        ).first()
+
+        matched_dairy = db.query(Dairy).filter(
+            (Dairy.email.ilike(login_id)) | (Dairy.phone == login_id)
+        ).first()
+
+        if not user and not matched_dairy:
+            raise HTTPException(
+                status_code=404,
+                detail="No dairy account found with this ID. Please register your dairy to create an account."
             )
-        # Check if login_id matches any registered Dairy by email/phone
-        matched_dairy = db.query(Dairy).filter((Dairy.email == login_id) | (Dairy.phone == login_id)).first()
-        d_title = matched_dairy.name if matched_dairy else "DairyPulse Farm HQ"
-        d_owner = matched_dairy.owner_name if matched_dairy else "Ritesh Tayade"
+
+        # Validate password if user has password set
+        if user and login_req.password:
+            if user.password_hash and user.password_hash != login_req.password.strip():
+                raise HTTPException(status_code=401, detail="Incorrect password. Please verify your credentials.")
+
+        user_name = user.full_name if user else (matched_dairy.owner_name if matched_dairy else "Dairy Owner")
+        user_phone = user.phone if user else (matched_dairy.phone if matched_dairy else login_id)
+        user_email = user.email if user else (matched_dairy.email if matched_dairy else login_id)
+        d_name = matched_dairy.name if matched_dairy else (user.dairy_name if user and user.dairy_name else "Dairy Farm HQ")
+        user_id = user.id if user else (matched_dairy.id if matched_dairy else "usr-owner")
+
         return AuthUserResponse(
-            id=matched_dairy.id if matched_dairy else "usr-owner-001",
-            name=d_owner,
+            id=user_id,
+            name=user_name,
             role="OWNER",
-            login_id=login_id or "admin@dairypulse.farm",
-            phone=matched_dairy.phone if matched_dairy else "+91 98765 43210",
-            email=matched_dairy.email if matched_dairy else "admin@dairypulse.farm",
-            assigned_area_or_route=f"{d_title} HQ",
-            dairy_name=d_title,
-            token="dp_owner_demo_token_123",
+            login_id=login_id,
+            phone=user_phone,
+            email=user_email,
+            assigned_area_or_route=f"{d_name} HQ",
+            dairy_name=d_name,
+            token=f"dp_owner_{user_id[:8]}",
         )
 
     # 2. DELIVERY RIDER / STAFF ROLE
     elif role in ["DELIVERY", "STAFF"]:
-        staff = None
-        user_account = None
-        if login_id:
-            # Check User account first (by email or phone)
-            user_account = db.query(User).filter(
-                ((User.email.ilike(login_id)) | (User.phone == login_id)),
-                User.role.in_(["DELIVERY", "STAFF"])
-            ).first()
+        user_account = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone == login_id)),
+            User.role.in_(["DELIVERY", "STAFF"])
+        ).first()
 
-            # Check Staff directory (by phone, email, or name)
-            staff = db.query(Staff).filter(
-                (Staff.phone == login_id) | 
-                (Staff.email.ilike(login_id)) | 
-                (Staff.name.ilike(f"%{login_id}%"))
-            ).first()
+        staff = db.query(Staff).filter(
+            (Staff.phone == login_id) | 
+            (Staff.email.ilike(login_id)) | 
+            (Staff.name.ilike(f"%{login_id}%"))
+        ).first()
 
-        # Check password against User account if provided
+        if not user_account and not staff:
+            raise HTTPException(
+                status_code=404,
+                detail="No rider account found with this ID. Please ask your dairy owner to add you as staff."
+            )
+
         target_user = user_account
         if not target_user and staff:
             target_user = db.query(User).filter(
@@ -1193,74 +1198,139 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             ).first()
 
         if target_user and login_req.password:
-            expected_pwd = target_user.password_hash or "rider123"
-            if expected_pwd != login_req.password.strip():
-                raise HTTPException(status_code=401, detail="Invalid password for delivery rider account")
+            if target_user.password_hash and target_user.password_hash != login_req.password.strip():
+                raise HTTPException(status_code=401, detail="Invalid password for delivery rider account.")
 
-        if staff or user_account:
-            staff_name = staff.name if staff else (user_account.full_name if user_account else "Delivery Rider")
-            staff_phone = staff.phone if staff else (user_account.phone if user_account else login_id)
-            staff_email = (staff.email if staff and staff.email else (user_account.email if user_account and user_account.email else "rider@dairypulse.farm"))
-            staff_area = staff.assigned_area if staff else "Baner & Central Market"
-            staff_id = staff.id if staff else (user_account.id if user_account else "st-001")
-            staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (user_account.dairy_name if user_account else "DairyPulse Farm HQ"))
+        staff_name = staff.name if staff else (user_account.full_name if user_account else "Delivery Rider")
+        staff_phone = staff.phone if staff else (user_account.phone if user_account else login_id)
+        staff_email = (staff.email if staff and staff.email else (user_account.email if user_account and user_account.email else None))
+        staff_area = staff.assigned_area if staff else "Route Area"
+        staff_id = staff.id if staff else (user_account.id if user_account else "st-001")
+        staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (user_account.dairy_name if user_account else "Dairy Farm HQ"))
 
-            return AuthUserResponse(
-                id=staff_id,
-                name=staff_name,
-                role="DELIVERY",
-                login_id=login_id,
-                phone=staff_phone,
-                email=staff_email,
-                assigned_area_or_route=staff_area,
-                dairy_name=staff_dairy,
-                token=f"dp_rider_{staff_id[:8]}",
-            )
         return AuthUserResponse(
-            id="st-001",
-            name="Rahul Deshmukh",
+            id=staff_id,
+            name=staff_name,
             role="DELIVERY",
-            login_id=login_id or "+91 98220 11984",
-            phone="+91 98220 11984",
-            email="rahul.deshmukh@dairypulse.farm",
-            assigned_area_or_route="Baner & Central Market",
-            token="dp_rider_demo_token_123",
+            login_id=login_id,
+            phone=staff_phone,
+            email=staff_email,
+            assigned_area_or_route=staff_area,
+            dairy_name=staff_dairy,
+            token=f"dp_rider_{staff_id[:8]}",
         )
 
     # 3. CUSTOMER / SUBSCRIBER ROLE
     elif role == "CUSTOMER":
-        cust = None
-        if login_id:
-            cust = db.query(Customer).filter(
-                (Customer.phone == login_id) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
-            ).first()
-        if cust:
-            return AuthUserResponse(
-                id=cust.id,
-                name=cust.name,
-                role="CUSTOMER",
-                login_id=cust.phone,
-                phone=cust.phone,
-                email=cust.email or "customer@dairypulse.farm",
-                assigned_area_or_route=cust.route,
-                customer_id=cust.id,
-                dairy_name=cust.dairy_name or "DairyPulse Farm HQ",
-                token=f"dp_cust_{cust.id[:8]}",
+        cust = db.query(Customer).filter(
+            (Customer.phone == login_id) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
+        ).first()
+
+        user_account = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone == login_id)),
+            User.role == "CUSTOMER"
+        ).first()
+
+        if not cust and not user_account:
+            raise HTTPException(
+                status_code=404,
+                detail="No customer account found with this phone or email. Please sign up to start milk deliveries."
             )
+
+        if user_account and login_req.password:
+            if user_account.password_hash and user_account.password_hash != login_req.password.strip():
+                raise HTTPException(status_code=401, detail="Invalid password for customer account.")
+
+        c_name = cust.name if cust else (user_account.full_name if user_account else "Valued Customer")
+        c_phone = cust.phone if cust else (user_account.phone if user_account else login_id)
+        c_email = cust.email if cust and cust.email else (user_account.email if user_account and user_account.email else None)
+        c_route = cust.route if cust else "Direct Delivery"
+        c_id = cust.id if cust else (user_account.id if user_account else "c-001")
+        c_dairy = cust.dairy_name if cust and cust.dairy_name else (user_account.dairy_name if user_account and user_account.dairy_name else "Dairy Farm")
+
         return AuthUserResponse(
-            id="c2",
-            name="Priya Kulkarni",
+            id=c_id,
+            name=c_name,
             role="CUSTOMER",
-            login_id=login_id or "+91 98200 44551",
-            phone="+91 98200 44551",
-            email="priya.k@example.com",
-            assigned_area_or_route="Aundh Morning Route A-1",
-            customer_id="c2",
-            dairy_name="DairyPulse Farm HQ",
-            token="dp_cust_demo_token_123",
+            login_id=c_phone or login_id,
+            phone=c_phone,
+            email=c_email,
+            assigned_area_or_route=c_route,
+            customer_id=c_id,
+            dairy_name=c_dairy,
+            token=f"dp_cust_{c_id[:8]}",
         )
 
     raise HTTPException(status_code=400, detail="Invalid role specified")
+
+@api_router.post("/auth/supabase-sync", response_model=AuthUserResponse)
+def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(get_db)):
+    from sqlalchemy import or_
+    role = (sync_req.role or "CUSTOMER").upper()
+    email = (sync_req.email or "").strip().lower() if sync_req.email else None
+    phone = (sync_req.phone or "").strip() if sync_req.phone else None
+    name = (sync_req.name or "").strip() or (email.split("@")[0] if email else "DairyPulse User")
+
+    if not email and not phone:
+        raise HTTPException(status_code=400, detail="Supabase sync requires either email or phone.")
+
+    # 1. Check existing User
+    query = db.query(User)
+    filters = []
+    if email:
+        filters.append(User.email.ilike(email))
+    if phone:
+        filters.append(User.phone == phone)
+    user = query.filter(or_(*filters)).first() if len(filters) > 1 else query.filter(filters[0]).first()
+
+    if not user:
+        # Create user account from Supabase profile
+        user = User(
+            email=email or f"{phone}@dairypulse.farm",
+            phone=phone,
+            password_hash=f"supabase_{sync_req.supabase_id or 'oauth'}",
+            full_name=name,
+            role=role,
+            dairy_name=sync_req.dairy_name or "Dairy Farm HQ",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # If customer role, also create Customer entry if not exists
+        if role == "CUSTOMER":
+            cust_filter = []
+            if phone:
+                cust_filter.append(Customer.phone == phone)
+            if email:
+                cust_filter.append(Customer.email.ilike(email))
+            existing_cust = db.query(Customer).filter(or_(*cust_filter)).first() if len(cust_filter) > 1 else (db.query(Customer).filter(cust_filter[0]).first() if cust_filter else None)
+            if not existing_cust:
+                new_cust = Customer(
+                    name=name,
+                    customer_type="HOUSEHOLD",
+                    phone=phone or "+91 99999 00000",
+                    email=email,
+                    address="Registered via Supabase",
+                    area="Central",
+                    route="Route 1",
+                    dairy_name=sync_req.dairy_name or "Dairy Farm HQ",
+                )
+                db.add(new_cust)
+                db.commit()
+
+    return AuthUserResponse(
+        id=user.id,
+        name=user.full_name,
+        role=user.role,
+        login_id=user.email or user.phone or "",
+        phone=user.phone,
+        email=user.email,
+        assigned_area_or_route=f"{user.dairy_name or 'HQ'} Route",
+        customer_id=user.id if user.role == "CUSTOMER" else None,
+        dairy_name=user.dairy_name or "Dairy Farm HQ",
+        token=f"dp_sb_{user.id[:8]}",
+    )
 
 # =========================================================================
 # 1. AI-POWERED MILK DEMAND FORECASTING & PROCUREMENT ASSISTANT

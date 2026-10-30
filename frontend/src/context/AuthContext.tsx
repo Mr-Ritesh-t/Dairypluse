@@ -2,7 +2,23 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, UserRole } from '@/types';
-import { loginApi } from '@/lib/api';
+import { loginApi, syncSupabaseAuthApi } from '@/lib/api';
+import {
+  supabase,
+  isSupabaseConfigured,
+  signInWithGoogleOAuth,
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
+  signInWithPhoneOtp as sbSignInWithPhoneOtp,
+  verifyPhoneOtp as sbVerifyPhoneOtp,
+} from '@/lib/supabaseClient';
+
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  user?: AuthUser;
+  notFound?: boolean;
+}
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -12,58 +28,14 @@ interface AuthContextType {
     loginId: string;
     password?: string;
     role: UserRole;
-    otp?: string;
     rememberMe?: boolean;
-  }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
-  logout: () => void;
-  quickSwitchUser: (role: UserRole) => void;
+  }) => Promise<LoginResult>;
+  loginWithGoogle: (role: UserRole) => Promise<void>;
+  loginWithPhoneOtp: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  verifyPhoneOtp: (phone: string, token: string, role: UserRole) => Promise<LoginResult>;
+  logout: () => Promise<void>;
   updateUser: (fields: Partial<AuthUser>) => void;
 }
-
-const defaultAdminUser: AuthUser = {
-  id: 'usr-owner-001',
-  name: 'Ritesh Tayade',
-  role: 'OWNER',
-  loginId: 'admin@dairypulse.farm',
-  phone: '+91 98765 43210',
-  email: 'admin@dairypulse.farm',
-  assignedAreaOrRoute: 'HQ Farm & Chilling Center',
-  token: 'dp_owner_token_default',
-};
-
-const demoPersonas: Record<UserRole, AuthUser> = {
-  OWNER: {
-    id: 'usr-owner-001',
-    name: 'Ritesh Tayade',
-    role: 'OWNER',
-    loginId: 'admin@dairypulse.farm',
-    phone: '+91 98765 43210',
-    email: 'admin@dairypulse.farm',
-    assignedAreaOrRoute: 'HQ Farm & Chilling Center',
-    token: 'dp_owner_active_token',
-  },
-  DELIVERY: {
-    id: 'st-001',
-    name: 'Rahul Deshmukh',
-    role: 'DELIVERY',
-    loginId: '+91 98220 11984',
-    phone: '+91 98220 11984',
-    email: 'rahul.deshmukh@dairypulse.farm',
-    assignedAreaOrRoute: 'Baner & Central Market (Route R-04)',
-    token: 'dp_rider_active_token',
-  },
-  CUSTOMER: {
-    id: 'c2',
-    name: 'Priya Kulkarni',
-    role: 'CUSTOMER',
-    loginId: '+91 98200 44551',
-    phone: '+91 98200 44551',
-    email: 'priya.k@example.com',
-    assignedAreaOrRoute: 'Aundh Morning Route A-1',
-    customerId: 'c2',
-    token: 'dp_cust_active_token',
-  },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -71,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load user from localStorage on mount
+  // 1. Load active user from localStorage and subscribe to Supabase Auth State
   useEffect(() => {
     try {
       const stored = localStorage.getItem('dairypulse_auth_user');
@@ -85,54 +57,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+
+    // 2. Listen to real Supabase session changes (Google OAuth callback, Phone sign-in, etc.)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+        try {
+          const sbUser = session.user;
+          const userEmail = sbUser.email || undefined;
+          const userPhone = sbUser.phone || undefined;
+          const meta = sbUser.user_metadata || {};
+          const fullName = meta.full_name || meta.name || (userEmail ? userEmail.split('@')[0] : 'DairyPulse User');
+          
+          // Role stored in localStorage from OAuth initiation or defaults to CUSTOMER
+          const savedRole = (localStorage.getItem('dairypulse_oauth_role') as UserRole) || 'CUSTOMER';
+
+          // Sync with FastAPI backend
+          const synced = await syncSupabaseAuthApi({
+            email: userEmail,
+            phone: userPhone,
+            name: fullName,
+            role: savedRole,
+            supabase_id: sbUser.id,
+            provider: sbUser.app_metadata?.provider || 'supabase',
+          });
+
+          if (synced && synced.id) {
+            const authUser: AuthUser = {
+              id: synced.id,
+              name: synced.name,
+              role: (synced.role as UserRole) || savedRole,
+              loginId: synced.login_id || userEmail || userPhone || '',
+              phone: synced.phone || userPhone,
+              email: synced.email || userEmail,
+              assignedAreaOrRoute: synced.assigned_area_or_route,
+              customerId: synced.customer_id,
+              dairyName: synced.dairy_name,
+              token: synced.token,
+            };
+            setUser(authUser);
+            localStorage.setItem('dairypulse_auth_user', JSON.stringify(authUser));
+            localStorage.removeItem('dairypulse_oauth_role');
+          }
+        } catch (syncErr) {
+          console.error('Failed to sync Supabase auth session with database:', syncErr);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('dairypulse_auth_user');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
+  /**
+   * Real credentials login against database
+   */
   const login = async ({
     loginId,
     password,
     role,
-    otp,
     rememberMe = true,
   }: {
     loginId: string;
     password?: string;
     role: UserRole;
-    otp?: string;
     rememberMe?: boolean;
-  }): Promise<{ success: boolean; error?: string; user?: AuthUser }> => {
+  }): Promise<LoginResult> => {
     setIsLoading(true);
 
     try {
-      // 1. Try backend API login
+      // 1. Query live database backend
       const apiResponse = await loginApi({
-        login_id: loginId,
-        password: password || otp,
+        login_id: loginId.trim(),
+        password: password?.trim(),
         role,
       });
 
-      let authenticatedUser: AuthUser;
-
-      if (apiResponse && apiResponse.id) {
-        authenticatedUser = {
-          id: apiResponse.id,
-          name: apiResponse.name,
-          role: (apiResponse.role as UserRole) || role,
-          loginId: apiResponse.login_id || loginId,
-          phone: apiResponse.phone,
-          email: apiResponse.email,
-          assignedAreaOrRoute: apiResponse.assigned_area_or_route,
-          customerId: apiResponse.customer_id,
-          token: apiResponse.token,
-        };
-      } else {
-        // 2. Offline / local fallback authentication
-        const persona = demoPersonas[role];
-        authenticatedUser = {
-          ...persona,
-          loginId: loginId || persona.loginId,
-          name: role === 'OWNER' && loginId && !loginId.includes('admin') ? loginId.split('@')[0] : persona.name,
-        };
+      if (!apiResponse || !apiResponse.id) {
+        throw new Error('Invalid credentials or account does not exist.');
       }
+
+      const authenticatedUser: AuthUser = {
+        id: apiResponse.id,
+        name: apiResponse.name,
+        role: (apiResponse.role as UserRole) || role,
+        loginId: apiResponse.login_id || loginId,
+        phone: apiResponse.phone,
+        email: apiResponse.email,
+        assignedAreaOrRoute: apiResponse.assigned_area_or_route,
+        customerId: apiResponse.customer_id,
+        dairyName: apiResponse.dairy_name,
+        token: apiResponse.token,
+      };
 
       setUser(authenticatedUser);
       if (rememberMe) {
@@ -141,28 +160,105 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true, user: authenticatedUser };
     } catch (err: any) {
-      return { success: false, error: err.message || 'Login failed. Please check credentials.' };
+      const errorMsg = err.message || 'Login failed. Please check credentials.';
+      const isNotFound = err.status === 404 || errorMsg.toLowerCase().includes('no account found') || errorMsg.toLowerCase().includes('not found');
+
+      return {
+        success: false,
+        error: errorMsg,
+        notFound: isNotFound,
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  /**
+   * Google OAuth Sign-In via Supabase Auth
+   */
+  const loginWithGoogle = async (role: UserRole) => {
     try {
-      localStorage.removeItem('dairypulse_auth_user');
-    } catch (e) {
-      console.error(e);
+      localStorage.setItem('dairypulse_oauth_role', role);
+      await signInWithGoogleOAuth();
+    } catch (err: any) {
+      localStorage.removeItem('dairypulse_oauth_role');
+      throw new Error(err.message || 'Google sign-in initiation failed.');
     }
   };
 
-  const quickSwitchUser = (role: UserRole) => {
-    const nextUser = demoPersonas[role];
-    setUser(nextUser);
+  /**
+   * Send SMS OTP via Supabase Auth for phone authentication
+   */
+  const loginWithPhoneOtp = async (phone: string) => {
     try {
-      localStorage.setItem('dairypulse_auth_user', JSON.stringify(nextUser));
+      await sbSignInWithPhoneOtp(phone);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to send OTP.' };
+    }
+  };
+
+  /**
+   * Verify Phone OTP via Supabase Auth
+   */
+  const verifyPhoneOtp = async (phone: string, token: string, role: UserRole): Promise<LoginResult> => {
+    setIsLoading(true);
+    try {
+      const data = await sbVerifyPhoneOtp(phone, token);
+      if (!data.user) {
+        throw new Error('OTP verification failed.');
+      }
+
+      // Sync verified phone user with backend
+      const synced = await syncSupabaseAuthApi({
+        phone,
+        name: `User ${phone.slice(-4)}`,
+        role,
+        supabase_id: data.user.id,
+        provider: 'phone',
+      });
+
+      const authUser: AuthUser = {
+        id: synced.id,
+        name: synced.name,
+        role: (synced.role as UserRole) || role,
+        loginId: phone,
+        phone,
+        email: synced.email,
+        assignedAreaOrRoute: synced.assigned_area_or_route,
+        customerId: synced.customer_id,
+        dairyName: synced.dairy_name,
+        token: synced.token,
+      };
+
+      setUser(authUser);
+      localStorage.setItem('dairypulse_auth_user', JSON.stringify(authUser));
+      return { success: true, user: authUser };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Invalid or expired OTP code.' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Real Logout
+   */
+  const logout = async () => {
+    try {
+      if (isSupabaseConfigured) {
+        await supabase.auth.signOut();
+      }
     } catch (e) {
-      console.error(e);
+      console.warn('Supabase signOut error:', e);
+    } finally {
+      setUser(null);
+      try {
+        localStorage.removeItem('dairypulse_auth_user');
+        localStorage.removeItem('dairypulse_oauth_role');
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -186,8 +282,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
+        loginWithPhoneOtp,
+        verifyPhoneOtp,
         logout,
-        quickSwitchUser,
         updateUser,
       }}
     >

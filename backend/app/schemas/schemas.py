@@ -377,6 +377,15 @@ class LoginRequest(BaseModel):
     password: Optional[str] = None
     role: str = "OWNER"  # "OWNER", "DELIVERY", "CUSTOMER"
 
+class SupabaseAuthSyncRequest(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    name: Optional[str] = None
+    role: str = "CUSTOMER"  # "OWNER", "DELIVERY", "CUSTOMER"
+    dairy_name: Optional[str] = None
+    supabase_id: Optional[str] = None
+    provider: Optional[str] = "supabase"
+
 class AuthUserResponse(BaseModel):
     id: str
     name: str
