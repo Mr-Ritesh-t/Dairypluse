@@ -33,16 +33,9 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 2. Authenticated user visiting /login: Route directly to their role's dashboard
+    // 2. Auth pages (/login, /register): Always allow viewing login/register without auto-bouncing
     if (isAuthPage) {
-      setIsRedirecting(true);
-      if (user.role === 'DELIVERY') {
-        router.replace('/mobile/delivery');
-      } else if (user.role === 'CUSTOMER') {
-        router.replace('/mobile/customer');
-      } else {
-        router.replace('/');
-      }
+      setIsRedirecting(false);
       return;
     }
 

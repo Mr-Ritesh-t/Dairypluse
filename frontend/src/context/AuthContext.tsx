@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const authenticatedUser: AuthUser = {
             id: apiResponse.id,
             name: apiResponse.name,
-            role: (apiResponse.role as UserRole) || role,
+            role: (role === 'DELIVERY' ? 'DELIVERY' : (apiResponse.role as UserRole) || role),
             loginId: apiResponse.login_id || loginId,
             phone: apiResponse.phone,
             email: apiResponse.email,

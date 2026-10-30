@@ -1216,8 +1216,12 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         (Customer.phone.in_(phone_patterns)) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
     ).first()
 
-    # Determine effective role
-    if user_any and user_any.role:
+    # Determine effective role: respect explicit role selection first
+    if requested_role in ["DELIVERY", "STAFF"]:
+        effective_role = "DELIVERY"
+    elif requested_role == "CUSTOMER":
+        effective_role = "CUSTOMER"
+    elif user_any and user_any.role:
         effective_role = user_any.role.upper()
     elif staff_any:
         effective_role = "DELIVERY"

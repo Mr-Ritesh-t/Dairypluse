@@ -36,7 +36,7 @@ import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle, loginWithPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { user, logout, login, loginWithGoogle, loginWithPhoneOtp, verifyPhoneOtp } = useAuth();
   const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products, addStaff } = useDairyPulse();
 
   // Tab: 'signin' | 'customer' | 'dairy'
@@ -133,8 +133,8 @@ export default function LoginPage() {
       target = '/mobile/customer';
     }
     setTimeout(() => {
-      router.push(target);
-    }, 400);
+      window.location.href = target;
+    }, 250);
   };
 
   // Submit Login
@@ -191,8 +191,8 @@ export default function LoginPage() {
       });
 
       if (res.success) {
-        const targetRole = res.user?.role || selectedRole;
-        setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting...`);
+        const targetRole: UserRole = selectedRole === 'DELIVERY' ? 'DELIVERY' : (res.user?.role || selectedRole);
+        setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting to delivery portal...`);
         redirectToRole(targetRole);
       } else {
         if (res.notFound) {
@@ -589,6 +589,28 @@ export default function LoginPage() {
             {activeTab === 'signin' && (
               <form onSubmit={handleLoginSubmit} className="space-y-3 sm:space-y-4">
                 
+                {/* Active Session Warning / Switcher */}
+                {user && (
+                  <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between text-xs animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2 truncate pr-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                      <span className="text-amber-900 truncate text-[11px] sm:text-xs font-medium">
+                        Currently signed in as: <strong>{user.name}</strong> ({user.role})
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await logout();
+                        window.location.reload();
+                      }}
+                      className="text-[11px] sm:text-xs font-bold text-rose-700 hover:text-rose-900 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs hover:bg-rose-50 transition cursor-pointer shrink-0"
+                    >
+                      Log Out
+                    </button>
+                  </div>
+                )}
+
                 {/* Heading (Desktop only, matches Mockup 1) */}
                 <div className="hidden sm:block text-center mb-4 sm:mb-5">
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
