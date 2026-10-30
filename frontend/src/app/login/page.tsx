@@ -27,7 +27,6 @@ import {
   BadgeCheck,
   Eye,
   EyeOff,
-  ChevronDown,
   Check,
   BarChart3,
   UserPlus,
@@ -51,10 +50,6 @@ export default function LoginPage() {
   const [authMode, setAuthMode] = useState<'password' | 'phone_otp'>('password');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
-
-  // Language state
-  const [language, setLanguage] = useState<'English' | 'Hindi' | 'Marathi'>('English');
-  const [langOpen, setLangOpen] = useState(false);
 
   // Account Not Found Interactivity State
   const [notFoundPrompt, setNotFoundPrompt] = useState(false);
@@ -394,73 +389,6 @@ export default function LoginPage() {
           className="object-cover object-bottom"
           priority
         />
-      </div>
-
-      {/* Top Floating Language Dropdown (Top-Right on All Screens) */}
-      <div className="absolute top-3 right-3 sm:top-6 sm:right-8 z-50">
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setLangOpen(!langOpen)}
-            className="bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-semibold text-slate-700 shadow-2xs hover:bg-white hover:border-slate-300 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer"
-          >
-            <span className="w-4 h-3 rounded-[2px] overflow-hidden inline-flex shadow-2xs border border-slate-200/60 shrink-0">
-              <svg viewBox="0 0 900 600" className="w-full h-full">
-                <rect width="900" height="200" fill="#FF9933" />
-                <rect y="200" width="900" height="200" fill="#FFFFFF" />
-                <rect y="400" width="900" height="200" fill="#138808" />
-                <circle cx="450" cy="300" r="75" fill="none" stroke="#000080" strokeWidth="12" />
-                <circle cx="450" cy="300" r="16" fill="#000080" />
-              </svg>
-            </span>
-            <span>{language === 'Hindi' ? 'हिन्दी' : language === 'Marathi' ? 'मराठी' : 'English'}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-
-          {langOpen && (
-            <div className="absolute right-0 mt-1.5 w-32 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => {
-                  setLanguage('English');
-                  setLangOpen(false);
-                }}
-                className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-emerald-50 hover:text-emerald-700 ${
-                  language === 'English' ? 'text-emerald-700 font-bold bg-emerald-50/50' : 'text-slate-700'
-                }`}
-              >
-                <span>English</span>
-                {language === 'English' && <Check className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLanguage('Hindi');
-                  setLangOpen(false);
-                }}
-                className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-emerald-50 hover:text-emerald-700 ${
-                  language === 'Hindi' ? 'text-emerald-700 font-bold bg-emerald-50/50' : 'text-slate-700'
-                }`}
-              >
-                <span>हिन्दी</span>
-                {language === 'Hindi' && <Check className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLanguage('Marathi');
-                  setLangOpen(false);
-                }}
-                className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-emerald-50 hover:text-emerald-700 ${
-                  language === 'Marathi' ? 'text-emerald-700 font-bold bg-emerald-50/50' : 'text-slate-700'
-                }`}
-              >
-                <span>मराठी</span>
-                {language === 'Marathi' && <Check className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Main Split Content Container */}
