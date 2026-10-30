@@ -96,8 +96,8 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   // 1. Auth Page Layout (/login, /register)
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-[#F4F7FB] text-slate-800 flex flex-col">
-        <main className="flex-1 w-full">{children}</main>
+      <div className="min-h-screen bg-[#F4F7FB] text-slate-800 flex flex-col overflow-x-hidden">
+        <main className="flex-1 w-full overflow-x-hidden">{children}</main>
         <ModalContainer />
       </div>
     );

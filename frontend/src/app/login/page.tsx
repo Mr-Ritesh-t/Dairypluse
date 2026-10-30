@@ -374,39 +374,35 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F0F8F4] relative flex flex-col justify-between overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 font-sans">
       
-      {/* Background Subtle Pastoral Landscape Curves */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <svg
-          className="absolute -top-24 -left-36 w-[800px] h-[600px] text-emerald-100/50"
-          viewBox="0 0 600 600"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0 0C150 120 320 80 450 200C580 320 620 450 600 600H0V0Z"
-            fill="currentColor"
-          />
-        </svg>
-        <svg
-          className="absolute bottom-0 right-0 w-[1000px] h-[550px] text-emerald-50/60"
-          viewBox="0 0 1000 550"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0 320C200 240 400 350 650 220C900 90 980 180 1000 250V550H0V320Z"
-            fill="currentColor"
-          />
-        </svg>
+      {/* Desktop Background Image (Scenic pastoral view uploaded by user) */}
+      <div className="hidden lg:block fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <Image
+          src="/images/login-desktop-bg.jpg"
+          alt="DairyPulse Farm PC Background"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+      </div>
+
+      {/* Mobile Background Image (Exact full-height pasture & leaves uploaded by user) */}
+      <div className="lg:hidden fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <Image
+          src="/images/login-mobile-bg.jpg"
+          alt="DairyPulse Farm Mobile Background"
+          fill
+          className="object-cover object-bottom"
+          priority
+        />
       </div>
 
       {/* Top Floating Language Dropdown (Top-Right on All Screens) */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50">
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-8 z-50">
         <div className="relative">
           <button
             type="button"
             onClick={() => setLangOpen(!langOpen)}
-            className="bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-700 shadow-2xs hover:bg-white hover:border-slate-300 transition flex items-center gap-2 cursor-pointer"
+            className="bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-semibold text-slate-700 shadow-2xs hover:bg-white hover:border-slate-300 transition flex items-center gap-1.5 sm:gap-2 cursor-pointer"
           >
             <span className="w-4 h-3 rounded-[2px] overflow-hidden inline-flex shadow-2xs border border-slate-200/60 shrink-0">
               <svg viewBox="0 0 900 600" className="w-full h-full">
@@ -468,7 +464,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main Split Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between min-h-screen">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between min-h-screen">
         
         {/* ================= LEFT COLUMN: HERO & BRAND (Desktop) ================= */}
         <div className="hidden lg:flex lg:w-1/2 flex-col justify-between pt-10 pb-4 px-8 lg:px-12 xl:px-16 min-h-screen">
@@ -548,24 +544,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Hero Visual Image (Milk Can, Bottle, Glass on Table) */}
-          <div className="relative pt-1 max-w-md">
-            <Image
-              src="/images/login-milk-hero-clean.png"
-              alt="Fresh Milk Dairy Can and Glass"
-              width={450}
-              height={226}
-              className="w-full h-auto object-contain rounded-2xl"
-              priority
-            />
-          </div>
+          {/* Spacer allowing background milk cans on wooden table to show through */}
+          <div className="relative h-44 xl:h-52 max-w-md pointer-events-none" />
         </div>
 
         {/* ================= RIGHT COLUMN: AUTH CARD (Mobile & Desktop) ================= */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-6">
+        <div className="w-full max-w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-6">
           
           {/* Mobile Header Branding (Visible on mobile only) */}
-          <div className="lg:hidden text-center pt-1 pb-3 px-4 space-y-1.5">
+          <div className="lg:hidden text-center pt-1 pb-3 px-2 space-y-1.5 w-full">
             <div className="w-13 h-13 rounded-2xl overflow-hidden shadow-xs border border-emerald-200/70 bg-white p-1 mx-auto">
               <Image
                 src="/images/dairypulse-badge.png"
@@ -586,8 +573,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Main White Card Container */}
-          <div className="w-full max-w-[490px] lg:max-w-[530px] bg-white rounded-3xl shadow-xl shadow-emerald-950/5 border border-slate-200/80 p-4 sm:p-7 relative z-20">
+          {/* Main Card Container */}
+          <div
+            className={`w-full sm:max-w-[490px] lg:max-w-[530px] sm:mx-auto relative z-20 transition-all ${
+              activeTab === 'signin'
+                ? 'bg-transparent sm:bg-white sm:rounded-3xl sm:shadow-xl sm:shadow-emerald-950/5 sm:border sm:border-slate-200/80 p-0 sm:p-7'
+                : 'bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-slate-200/80 p-4 sm:p-7'
+            }`}
+          >
             
             {/* 3 Top Tabs: Sign In | Customer Sign Up | Register Dairy (Desktop & Tablet) */}
             <div className="hidden sm:grid bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 grid-cols-3 gap-1 mb-6 text-xs font-semibold">
@@ -681,12 +674,12 @@ export default function LoginPage() {
                   <label className="block text-xs font-bold text-slate-800 mb-1.5 sm:mb-2">
                     Select Your Role
                   </label>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                     {/* Admin */}
                     <button
                       type="button"
                       onClick={() => handleSelectRole('OWNER')}
-                      className={`relative p-2.5 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'OWNER'
                           ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
@@ -697,12 +690,12 @@ export default function LoginPage() {
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100/70 text-emerald-700 flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100/70 text-emerald-700 flex items-center justify-center shrink-0">
                         <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                       </div>
-                      <div>
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900">Admin</span>
-                        <span className="block text-[10px] sm:text-[11px] text-slate-400">Dairy Owner</span>
+                      <div className="w-full min-w-0">
+                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Admin</span>
+                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Dairy Owner</span>
                       </div>
                     </button>
 
@@ -710,7 +703,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('DELIVERY')}
-                      className={`relative p-2.5 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'DELIVERY'
                           ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
@@ -721,12 +714,12 @@ export default function LoginPage() {
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-100/70 text-blue-700 flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-100/70 text-blue-700 flex items-center justify-center shrink-0">
                         <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                       </div>
-                      <div>
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900">Rider</span>
-                        <span className="block text-[10px] sm:text-[11px] text-slate-400">Delivery Staff</span>
+                      <div className="w-full min-w-0">
+                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Rider</span>
+                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Delivery Staff</span>
                       </div>
                     </button>
 
@@ -734,7 +727,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('CUSTOMER')}
-                      className={`relative p-2.5 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'CUSTOMER'
                           ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
@@ -745,12 +738,12 @@ export default function LoginPage() {
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-100/70 text-purple-700 flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-100/70 text-purple-700 flex items-center justify-center shrink-0">
                         <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                       </div>
-                      <div>
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900">Customer</span>
-                        <span className="block text-[10px] sm:text-[11px] text-slate-400">Milk Subscriber</span>
+                      <div className="w-full min-w-0">
+                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Customer</span>
+                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Milk Subscriber</span>
                       </div>
                     </button>
                   </div>
@@ -761,7 +754,7 @@ export default function LoginPage() {
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
                     Authentication Method
                   </label>
-                  <div className="bg-slate-100/90 p-1 rounded-2xl flex items-center border border-slate-200/60 grid grid-cols-2 gap-1 text-xs font-semibold">
+                  <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 grid grid-cols-2 gap-1 text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => {
@@ -1700,20 +1693,11 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Mobile Bottom Pasture Scene with Grazing Cows & Farm Barn */}
-          <div className="lg:hidden w-full max-w-[490px] mt-4 -mb-2 overflow-hidden rounded-2xl shadow-xs">
-            <Image
-              src="/images/login-farm-pasture-clean.png"
-              alt="Dairy Farm Pasture with Cows"
-              width={472}
-              height={174}
-              className="w-full h-auto object-cover"
-              priority
-            />
-          </div>
+          {/* Mobile Bottom Spacing for Pastoral Background with Cows & Barn */}
+          <div className="lg:hidden h-28 sm:h-32 w-full pointer-events-none" />
 
-          {/* Bottom Footnote */}
-          <div className="text-center text-[11px] text-slate-400 mt-5 space-y-0.5">
+          {/* Bottom Footnote (Desktop only) */}
+          <div className="hidden lg:block text-center text-[11px] text-slate-400 mt-5 space-y-0.5">
             <p>DairyPulse &bull; Aapke Dairy Business ka Smart Saathi</p>
           </div>
         </div>
