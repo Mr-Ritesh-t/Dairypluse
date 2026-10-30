@@ -217,8 +217,11 @@ def record_wastage(wastage: WastageCreate, db: Session = Depends(get_db)):
 
 # ----------------- CUSTOMERS -----------------
 @api_router.get("/customers", response_model=List[CustomerResponse])
-def get_customers(db: Session = Depends(get_db)):
-    return db.query(Customer).all()
+def get_customers(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Customer)
+    if dairy_name:
+        query = query.filter(Customer.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/customers", response_model=CustomerResponse)
 def create_customer(cust: CustomerCreate, db: Session = Depends(get_db)):
