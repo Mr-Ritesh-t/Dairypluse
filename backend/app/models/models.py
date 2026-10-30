@@ -95,6 +95,7 @@ class Product(Base):
     cost_price = Column(Float, nullable=False)
     available_stock = Column(Float, default=0.0)
     low_stock_threshold = Column(Float, default=100.0)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     status = Column(String, default="In Stock")
 
 class StockReceipt(Base):
@@ -153,6 +154,7 @@ class Order(Base):
     delivery_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
     status = Column(String, default="Pending")  # Pending, Dispatched, Delivered, Cancelled
     payment_status = Column(String, default="Pending")  # Paid, Partial, Pending
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     total_amount = Column(Float, default=0.0)
     paid_amount = Column(Float, default=0.0)
 

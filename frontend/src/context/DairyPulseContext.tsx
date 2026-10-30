@@ -72,6 +72,9 @@ interface DairyPulseContextType {
   dairies: DairyInfo[];
   routes: RouteInfo[];
   driverRatings: DriverRating[];
+  refreshDairies: () => Promise<DairyInfo[]>;
+  activeDairy: DairyInfo | null;
+  setActiveDairy: (dairy: DairyInfo) => void;
   
   // Modals state
   activeModal: string | null;
@@ -212,11 +215,44 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [staff, setStaff] = useState<StaffMember[]>(initialStaff);
-  const [dairies, setDairies] = useState<DairyInfo[]>([
-    { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', rating: 4.9 },
-    { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', rating: 4.8 },
-    { id: 'dairy-3', name: 'Gir Organic Farms', ownerName: 'Mahesh Deshmukh', email: 'gir@dairy.com', phone: '+91 97654 32109', city: 'Mumbai', rating: 4.95 },
-  ]);
+  const [dairies, setDairies] = useState<DairyInfo[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dairypulse_registered_dairies');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [
+      { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', rating: 4.9 },
+      { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', rating: 4.8 },
+      { id: 'dairy-3', name: 'Gir Organic Farms', ownerName: 'Mahesh Deshmukh', email: 'gir@dairy.com', phone: '+91 97654 32109', city: 'Pune', rating: 4.95 },
+    ];
+  });
+  const [selectedActiveDairy, setSelectedActiveDairy] = useState<DairyInfo | null>(null);
+  const activeDairy = selectedActiveDairy || (dairies.length > 0 ? dairies[0] : null);
+  const setActiveDairy = (dairy: DairyInfo) => setSelectedActiveDairy(dairy);
+
+  const refreshDairies = async (): Promise<DairyInfo[]> => {
+    try {
+      const data = await getDairiesApi();
+      if (data && Array.isArray(data) && data.length > 0) {
+        setDairies(data);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_registered_dairies', JSON.stringify(data));
+          } catch (e) {}
+        }
+        return data;
+      }
+    } catch (e) {
+      console.warn('refreshDairies error:', e);
+    }
+    return dairies;
+  };
+
   const [routes, setRoutes] = useState<RouteInfo[]>([]);
   const [driverRatings, setDriverRatings] = useState<DriverRating[]>([]);
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -226,6 +262,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
 
   // Sync state with FastAPI backend if online
   useEffect(() => {
+    refreshDairies();
     getProducts().then((data) => {
       if (data && Array.isArray(data)) setProducts(data);
     });
@@ -252,9 +289,6 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     });
     getStaff().then((data) => {
       if (data && Array.isArray(data)) setStaff(data);
-    });
-    getDairiesApi().then((data) => {
-      if (data && Array.isArray(data) && data.length > 0) setDairies(data);
     });
     getRoutesApi().then((data) => {
       if (data && Array.isArray(data)) setRoutes(data);
@@ -616,22 +650,43 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   }): Promise<DairyInfo | null> => {
     const newDairy: DairyInfo = {
       id: `dairy_${Date.now()}`,
-      name: dairyData.name,
-      ownerName: dairyData.ownerName,
-      email: dairyData.email,
-      phone: dairyData.phone,
-      city: dairyData.city || 'Pune',
-      address: dairyData.address || '',
+      name: dairyData.name.trim(),
+      ownerName: dairyData.ownerName.trim(),
+      email: dairyData.email.trim(),
+      phone: dairyData.phone.trim(),
+      city: dairyData.city?.trim() || 'Pune',
+      address: dairyData.address?.trim() || '',
       latitude: dairyData.latitude || 18.5520,
       longitude: dairyData.longitude || 73.7880,
       rating: 5.0,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
     };
-    setDairies((prev) => [newDairy, ...prev]);
 
+    // 1. Prepend immediately to state and localStorage so any screen sees it without delay
+    setDairies((prev) => {
+      const filtered = prev.filter((d) => d.name.trim().toLowerCase() !== newDairy.name.toLowerCase());
+      const updated = [newDairy, ...filtered];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_registered_dairies', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+    setSelectedActiveDairy(newDairy);
+
+    // 2. Sync with backend API
     const res = await postDairyApi(dairyData);
     if (res && res.id) {
-      newDairy.id = res.id;
+      setDairies((prev) => {
+        const updated = prev.map((d) => (d.name.trim().toLowerCase() === newDairy.name.toLowerCase() ? { ...d, ...res } : d));
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_registered_dairies', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
       return res;
     }
     return newDairy;
@@ -963,6 +1018,9 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         expenses,
         staff,
         dairies,
+        activeDairy,
+        setActiveDairy,
+        refreshDairies,
         routes,
         driverRatings,
         rateDriver,

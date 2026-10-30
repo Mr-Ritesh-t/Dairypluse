@@ -360,6 +360,7 @@ class DairyResponse(BaseModel):
     latitude: Optional[float] = 18.5520
     longitude: Optional[float] = 73.7880
     rating: float = 4.9
+    created_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 class LoginRequest(BaseModel):

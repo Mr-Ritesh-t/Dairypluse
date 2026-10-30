@@ -1,13 +1,17 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DB_PATH = BACKEND_DIR / "dairypulse.db"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "DairyPulse API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
-    # Database URL: uses PostgreSQL if provided, defaults to SQLite for instant local dev
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./dairypulse.db")
+    # Database URL: uses PostgreSQL if provided, defaults to absolute SQLite path
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH.as_posix()}")
     
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dairypulse-secret-key-development-2026")
     ALGORITHM: str = "HS256"

@@ -12,6 +12,7 @@ export interface Product {
   availableStock: number;
   lowStockThreshold: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  dairyName?: string;
 }
 
 export interface InventoryMovement {
@@ -24,6 +25,7 @@ export interface InventoryMovement {
   ratePerLiter?: number;
   notes?: string;
   timestamp: string;
+  dairyName?: string;
 }
 
 export interface Customer {
@@ -66,6 +68,7 @@ export interface ShopOrder {
   shopName: string;
   contactPerson: string;
   phone: string;
+  dairyName?: string;
   orderDate: string;
   deliveryDate: string;
   status: 'Pending' | 'Dispatched' | 'Delivered' | 'Cancelled';
@@ -92,6 +95,7 @@ export interface DeliveryTask {
   societyOrLandmark?: string;
   landmark?: string;
   area: string;
+  dairyName?: string;
   productVariant: MilkVariant;
   quantityLiters: number;
   slot: 'Morning' | 'Evening' | (string & {});
@@ -134,6 +138,7 @@ export interface RouteInfo {
   totalStops: number;
   totalLiters: number;
   maxCapacityLiters?: number;
+  dairyName?: string;
 }
 
 export interface RouteCustomerStop {
@@ -151,6 +156,7 @@ export interface RouteBuildPayload {
   societies?: string;
   maxCapacityLiters?: number;
   stops: RouteCustomerStop[];
+  dairyName?: string;
 }
 
 export interface Invoice {
@@ -165,6 +171,7 @@ export interface Invoice {
   totalAmount: number;
   paidAmount: number;
   status: 'Paid' | 'Partial' | 'Unpaid' | 'Overdue';
+  dairyName?: string;
 }
 
 export interface Expense {
@@ -175,6 +182,7 @@ export interface Expense {
   vendor: string;
   paymentMethod: 'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque';
   notes?: string;
+  dairyName?: string;
 }
 
 export interface StaffMember {
@@ -187,6 +195,7 @@ export interface StaffMember {
   deliveriesToday: number;
   rating: number;
   joiningDate: string;
+  dairyName?: string;
 }
 
 export type UserRole = 'OWNER' | 'DELIVERY' | 'CUSTOMER';

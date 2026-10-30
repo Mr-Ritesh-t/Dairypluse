@@ -927,7 +927,7 @@ def delete_staff(staff_id: str, db: Session = Depends(get_db)):
 # ----------------- DAIRIES (MULTI-TENANT SUPPORT) -----------------
 @api_router.get("/dairies", response_model=List[DairyResponse])
 def get_dairies(db: Session = Depends(get_db)):
-    dairies = db.query(Dairy).all()
+    dairies = db.query(Dairy).order_by(Dairy.created_at.desc()).all()
     if not dairies:
         default_dairies = [
             Dairy(
@@ -965,41 +965,79 @@ def get_dairies(db: Session = Depends(get_db)):
             db.add(d)
         db.commit()
         return default_dairies
-    return dairies
+
+    # Deduplicate by lowercase name to ensure clean list, newest first
+    unique_dairies = []
+    seen = set()
+    for d in dairies:
+        k = d.name.strip().lower()
+        if k not in seen:
+            seen.add(k)
+            unique_dairies.append(d)
+    return unique_dairies
 
 @api_router.post("/dairies", response_model=DairyResponse)
 def create_dairy(dairy_data: DairyCreate, db: Session = Depends(get_db)):
-    new_dairy = Dairy(
-        name=dairy_data.name,
-        owner_name=dairy_data.owner_name,
-        email=dairy_data.email,
-        phone=dairy_data.phone,
-        city=dairy_data.city,
-        address=dairy_data.address,
-        latitude=dairy_data.latitude if dairy_data.latitude is not None else 18.5520,
-        longitude=dairy_data.longitude if dairy_data.longitude is not None else 73.7880,
-        rating=5.0,
-    )
-    db.add(new_dairy)
+    # Check if a dairy with the same name or email already exists
+    existing_dairy = db.query(Dairy).filter(
+        (Dairy.name.ilike(dairy_data.name.strip())) | (Dairy.email.ilike(dairy_data.email.strip()))
+    ).first()
+    
+    if existing_dairy:
+        existing_dairy.name = dairy_data.name.strip()
+        existing_dairy.owner_name = dairy_data.owner_name.strip()
+        existing_dairy.phone = dairy_data.phone.strip()
+        existing_dairy.email = dairy_data.email.strip()
+        if dairy_data.city:
+            existing_dairy.city = dairy_data.city.strip()
+        if dairy_data.address:
+            existing_dairy.address = dairy_data.address.strip()
+        if dairy_data.latitude:
+            existing_dairy.latitude = dairy_data.latitude
+        if dairy_data.longitude:
+            existing_dairy.longitude = dairy_data.longitude
+        db.commit()
+        db.refresh(existing_dairy)
+        target_dairy = existing_dairy
+    else:
+        new_dairy = Dairy(
+            name=dairy_data.name.strip(),
+            owner_name=dairy_data.owner_name.strip(),
+            email=dairy_data.email.strip(),
+            phone=dairy_data.phone.strip(),
+            city=dairy_data.city or "Pune",
+            address=dairy_data.address,
+            latitude=dairy_data.latitude if dairy_data.latitude is not None else 18.5520,
+            longitude=dairy_data.longitude if dairy_data.longitude is not None else 73.7880,
+            rating=5.0,
+        )
+        db.add(new_dairy)
+        db.commit()
+        db.refresh(new_dairy)
+        target_dairy = new_dairy
 
-    # Automatically create user account for this new dairy owner so they can log in
+    # Automatically create or update user account for this dairy owner
     existing_user = db.query(User).filter(
-        (User.email == dairy_data.email) | (User.phone == dairy_data.phone)
+        (User.email.ilike(dairy_data.email.strip())) | (User.phone == dairy_data.phone.strip())
     ).first()
     if not existing_user:
         new_user = User(
-            email=dairy_data.email,
-            phone=dairy_data.phone,
+            email=dairy_data.email.strip(),
+            phone=dairy_data.phone.strip(),
             password_hash=dairy_data.password or "admin123",
-            full_name=dairy_data.owner_name,
-            dairy_name=dairy_data.name,
+            full_name=dairy_data.owner_name.strip(),
+            dairy_name=dairy_data.name.strip(),
             role="OWNER",
         )
         db.add(new_user)
+    else:
+        existing_user.dairy_name = dairy_data.name.strip()
+        existing_user.full_name = dairy_data.owner_name.strip()
+        if dairy_data.password:
+            existing_user.password_hash = dairy_data.password
 
     db.commit()
-    db.refresh(new_dairy)
-    return new_dairy
+    return target_dairy
 
 @api_router.patch("/dairies/{dairy_id}", response_model=DairyResponse)
 def update_dairy(dairy_id: str, dairy_update: DairyUpdate, db: Session = Depends(get_db)):

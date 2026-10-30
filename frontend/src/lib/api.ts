@@ -213,6 +213,7 @@ export async function getCustomers() {
       address: c.address,
       area: c.area,
       route: c.route,
+      dairyName: c.dairy_name || 'DairyPulse Farm HQ',
       latitude: c.latitude,
       longitude: c.longitude,
       preferredTime: c.preferred_time || '6:00 AM - 7:30 AM',
@@ -1659,7 +1660,7 @@ export async function getDairiesApi(): Promise<DairyInfo[]> {
     const res = await fetch(`${API_BASE_URL}/dairies`, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch dairies');
     const data = await res.json();
-    return data.map((d: any) => ({
+    const mapped = data.map((d: any) => ({
       id: d.id,
       name: d.name,
       ownerName: d.owner_name,
@@ -1672,8 +1673,23 @@ export async function getDairiesApi(): Promise<DairyInfo[]> {
       rating: d.rating,
       createdAt: d.created_at,
     }));
+    if (typeof window !== 'undefined' && mapped.length > 0) {
+      try {
+        localStorage.setItem('dairypulse_registered_dairies', JSON.stringify(mapped));
+      } catch (e) {}
+    }
+    return mapped;
   } catch (err) {
-    console.warn('API error fetching dairies, using local defaults:', err);
+    console.warn('API error fetching dairies, using local defaults/cache:', err);
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('dairypulse_registered_dairies');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
     return [
       { id: 'dairy-1', name: 'Amrut Dairy Farm', ownerName: 'Rajesh Sharma', email: 'admin@dairypulse.com', phone: '+91 98765 43210', city: 'Pune', address: 'Hadapsar Chilling Center, Pune', latitude: 18.5089, longitude: 73.9259, rating: 4.9 },
       { id: 'dairy-2', name: 'Gokul Pure Milk Co.', ownerName: 'Suresh Patil', email: 'gokul@dairy.com', phone: '+91 98220 12345', city: 'Pune', address: 'Kothrud Depot, Pune', latitude: 18.5074, longitude: 73.8077, rating: 4.8 },
