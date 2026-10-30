@@ -1,18 +1,18 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+const DEFAULT_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZncGZsYXl5b2NzcHNyYWt1dnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMjE3MDEsImV4cCI6MjEwODg5NzcwMX0.PK5a0B2dLvTfPcMQq3jZUqGrQAPYnAz8v6Q8H4OJqiw';
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vgpflayyocspsrakuvvs.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(
   SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'your-supabase-anon-key-here' && SUPABASE_ANON_KEY.length > 20
 );
 
-// Fallback dummy key to prevent crash if not yet configured
-const dummyKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy';
-
 export const supabase: SupabaseClient = createClient(
   SUPABASE_URL,
-  isSupabaseConfigured ? SUPABASE_ANON_KEY : dummyKey,
+  SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: true,
@@ -120,3 +120,4 @@ export async function verifyPhoneOtp(phone: string, token: string) {
   if (error) throw error;
   return data;
 }
+

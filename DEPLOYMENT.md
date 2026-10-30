@@ -96,7 +96,7 @@ python seed_supabase.py
    | :--- | :--- | :--- |
    | `NEXT_PUBLIC_API_URL` | `https://dairypulse-backend.onrender.com/api/v1` | Your Render FastAPI backend URL |
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://vgpflayyocspsrakuvvs.supabase.co` | Supabase Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | *(your-supabase-anon-key)* | From Supabase -> Project Settings -> API (`anon` `public` key) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZncGZsYXl5b2NzcHNyYWt1dnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMjE3MDEsImV4cCI6MjEwODg5NzcwMX0.PK5a0B2dLvTfPcMQq3jZUqGrQAPYnAz8v6Q8H4OJqiw` | From Supabase -> Project Settings -> API (`anon` `public` key) |
 
 6. **Google OAuth & Phone Auth Setup (Optional in Supabase Dashboard)**:
    - In [Supabase Dashboard](https://supabase.com/dashboard/project/vgpflayyocspsrakuvvs) -> **Authentication** -> **Providers**:
