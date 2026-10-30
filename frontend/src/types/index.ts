@@ -190,6 +190,8 @@ export interface StaffMember {
   name: string;
   role: 'Delivery Rider' | 'Dairy Plant Operator' | 'Quality Inspector' | 'Store Manager';
   phone: string;
+  email?: string;
+  password?: string;
   assignedArea: string;
   status: 'On Duty' | 'Off Duty' | 'On Leave';
   deliveriesToday: number;

@@ -536,6 +536,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       joiningDate: today,
       rating: 5.0,
       deliveriesToday: 0,
+      dairyName: memberData.dairyName || activeDairy?.name,
     };
     setStaff((prev) => [newMember, ...prev]);
 
@@ -544,10 +545,17 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       name: memberData.name,
       role: memberData.role,
       phone: memberData.phone,
+      email: memberData.email,
+      password: memberData.password,
       assignedArea: memberData.assignedArea,
       status: memberData.status,
+      dairyName: memberData.dairyName || activeDairy?.name,
     });
-    return (res as StaffMember) || newMember;
+    if (res) {
+      setStaff((prev) => prev.map((s) => (s.id === newMember.id ? (res as StaffMember) : s)));
+      return res as StaffMember;
+    }
+    return newMember;
   };
 
   const updateStaff = async (id: string, updateData: Partial<StaffMember>): Promise<boolean> => {
@@ -558,8 +566,11 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       status: updateData.status,
       assignedArea: updateData.assignedArea,
       phone: updateData.phone,
+      email: updateData.email,
+      password: updateData.password,
       role: updateData.role,
       rating: updateData.rating,
+      dairyName: updateData.dairyName || activeDairy?.name,
     });
     return !!updated;
   };

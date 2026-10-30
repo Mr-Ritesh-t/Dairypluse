@@ -51,6 +51,7 @@ class Staff(Base):
     name = Column(String, nullable=False)
     role = Column(String, nullable=False)  # Delivery Rider, Plant Operator, Manager
     phone = Column(String, nullable=False)
+    email = Column(String, nullable=True)
     assigned_area = Column(String, nullable=False)
     dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
     status = Column(String, default="On Duty")  # On Duty, Off Duty, On Leave

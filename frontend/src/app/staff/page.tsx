@@ -24,6 +24,12 @@ import {
   PackageCheck,
   User,
   Users,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { StaffMember } from '@/types';
@@ -36,22 +42,41 @@ export default function StaffManagementPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [successInfo, setSuccessInfo] = useState<{ name: string; phone: string; role: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+    role: string;
+  } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState('');
   const [role, setRole] = useState<'Delivery Rider' | 'Dairy Plant Operator' | 'Quality Inspector' | 'Store Manager'>('Delivery Rider');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('rider123');
+  const [showPassword, setShowPassword] = useState(false);
   const [assignedArea, setAssignedArea] = useState('Baner Morning Route R-04');
   const [status, setStatus] = useState<'On Duty' | 'Off Duty'>('On Duty');
 
   const onDutyCount = staff.filter((s) => s.status === 'On Duty').length;
   const ridersCount = staff.filter((s) => s.role === 'Delivery Rider').length;
 
+  const copyToClipboard = (text: string, fieldName: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2500);
+  };
+
   // Create staff
   const handleCreateRider = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
+
+    const finalEmail = email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+    const finalPassword = password.trim() || 'rider123';
 
     setIsSubmitting(true);
     try {
@@ -59,6 +84,8 @@ export default function StaffManagementPage() {
         name: name.trim(),
         role,
         phone: phone.trim(),
+        email: finalEmail,
+        password: finalPassword,
         assignedArea: assignedArea.trim(),
         status,
         deliveriesToday: 0,
@@ -68,11 +95,15 @@ export default function StaffManagementPage() {
       setSuccessInfo({
         name: name.trim(),
         phone: phone.trim(),
+        email: finalEmail,
+        password: finalPassword,
         role,
       });
 
       setName('');
       setPhone('');
+      setEmail('');
+      setPassword('rider123');
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +256,7 @@ export default function StaffManagementPage() {
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Staff Member</th>
                 <th className="pb-2.5 font-medium">Role</th>
-                <th className="pb-2.5 font-medium">Login Phone</th>
+                <th className="pb-2.5 font-medium">Login (Phone / Gmail)</th>
                 <th className="pb-2.5 font-medium">Assigned Route / Plant</th>
                 <th className="pb-2.5 font-medium">Today's Deliveries</th>
                 <th className="pb-2.5 font-medium">Rating</th>
@@ -280,7 +311,20 @@ export default function StaffManagementPage() {
                         {s.role}
                       </span>
                     </td>
-                    <td className="py-3.5 text-slate-700 font-mono font-medium">{s.phone}</td>
+                    <td className="py-3.5 text-slate-700">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 font-bold font-mono text-slate-800">
+                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{s.phone}</span>
+                        </div>
+                        {s.email && (
+                          <div className="text-[11px] font-sans font-medium text-slate-500 flex items-center gap-1">
+                            <Mail className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="truncate max-w-[170px]" title={s.email}>{s.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3.5 text-slate-600 font-medium">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
@@ -452,6 +496,61 @@ export default function StaffManagementPage() {
                     {selectedStaff.rating} ★
                   </div>
                   <p className="text-[10px] text-amber-700 mt-0.5 font-medium">98.4% on-time delivery</p>
+                </div>
+              </div>
+
+              {/* Account & Login Credentials */}
+              <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Sign-In & Mobile App Account</h4>
+                      <p className="text-[10px] text-slate-500">Credentials used to log into /mobile/delivery</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    Active Account
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-100">
+                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">Login Gmail / Email</span>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                        <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{selectedStaff.email || `${selectedStaff.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedStaff.email || `${selectedStaff.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`, 'drawer_email')}
+                        className="text-slate-400 hover:text-emerald-700 p-1 cursor-pointer"
+                        title="Copy Email"
+                      >
+                        {copiedField === 'drawer_email' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-100">
+                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">Login Phone Number</span>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="font-mono font-bold text-slate-800 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{selectedStaff.phone}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedStaff.phone, 'drawer_phone')}
+                        className="text-slate-400 hover:text-emerald-700 p-1 cursor-pointer"
+                        title="Copy Phone"
+                      >
+                        {copiedField === 'drawer_phone' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -782,28 +881,78 @@ export default function StaffManagementPage() {
             </div>
 
             {successInfo ? (
-              <div className="py-6 text-center space-y-3">
+              <div className="py-5 text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-base">Rider ID Created!</h4>
-                <p className="text-xs text-slate-600 max-w-xs mx-auto">
-                  <strong>{successInfo.name}</strong> has been registered as a {successInfo.role}.
-                </p>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Login Role:</span>
-                    <span className="font-bold text-slate-800">Delivery Partner</span>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-base">Rider ID & Login Created!</h4>
+                  <p className="text-xs text-slate-600 mt-1 max-w-xs mx-auto">
+                    <strong>{successInfo.name}</strong> has been enrolled as a {successInfo.role}. Give these credentials to the rider for app login.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs text-left space-y-2">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                    <span className="text-slate-500 font-medium">Role:</span>
+                    <span className="font-bold text-slate-800">{successInfo.role} (Delivery Partner)</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Login Phone ID:</span>
-                    <span className="font-mono font-bold text-emerald-700">{successInfo.phone}</span>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Login Gmail / Email:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold font-mono text-emerald-700">{successInfo.email}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(successInfo.email, 'modal_email')}
+                        className="p-1 text-slate-400 hover:text-emerald-700 cursor-pointer"
+                        title="Copy Email"
+                      >
+                        {copiedField === 'modal_email' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Destination:</span>
-                    <span className="text-blue-600 font-medium">/mobile/delivery</span>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Login Password:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded-md border border-slate-200">{successInfo.password}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(successInfo.password, 'modal_pwd')}
+                        className="p-1 text-slate-400 hover:text-emerald-700 cursor-pointer"
+                        title="Copy Password"
+                      >
+                        {copiedField === 'modal_pwd' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Login Phone ID:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-medium text-slate-700">{successInfo.phone}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(successInfo.phone, 'modal_phone')}
+                        className="p-1 text-slate-400 hover:text-emerald-700 cursor-pointer"
+                        title="Copy Phone"
+                      >
+                        {copiedField === 'modal_phone' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+                    <span className="text-slate-500 font-medium">Login URL:</span>
+                    <span className="text-blue-600 font-medium">/login (Select &apos;Delivery Partner&apos;)</span>
                   </div>
                 </div>
+
+                <p className="text-[11px] text-emerald-700 bg-emerald-50/80 p-2 rounded-xl text-center">
+                  Rider can sign in instantly using either their Gmail or Phone Number with this password.
+                </p>
+
                 <div className="pt-2 flex justify-center gap-2">
                   <button
                     type="button"
@@ -825,14 +974,20 @@ export default function StaffManagementPage() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleCreateRider} className="space-y-4 pt-3">
+              <form onSubmit={handleCreateRider} className="space-y-3.5 pt-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setName(newName);
+                      if (!email || email.includes('@gmail.com') || email.includes('@dairypulse.farm')) {
+                        setEmail(`${newName.toLowerCase().replace(/\s+/g, '')}@gmail.com`);
+                      }
+                    }}
                     placeholder="e.g. Rahul Deshmukh"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                   />
@@ -863,6 +1018,61 @@ export default function StaffManagementPage() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
+                </div>
+
+                {/* Login Credentials: Gmail & Password */}
+                <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-900">Rider App Login Credentials</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Gmail / Email for Login *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="rahul@gmail.com"
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Password for Login *
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter password"
+                          className="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    The rider will sign in to the Delivery App at <code className="bg-white px-1 py-0.5 rounded border border-slate-200">/login</code> using this Gmail and password.
+                  </p>
                 </div>
 
                 <div>
@@ -915,9 +1125,10 @@ export default function StaffManagementPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                   >
-                    {isSubmitting ? 'Creating ID...' : 'Create Staff ID'}
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{isSubmitting ? 'Creating ID...' : 'Create Staff ID & Login'}</span>
                   </button>
                 </div>
               </form>

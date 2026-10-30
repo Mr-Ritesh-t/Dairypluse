@@ -302,7 +302,10 @@ class StaffCreate(BaseModel):
     name: str
     role: str = "Delivery Rider"
     phone: str
+    email: Optional[str] = None
+    password: Optional[str] = None
     assigned_area: str
+    dairy_name: Optional[str] = "DairyPulse Farm HQ"
     status: str = "On Duty"
     deliveries_today: int = 0
     rating: float = 5.0
@@ -313,7 +316,9 @@ class StaffResponse(BaseModel):
     name: str
     role: str
     phone: str
+    email: Optional[str] = None
     assigned_area: str
+    dairy_name: Optional[str] = None
     status: str
     deliveries_today: int
     rating: float
@@ -324,7 +329,10 @@ class StaffUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
     phone: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
     assigned_area: Optional[str] = None
+    dairy_name: Optional[str] = None
     status: Optional[str] = None
     deliveries_today: Optional[int] = None
     rating: Optional[float] = None

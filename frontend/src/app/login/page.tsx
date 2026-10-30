@@ -446,7 +446,7 @@ export default function LoginPage() {
               {/* Login ID Input */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {selectedRole === 'OWNER' ? 'Dairy Owner Email / Phone' : 'Mobile Phone (Login ID)'}
+                  {selectedRole === 'OWNER' ? 'Dairy Owner Email / Phone' : selectedRole === 'DELIVERY' ? 'Rider Gmail / Mobile Phone' : 'Mobile Phone (Login ID)'}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -457,7 +457,7 @@ export default function LoginPage() {
                     required
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
-                    placeholder={selectedRole === 'OWNER' ? 'owner@dairy.com' : '+91 98...'}
+                    placeholder={selectedRole === 'OWNER' ? 'owner@dairy.com' : selectedRole === 'DELIVERY' ? 'rider@gmail.com or +91 98...' : '+91 98...'}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
                   />
                 </div>

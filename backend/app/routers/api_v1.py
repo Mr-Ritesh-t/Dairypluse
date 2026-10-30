@@ -898,11 +898,17 @@ def get_staff(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
 @api_router.post("/staff", response_model=StaffResponse)
 def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
     joining_date = staff_data.joining_date or datetime.utcnow().strftime("%Y-%m-%d")
+    clean_phone = staff_data.phone.strip()
+    clean_email = (staff_data.email.strip() if staff_data.email else f"{staff_data.name.lower().replace(' ', '')}@dairypulse.farm")
+    staff_pwd = staff_data.password.strip() if staff_data.password else "rider123"
+
     new_staff = Staff(
-        name=staff_data.name,
+        name=staff_data.name.strip(),
         role=staff_data.role,
-        phone=staff_data.phone,
+        phone=clean_phone,
+        email=clean_email,
         assigned_area=staff_data.assigned_area,
+        dairy_name=staff_data.dairy_name or "DairyPulse Farm HQ",
         status=staff_data.status,
         deliveries_today=staff_data.deliveries_today,
         rating=staff_data.rating,
@@ -911,6 +917,36 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
     db.add(new_staff)
     db.commit()
     db.refresh(new_staff)
+
+    # Automatically create or update User authentication account for delivery boy / staff
+    role_code = "DELIVERY" if "delivery" in staff_data.role.lower() or "rider" in staff_data.role.lower() else "STAFF"
+    existing_user = db.query(User).filter(
+        (User.email.ilike(clean_email)) | (User.phone == clean_phone)
+    ).first()
+
+    if not existing_user:
+        new_user = User(
+            email=clean_email,
+            phone=clean_phone,
+            password_hash=staff_pwd,
+            full_name=staff_data.name.strip(),
+            dairy_name=staff_data.dairy_name or "DairyPulse Farm HQ",
+            role=role_code,
+            is_active=True,
+        )
+        db.add(new_user)
+    else:
+        existing_user.full_name = staff_data.name.strip()
+        existing_user.dairy_name = staff_data.dairy_name or "DairyPulse Farm HQ"
+        existing_user.role = role_code
+        if staff_data.password:
+            existing_user.password_hash = staff_pwd
+        if clean_email:
+            existing_user.email = clean_email
+        if clean_phone:
+            existing_user.phone = clean_phone
+
+    db.commit()
     return new_staff
 
 @api_router.patch("/staff/{staff_id}", response_model=StaffResponse)
@@ -925,14 +961,32 @@ def update_staff(staff_id: str, staff_data: StaffUpdate, db: Session = Depends(g
         staff.role = staff_data.role
     if staff_data.phone is not None:
         staff.phone = staff_data.phone
+    if staff_data.email is not None:
+        staff.email = staff_data.email
     if staff_data.assigned_area is not None:
         staff.assigned_area = staff_data.assigned_area
+    if staff_data.dairy_name is not None:
+        staff.dairy_name = staff_data.dairy_name
     if staff_data.status is not None:
         staff.status = staff_data.status
     if staff_data.deliveries_today is not None:
         staff.deliveries_today = staff_data.deliveries_today
     if staff_data.rating is not None:
         staff.rating = staff_data.rating
+
+    # Sync login account if phone/email/password updated
+    user = db.query(User).filter((User.phone == staff.phone) | (User.email == staff.email)).first()
+    if user:
+        if staff_data.password:
+            user.password_hash = staff_data.password.strip()
+        if staff_data.name:
+            user.full_name = staff_data.name.strip()
+        if staff_data.phone:
+            user.phone = staff_data.phone.strip()
+        if staff_data.email:
+            user.email = staff_data.email.strip()
+        if staff_data.dairy_name:
+            user.dairy_name = staff_data.dairy_name
 
     db.commit()
     db.refresh(staff)
@@ -948,7 +1002,10 @@ def delete_staff(staff_id: str, db: Session = Depends(get_db)):
     staff_phone = staff.phone
 
     # Clean up associated delivery user account if any
-    associated_user = db.query(User).filter(User.phone == staff_phone, User.role.in_(["DELIVERY", "STAFF"])).first()
+    associated_user = db.query(User).filter(
+        (User.phone == staff_phone) | ((User.email == staff.email) if staff.email else False),
+        User.role.in_(["DELIVERY", "STAFF"])
+    ).first()
     if associated_user:
         db.delete(associated_user)
 
@@ -1147,20 +1204,52 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     # 2. DELIVERY RIDER / STAFF ROLE
     elif role in ["DELIVERY", "STAFF"]:
         staff = None
+        user_account = None
         if login_id:
-            staff = db.query(Staff).filter(
-                (Staff.phone == login_id) | (Staff.name.ilike(f"%{login_id}%"))
+            # Check User account first (by email or phone)
+            user_account = db.query(User).filter(
+                ((User.email.ilike(login_id)) | (User.phone == login_id)),
+                User.role.in_(["DELIVERY", "STAFF"])
             ).first()
-        if staff:
+
+            # Check Staff directory (by phone, email, or name)
+            staff = db.query(Staff).filter(
+                (Staff.phone == login_id) | 
+                (Staff.email.ilike(login_id)) | 
+                (Staff.name.ilike(f"%{login_id}%"))
+            ).first()
+
+        # Check password against User account if provided
+        target_user = user_account
+        if not target_user and staff:
+            target_user = db.query(User).filter(
+                ((User.phone == staff.phone) | (User.email.ilike(staff.email) if staff.email else False)),
+                User.role.in_(["DELIVERY", "STAFF"])
+            ).first()
+
+        if target_user and login_req.password:
+            expected_pwd = target_user.password_hash or "rider123"
+            if expected_pwd != login_req.password.strip():
+                raise HTTPException(status_code=401, detail="Invalid password for delivery rider account")
+
+        if staff or user_account:
+            staff_name = staff.name if staff else (user_account.full_name if user_account else "Delivery Rider")
+            staff_phone = staff.phone if staff else (user_account.phone if user_account else login_id)
+            staff_email = (staff.email if staff and staff.email else (user_account.email if user_account and user_account.email else "rider@dairypulse.farm"))
+            staff_area = staff.assigned_area if staff else "Baner & Central Market"
+            staff_id = staff.id if staff else (user_account.id if user_account else "st-001")
+            staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (user_account.dairy_name if user_account else "DairyPulse Farm HQ"))
+
             return AuthUserResponse(
-                id=staff.id,
-                name=staff.name,
+                id=staff_id,
+                name=staff_name,
                 role="DELIVERY",
-                login_id=staff.phone,
-                phone=staff.phone,
-                email="rider@dairypulse.farm",
-                assigned_area_or_route=staff.assigned_area,
-                token=f"dp_rider_{staff.id[:8]}",
+                login_id=login_id,
+                phone=staff_phone,
+                email=staff_email,
+                assigned_area_or_route=staff_area,
+                dairy_name=staff_dairy,
+                token=f"dp_rider_{staff_id[:8]}",
             )
         return AuthUserResponse(
             id="st-001",

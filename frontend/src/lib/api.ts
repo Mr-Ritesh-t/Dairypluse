@@ -908,11 +908,13 @@ export async function getStaff() {
       name: st.name,
       role: st.role,
       phone: st.phone,
+      email: st.email || '',
       assignedArea: st.assigned_area,
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 4.9,
       joiningDate: st.joining_date,
+      dairyName: st.dairy_name,
     }));
   } catch (err) {
     console.warn('API error, falling back to local state:', err);
@@ -924,11 +926,14 @@ export async function postStaff(data: {
   name: string;
   role?: string;
   phone: string;
+  email?: string;
+  password?: string;
   assignedArea: string;
   status?: string;
   deliveriesToday?: number;
   rating?: number;
   joiningDate?: string;
+  dairyName?: string;
 }) {
   try {
     const res = await fetch(`${API_BASE_URL}/staff`, {
@@ -938,11 +943,14 @@ export async function postStaff(data: {
         name: data.name,
         role: data.role || 'Delivery Rider',
         phone: data.phone,
+        email: data.email,
+        password: data.password,
         assigned_area: data.assignedArea,
         status: data.status || 'On Duty',
         deliveries_today: data.deliveriesToday || 0,
         rating: data.rating || 5.0,
         joining_date: data.joiningDate || new Date().toISOString().split('T')[0],
+        dairy_name: data.dairyName,
       }),
     });
     if (!res.ok) throw new Error('Failed to create staff member');
@@ -952,11 +960,13 @@ export async function postStaff(data: {
       name: st.name,
       role: st.role,
       phone: st.phone,
+      email: st.email || data.email || '',
       assignedArea: st.assigned_area,
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 5.0,
       joiningDate: st.joining_date,
+      dairyName: st.dairy_name,
     };
   } catch (err) {
     console.warn('API error creating staff:', err);
@@ -978,7 +988,16 @@ export async function deleteStaffApi(staffId: string): Promise<boolean> {
 
 export async function patchStaffApi(
   staffId: string,
-  updateData: { status?: string; assignedArea?: string; phone?: string; role?: string; rating?: number }
+  updateData: {
+    status?: string;
+    assignedArea?: string;
+    phone?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+    rating?: number;
+    dairyName?: string;
+  }
 ) {
   try {
     const res = await fetch(`${API_BASE_URL}/staff/${staffId}`, {
@@ -988,8 +1007,11 @@ export async function patchStaffApi(
         status: updateData.status,
         assigned_area: updateData.assignedArea,
         phone: updateData.phone,
+        email: updateData.email,
+        password: updateData.password,
         role: updateData.role,
         rating: updateData.rating,
+        dairy_name: updateData.dairyName,
       }),
     });
     if (!res.ok) throw new Error('Failed to update staff member');
@@ -999,11 +1021,13 @@ export async function patchStaffApi(
       name: st.name,
       role: st.role,
       phone: st.phone,
+      email: st.email || updateData.email || '',
       assignedArea: st.assigned_area,
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 5.0,
       joiningDate: st.joining_date,
+      dairyName: st.dairy_name,
     };
   } catch (err) {
     console.warn('API error patching staff:', err);

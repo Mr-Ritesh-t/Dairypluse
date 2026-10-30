@@ -132,11 +132,13 @@ def test_expenses():
     assert create_res.json()["amount"] == 5000.0
 
 def test_create_staff_and_login():
-    # 1. Admin creates a new delivery rider
+    # 1. Admin creates a new delivery rider with explicit Gmail and Password
     rider_payload = {
         "name": "Suresh Shinde",
         "role": "Delivery Rider",
         "phone": "+91 98221 55667",
+        "email": "suresh.rider@gmail.com",
+        "password": "SecurePassword123",
         "assigned_area": "Baner Morning Route R-04",
         "status": "On Duty",
     }
@@ -145,16 +147,35 @@ def test_create_staff_and_login():
     rider_data = create_res.json()
     assert rider_data["name"] == "Suresh Shinde"
     assert rider_data["phone"] == "+91 98221 55667"
+    assert rider_data["email"] == "suresh.rider@gmail.com"
 
-    # 2. Rider logs in with their newly created mobile phone ID
-    login_payload = {
-        "login_id": "+91 98221 55667",
+    # 2a. Rider logs in using their Gmail and Password
+    gmail_login_res = client.post("/api/v1/auth/login", json={
+        "login_id": "suresh.rider@gmail.com",
+        "password": "SecurePassword123",
         "role": "DELIVERY",
-    }
-    login_res = client.post("/api/v1/auth/login", json=login_payload)
-    assert login_res.status_code == 200
-    assert login_res.json()["name"] == "Suresh Shinde"
-    assert login_res.json()["role"] == "DELIVERY"
+    })
+    assert gmail_login_res.status_code == 200
+    assert gmail_login_res.json()["name"] == "Suresh Shinde"
+    assert gmail_login_res.json()["email"] == "suresh.rider@gmail.com"
+    assert gmail_login_res.json()["role"] == "DELIVERY"
+
+    # 2b. Rider logs in using their Phone and Password
+    phone_login_res = client.post("/api/v1/auth/login", json={
+        "login_id": "+91 98221 55667",
+        "password": "SecurePassword123",
+        "role": "DELIVERY",
+    })
+    assert phone_login_res.status_code == 200
+    assert phone_login_res.json()["name"] == "Suresh Shinde"
+
+    # 2c. Invalid password check fails with 401
+    bad_pwd_res = client.post("/api/v1/auth/login", json={
+        "login_id": "suresh.rider@gmail.com",
+        "password": "WrongPassword",
+        "role": "DELIVERY",
+    })
+    assert bad_pwd_res.status_code == 401
 
     # 3. Update staff member status and assigned area
     rider_id = rider_data["id"]
