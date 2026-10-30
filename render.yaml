@@ -19,3 +19,4 @@ services:
         value: "https://*.vercel.app,http://localhost:3000"
       - key: TIMEZONE
         value: "Asia/Kolkata"
+

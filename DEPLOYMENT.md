@@ -122,3 +122,4 @@ python seed_supabase.py
   Free Render instances sleep after 15 minutes of inactivity and take ~30 seconds to wake up on the first request. The frontend has built-in resilient offline fallbacks so the app never crashes during cold starts.
 - **Supabase connection pooler vs direct**:
   If using Supabase Transaction pooler (`port 6543`), ensure `sslmode=require` is at the end of your connection string: `?sslmode=require`.
+
