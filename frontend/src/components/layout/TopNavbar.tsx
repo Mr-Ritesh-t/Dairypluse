@@ -40,11 +40,11 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 
   return (
     <header
-      className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 shadow-2xs"
+      className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 shadow-2xs gap-4 sm:gap-6 lg:gap-8"
       data-purpose="top-navbar"
     >
       {/* Left side: Hamburger & Search */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
+      <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl mr-3 sm:mr-6">
         <button
           aria-label="Toggle Navigation"
           onClick={onToggleSidebar}
@@ -68,7 +68,7 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
       </div>
 
      
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
         {/* Quick Actions Dropdown */}
         <div className="relative">
           {/* Desktop full button */}
