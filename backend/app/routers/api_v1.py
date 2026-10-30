@@ -1018,42 +1018,7 @@ def delete_staff(staff_id: str, db: Session = Depends(get_db)):
 def get_dairies(db: Session = Depends(get_db)):
     dairies = db.query(Dairy).order_by(Dairy.created_at.desc()).all()
     if not dairies:
-        default_dairies = [
-            Dairy(
-                id="d-001",
-                name="DairyPulse Farm HQ",
-                owner_name="Ritesh Tayade",
-                email="admin@dairypulse.farm",
-                phone="+91 98765 43210",
-                city="Pune",
-                address="Baner Chilling Plant & Processing Center",
-                rating=4.9,
-            ),
-            Dairy(
-                id="d-002",
-                name="Gokul Fresh Dairy",
-                owner_name="Sanjay Patil",
-                email="contact@gokuldairy.com",
-                phone="+91 98220 33445",
-                city="Pune",
-                address="Kothrud Hub",
-                rating=4.8,
-            ),
-            Dairy(
-                id="d-003",
-                name="Shree Ganesh Organic Milk",
-                owner_name="Mahesh Deshmukh",
-                email="ganeshdairy@gmail.com",
-                phone="+91 98230 55667",
-                city="Pimpri-Chinchwad",
-                address="Wakad Dairy Center",
-                rating=4.9,
-            ),
-        ]
-        for d in default_dairies:
-            db.add(d)
-        db.commit()
-        return default_dairies
+        return []
 
     # Deduplicate by lowercase name to ensure clean list, newest first
     unique_dairies = []
