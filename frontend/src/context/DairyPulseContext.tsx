@@ -166,7 +166,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const [rawDeliveries, setRawDeliveries] = useState<DeliveryTask[]>(initialDeliveries);
   const [rawInvoices, setRawInvoices] = useState<Invoice[]>(initialInvoices);
   const [rawExpenses, setRawExpenses] = useState<Expense[]>(initialExpenses);
-  const [rawStaff, setRawStaff] = useState<StaffMember[]>(initialStaff);
+  const [rawStaff, setRawStaff] = useState<StaffMember[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dairypulse_staff');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return initialStaff;
+  });
   const [rawRoutes, setRawRoutes] = useState<RouteInfo[]>([]);
 
   // Aliases so all existing mutators cleanly update the master raw state
@@ -338,7 +349,23 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       if (data && Array.isArray(data)) setRawExpenses(data);
     });
     getStaff().then((data) => {
-      if (data && Array.isArray(data)) setRawStaff(data);
+      if (data && Array.isArray(data)) {
+        setRawStaff((prev) => {
+          const merged = [...data];
+          for (const s of prev) {
+            const sDigits = (s.phone || '').replace(/\D/g, '');
+            if (!merged.some((m) => m.id === s.id || (sDigits && (m.phone || '').replace(/\D/g, '') === sDigits))) {
+              merged.push(s);
+            }
+          }
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('dairypulse_staff', JSON.stringify(merged));
+            } catch (e) {}
+          }
+          return merged;
+        });
+      }
     });
     getRoutesApi().then((data) => {
       if (data && Array.isArray(data)) setRawRoutes(data);
@@ -481,7 +508,15 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       deliveriesToday: 0,
       dairyName: memberData.dairyName || activeDairy?.name,
     };
-    setStaff((prev) => [newMember, ...prev]);
+    setStaff((prev) => {
+      const updated = [newMember, ...prev];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
 
     // Backend sync
     const res = await postStaff({
@@ -495,16 +530,30 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       dairyName: memberData.dairyName || activeDairy?.name,
     });
     if (res) {
-      setStaff((prev) => prev.map((s) => (s.id === newMember.id ? (res as StaffMember) : s)));
+      setStaff((prev) => {
+        const updated = prev.map((s) => (s.id === newMember.id ? (res as StaffMember) : s));
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
       return res as StaffMember;
     }
     return newMember;
   };
 
   const updateStaff = async (id: string, updateData: Partial<StaffMember>): Promise<boolean> => {
-    setStaff((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updateData } : s))
-    );
+    setStaff((prev) => {
+      const updated = prev.map((s) => (s.id === id ? { ...s, ...updateData } : s));
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
     const updated = await patchStaffApi(id, {
       status: updateData.status,
       assignedArea: updateData.assignedArea,
@@ -519,7 +568,15 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteStaff = async (id: string): Promise<boolean> => {
-    setStaff((prev) => prev.filter((s) => s.id !== id));
+    setStaff((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
     const success = await deleteStaffApi(id);
     return success;
   };

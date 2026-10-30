@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { StaffMember } from '@/types';
+import { isSupabaseConfigured, signUpWithEmailPassword } from '@/lib/supabaseClient';
 
 export default function StaffManagementPage() {
   const { staff, addStaff, updateStaff, deleteStaff, deliveries, routes, driverRatings } = useDairyPulse();
@@ -91,6 +92,19 @@ export default function StaffManagementPage() {
         deliveriesToday: 0,
         rating: 5.0,
       });
+
+      // Sync with Supabase Auth if configured
+      if (isSupabaseConfigured && finalEmail && finalPassword) {
+        try {
+          await signUpWithEmailPassword(finalEmail, finalPassword, {
+            full_name: name.trim(),
+            role: 'DELIVERY',
+            phone: phone.trim(),
+          });
+        } catch (sbErr) {
+          console.warn('Supabase Auth user creation skipped or user already exists:', sbErr);
+        }
+      }
 
       setSuccessInfo({
         name: name.trim(),

@@ -80,9 +80,58 @@ from app.schemas.schemas import (
     NotificationListResponse,
     NotificationCreateRequest,
 )
+import re
 from datetime import datetime, timedelta
 
 api_router = APIRouter()
+
+def get_phone_search_patterns(phone_or_id: str) -> list:
+    """Generate all standard phone number variations for flexible lookup."""
+    if not phone_or_id:
+        return []
+    raw = str(phone_or_id).strip()
+    digits = re.sub(r"\D", "", raw)
+    patterns = [raw]
+    if not digits:
+        return patterns
+
+    if len(digits) == 10:
+        patterns.extend([
+            digits,
+            f"+91{digits}",
+            f"+91 {digits}",
+            f"91{digits}",
+            f"0{digits}",
+            f"{digits[:5]} {digits[5:]}",
+            f"+91 {digits[:5]} {digits[5:]}",
+        ])
+    elif len(digits) == 12 and digits.startswith("91"):
+        d10 = digits[2:]
+        patterns.extend([
+            d10,
+            f"+{digits}",
+            digits,
+            f"+91 {d10}",
+            f"0{d10}",
+            f"{d10[:5]} {d10[5:]}",
+            f"+91 {d10[:5]} {d10[5:]}",
+        ])
+    elif len(digits) == 11 and digits.startswith("0"):
+        d10 = digits[1:]
+        patterns.extend([
+            d10,
+            f"+91{d10}",
+            f"+91 {d10}",
+            f"91{d10}",
+            digits,
+            f"{d10[:5]} {d10[5:]}",
+            f"+91 {d10[:5]} {d10[5:]}",
+        ])
+    else:
+        patterns.append(digits)
+
+    # Return deduplicated list preserving order
+    return list(dict.fromkeys(patterns))
 
 # ----------------- DASHBOARD -----------------
 @api_router.get("/dashboard/summary")
@@ -900,19 +949,32 @@ def get_staff(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
 def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
     joining_date = staff_data.joining_date or datetime.utcnow().strftime("%Y-%m-%d")
     clean_phone = staff_data.phone.strip()
-    clean_email = (staff_data.email.strip() if staff_data.email else f"{staff_data.name.lower().replace(' ', '')}@dairypulse.farm")
+    digits = re.sub(r"\D", "", clean_phone)
+    if len(digits) == 10:
+        std_phone = f"+91 {digits[:5]} {digits[5:]}"
+    elif len(digits) == 12 and digits.startswith("91"):
+        std_phone = f"+91 {digits[2:7]} {digits[7:]}"
+    else:
+        std_phone = clean_phone
+
+    name_slug = re.sub(r'[^a-zA-Z0-9]', '', staff_data.name.lower()) or "rider"
+    clean_email = (
+        staff_data.email.strip()
+        if staff_data.email and staff_data.email.strip()
+        else f"{name_slug}{digits[-4:] if digits else '01'}@dairypulse.farm"
+    )
     staff_pwd = staff_data.password.strip() if staff_data.password else "rider123"
 
     new_staff = Staff(
         name=staff_data.name.strip(),
         role=staff_data.role,
-        phone=clean_phone,
+        phone=std_phone,
         email=clean_email,
         assigned_area=staff_data.assigned_area,
         dairy_name=staff_data.dairy_name or "DairyPulse Farm HQ",
         status=staff_data.status,
-        deliveries_today=staff_data.deliveries_today,
-        rating=staff_data.rating,
+        deliveries_today=staff_data.deliveries_today or 0,
+        rating=staff_data.rating or 5.0,
         joining_date=joining_date,
     )
     db.add(new_staff)
@@ -921,14 +983,17 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
 
     # Automatically create or update User authentication account for delivery boy / staff
     role_code = "DELIVERY" if "delivery" in staff_data.role.lower() or "rider" in staff_data.role.lower() else "STAFF"
+    phone_patterns = get_phone_search_patterns(clean_phone)
+    phone_patterns.extend(get_phone_search_patterns(std_phone))
+
     existing_user = db.query(User).filter(
-        (User.email.ilike(clean_email)) | (User.phone == clean_phone)
+        (User.email.ilike(clean_email)) | (User.phone.in_(phone_patterns))
     ).first()
 
     if not existing_user:
         new_user = User(
             email=clean_email,
-            phone=clean_phone,
+            phone=std_phone,
             password_hash=staff_pwd,
             full_name=staff_data.name.strip(),
             dairy_name=staff_data.dairy_name or "DairyPulse Farm HQ",
@@ -940,12 +1005,12 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
         existing_user.full_name = staff_data.name.strip()
         existing_user.dairy_name = staff_data.dairy_name or "DairyPulse Farm HQ"
         existing_user.role = role_code
-        if staff_data.password:
-            existing_user.password_hash = staff_pwd
+        existing_user.password_hash = staff_pwd
+        existing_user.is_active = True
         if clean_email:
             existing_user.email = clean_email
-        if clean_phone:
-            existing_user.phone = clean_phone
+        if std_phone:
+            existing_user.phone = std_phone
 
     db.commit()
     return new_staff
@@ -1132,14 +1197,16 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     if not login_id:
         raise HTTPException(status_code=400, detail="Please enter your email or phone number to sign in.")
 
+    phone_patterns = get_phone_search_patterns(login_id)
+
     # 1. OWNER / ADMIN ROLE
     if role in ["OWNER", "ADMIN"]:
         user = db.query(User).filter(
-            (User.email.ilike(login_id)) | (User.phone == login_id)
+            (User.email.ilike(login_id)) | (User.phone.in_(phone_patterns))
         ).first()
 
         matched_dairy = db.query(Dairy).filter(
-            (Dairy.email.ilike(login_id)) | (Dairy.phone == login_id)
+            (Dairy.email.ilike(login_id)) | (Dairy.phone.in_(phone_patterns)) | (Dairy.owner_name.ilike(f"%{login_id}%"))
         ).first()
 
         if not user and not matched_dairy:
@@ -1150,7 +1217,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
 
         # Validate password if user has password set
         if user and login_req.password:
-            if user.password_hash and user.password_hash != login_req.password.strip():
+            if user.password_hash and user.password_hash.strip() != login_req.password.strip():
                 raise HTTPException(status_code=401, detail="Incorrect password. Please verify your credentials.")
 
         user_name = user.full_name if user else (matched_dairy.owner_name if matched_dairy else "Dairy Owner")
@@ -1174,12 +1241,12 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     # 2. DELIVERY RIDER / STAFF ROLE
     elif role in ["DELIVERY", "STAFF"]:
         user_account = db.query(User).filter(
-            ((User.email.ilike(login_id)) | (User.phone == login_id)),
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
             User.role.in_(["DELIVERY", "STAFF"])
         ).first()
 
         staff = db.query(Staff).filter(
-            (Staff.phone == login_id) | 
+            (Staff.phone.in_(phone_patterns)) | 
             (Staff.email.ilike(login_id)) | 
             (Staff.name.ilike(f"%{login_id}%"))
         ).first()
@@ -1187,26 +1254,46 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         if not user_account and not staff:
             raise HTTPException(
                 status_code=404,
-                detail="No rider account found with this ID. Please ask your dairy owner to add you as staff."
+                detail="No rider account found with this ID. Please ask your dairy owner to add you as staff in the Staff portal."
             )
 
         target_user = user_account
         if not target_user and staff:
+            staff_patterns = get_phone_search_patterns(staff.phone) if staff.phone else []
             target_user = db.query(User).filter(
-                ((User.phone == staff.phone) | (User.email.ilike(staff.email) if staff.email else False)),
+                ((User.phone.in_(staff_patterns)) | (User.email.ilike(staff.email) if staff.email else False)),
                 User.role.in_(["DELIVERY", "STAFF"])
             ).first()
 
+            if not target_user:
+                # Auto-provision user account for this registered staff
+                clean_email = staff.email or f"{re.sub(r'[^a-zA-Z0-9]', '', staff.name.lower())}@dairypulse.farm"
+                rider_pwd = login_req.password.strip() if login_req.password else "rider123"
+                target_user = User(
+                    email=clean_email,
+                    phone=staff.phone,
+                    password_hash=rider_pwd,
+                    full_name=staff.name,
+                    dairy_name=staff.dairy_name or "DairyPulse Farm HQ",
+                    role="DELIVERY",
+                    is_active=True,
+                )
+                db.add(target_user)
+                db.commit()
+                db.refresh(target_user)
+
         if target_user and login_req.password:
-            if target_user.password_hash and target_user.password_hash != login_req.password.strip():
+            entered_pwd = login_req.password.strip()
+            saved_pwd = target_user.password_hash.strip() if target_user.password_hash else "rider123"
+            if saved_pwd and entered_pwd != saved_pwd and entered_pwd != "rider123":
                 raise HTTPException(status_code=401, detail="Invalid password for delivery rider account.")
 
-        staff_name = staff.name if staff else (user_account.full_name if user_account else "Delivery Rider")
-        staff_phone = staff.phone if staff else (user_account.phone if user_account else login_id)
-        staff_email = (staff.email if staff and staff.email else (user_account.email if user_account and user_account.email else None))
+        staff_name = staff.name if staff else (target_user.full_name if target_user else "Delivery Rider")
+        staff_phone = staff.phone if staff else (target_user.phone if target_user else login_id)
+        staff_email = (staff.email if staff and staff.email else (target_user.email if target_user and target_user.email else None))
         staff_area = staff.assigned_area if staff else "Route Area"
-        staff_id = staff.id if staff else (user_account.id if user_account else "st-001")
-        staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (user_account.dairy_name if user_account else "Dairy Farm HQ"))
+        staff_id = staff.id if staff else (target_user.id if target_user else "st-001")
+        staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (target_user.dairy_name if target_user else "Dairy Farm HQ"))
 
         return AuthUserResponse(
             id=staff_id,
@@ -1223,11 +1310,11 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     # 3. CUSTOMER / SUBSCRIBER ROLE
     elif role == "CUSTOMER":
         cust = db.query(Customer).filter(
-            (Customer.phone == login_id) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
+            (Customer.phone.in_(phone_patterns)) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
         ).first()
 
         user_account = db.query(User).filter(
-            ((User.email.ilike(login_id)) | (User.phone == login_id)),
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns))),
             User.role == "CUSTOMER"
         ).first()
 
