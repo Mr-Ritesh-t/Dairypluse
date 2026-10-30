@@ -19,6 +19,7 @@ import {
   modifySubscriptionQuantityApi,
   scheduleExtraMilkApi,
 } from '@/lib/api';
+import { useDairyPulse } from '@/context/DairyPulseContext';
 
 interface FlexibleSubscriptionModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function FlexibleSubscriptionModal({
   initialTab = 'SKIP',
   onSuccess,
 }: FlexibleSubscriptionModalProps) {
+  const { products } = useDairyPulse();
   const [activeTab, setActiveTab] = useState<'SKIP' | 'QUANTITY' | 'EXTRA'>(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -360,10 +362,20 @@ export function FlexibleSubscriptionModal({
                   onChange={(e) => setExtraVariant(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
                 >
-                  <option value="Cow Milk">Cow Milk</option>
-                  <option value="Buffalo Milk">Buffalo Milk</option>
-                  <option value="Toned Milk">Toned Milk</option>
-                  <option value="A2 Desi Cow Milk">A2 Desi Cow</option>
+                  {products && products.length > 0 ? (
+                    products.map((p) => (
+                      <option key={p.id || p.variant} value={p.variant}>
+                        {p.name} ({p.variant})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Cow Milk">Cow Milk</option>
+                      <option value="Buffalo Milk">Buffalo Milk</option>
+                      <option value="Toned Milk">Toned Milk</option>
+                      <option value="A2 Desi Cow Milk">A2 Desi Cow</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>

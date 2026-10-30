@@ -19,6 +19,7 @@ import {
   UserCheck,
   Building2,
   MapPin,
+  Layers,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -104,6 +105,13 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
               >
                 <Milk className="w-4 h-4 text-emerald-600" />
                 <span>Add Milk Stock</span>
+              </button>
+              <button
+                onClick={() => openModal('addVariety')}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 text-left transition"
+              >
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <span>Add Milk Variety</span>
               </button>
               <button
                 onClick={() => openModal('addCustomer')}

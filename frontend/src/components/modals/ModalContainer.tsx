@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass } from 'lucide-react';
+import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { MilkVariant } from '@/types';
@@ -11,6 +11,7 @@ export function ModalContainer() {
   const {
     activeModal,
     closeModal,
+    openModal,
     addStockReceipt,
     recordWastage,
     addCustomer,
@@ -20,15 +21,27 @@ export function ModalContainer() {
     customers,
     dairies,
     updateDairy,
+    products,
+    addProduct,
   } = useDairyPulse();
   const { user, updateUser } = useAuth();
 
   // Add Stock Form State
-  const [stockVariant, setStockVariant] = useState<MilkVariant>('Cow Milk');
+  const [stockVariant, setStockVariant] = useState<MilkVariant>(products[0]?.variant || '');
   const [stockQty, setStockQty] = useState('100');
   const [supplier, setSupplier] = useState('');
-  const [rate, setRate] = useState('48');
+  const [rate, setRate] = useState(products[0]?.costPrice ? products[0].costPrice.toString() : '48');
   const [stockNotes, setStockNotes] = useState('FAT 4.2%, SNF 8.6% tested ok');
+
+  // Add Variety Form State
+  const [newVarName, setNewVarName] = useState('');
+  const [newVarVariant, setNewVarVariant] = useState('');
+  const [newVarFat, setNewVarFat] = useState('4.2');
+  const [newVarSnf, setNewVarSnf] = useState('8.5');
+  const [newVarCostPrice, setNewVarCostPrice] = useState('48');
+  const [newVarSellingPrice, setNewVarSellingPrice] = useState('62');
+  const [newVarThreshold, setNewVarThreshold] = useState('100');
+  const [isAddingVar, setIsAddingVar] = useState(false);
 
   // Add Customer Form State
   const [custName, setCustName] = useState('');
@@ -77,6 +90,26 @@ export function ModalContainer() {
   const [profileDairyLat, setProfileDairyLat] = useState<number>(18.5089);
   const [profileDairyLng, setProfileDairyLng] = useState<number>(73.9259);
   const [isSavingDairy, setIsSavingDairy] = useState(false);
+
+  useEffect(() => {
+    if (products && products.length > 0) {
+      if (!stockVariant || !products.some((p) => p.variant === stockVariant)) {
+        setStockVariant(products[0].variant);
+        if (products[0].costPrice) {
+          setRate(products[0].costPrice.toString());
+        }
+      }
+      if (!orderVariant || !products.some((p) => p.variant === orderVariant)) {
+        setOrderVariant(products[0].variant);
+        if (products[0].sellingPrice) {
+          setOrderRate(products[0].sellingPrice.toString());
+        }
+      }
+      if (!wastageVariant || !products.some((p) => p.variant === wastageVariant)) {
+        setWastageVariant(products[0].variant);
+      }
+    }
+  }, [products]);
 
   useEffect(() => {
     if (activeModal === 'dairyProfile') {
@@ -135,6 +168,11 @@ export function ModalContainer() {
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-3">
+            {activeModal === 'addVariety' && (
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <Layers className="w-5 h-5" />
+              </div>
+            )}
             {activeModal === 'addStock' && (
               <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <Milk className="w-5 h-5" />
@@ -172,6 +210,7 @@ export function ModalContainer() {
             )}
             <div>
               <h3 className="font-bold text-slate-900 text-base">
+                {activeModal === 'addVariety' && 'Add New Milk Variety'}
                 {activeModal === 'addStock' && 'Add Milk Stock Intake'}
                 {activeModal === 'addCustomer' && 'Register New Customer'}
                 {activeModal === 'generateBill' && 'Generate Invoice / Bill'}
@@ -181,6 +220,7 @@ export function ModalContainer() {
                 {activeModal === 'dairyProfile' && 'Dairy Farm Profile & Plant Location'}
               </h3>
               <p className="text-xs text-slate-500">
+                {activeModal === 'addVariety' && 'Configure custom milk variety, FAT/SNF specifications, and pricing'}
                 {activeModal === 'addStock' && 'Record incoming bulk milk cans or tanker supply'}
                 {activeModal === 'addCustomer' && 'Add household subscriber or commercial dairy buyer'}
                 {activeModal === 'generateBill' && 'Create cycle invoice linked to client ledger'}
@@ -203,85 +243,278 @@ export function ModalContainer() {
         <div className="p-6 overflow-y-auto">
           {/* Add Stock Form */}
           {activeModal === 'addStock' && (
+            products.length === 0 ? (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shadow-xs">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">No Milk Varieties Added Yet</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 leading-relaxed">
+                    You haven't added any milk varieties to your inventory. Please create a milk variety first to record incoming stock.
+                  </p>
+                </div>
+                <div className="pt-2 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openModal('addVariety')}
+                    className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add Milk Variety</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addStockReceipt(stockVariant, parseFloat(stockQty) || 0, supplier, parseFloat(rate) || 0, stockNotes);
+                  closeModal();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">Milk Variant</label>
+                    <button
+                      type="button"
+                      onClick={() => openModal('addVariety')}
+                      className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Variety</span>
+                    </button>
+                  </div>
+                  <select
+                    value={stockVariant}
+                    onChange={(e) => {
+                      const selected = e.target.value as MilkVariant;
+                      setStockVariant(selected);
+                      const matched = products.find((p) => p.variant === selected);
+                      if (matched?.costPrice) {
+                        setRate(matched.costPrice.toString());
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
+                    required
+                  >
+                    {products.map((p) => (
+                      <option key={p.id || p.variant} value={p.variant}>
+                        {p.name} ({p.variant}) • {p.fatContent}% FAT{p.snfContent ? ` • ${p.snfContent}% SNF` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Quantity (Liters)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      required
+                      value={stockQty}
+                      onChange={(e) => setStockQty(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Purchase Rate (₹/L)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      required
+                      value={rate}
+                      onChange={(e) => setRate(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Supplier / Dairy Co-Op</label>
+                  <input
+                    type="text"
+                    required
+                    value={supplier}
+                    onChange={(e) => setSupplier(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. Sahyadri Farmers Co-Op"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Batch Notes & Quality Specs</label>
+                  <input
+                    type="text"
+                    value={stockNotes}
+                    onChange={(e) => setStockNotes(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
+                    placeholder="FAT %, SNF %, temperature check"
+                  />
+                </div>
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer"
+                  >
+                    Confirm Stock Intake
+                  </button>
+                </div>
+              </form>
+            )
+          )}
+
+          {/* Add Variety Form */}
+          {activeModal === 'addVariety' && (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                addStockReceipt(stockVariant, parseFloat(stockQty) || 0, supplier, parseFloat(rate) || 0, stockNotes);
-                closeModal();
+                if (!newVarName.trim()) return;
+                setIsAddingVar(true);
+                const tag = newVarVariant.trim() || newVarName.trim();
+                const sp = parseFloat(newVarSellingPrice) || 60;
+                const cp = parseFloat(newVarCostPrice) || 45;
+                const fat = parseFloat(newVarFat) || 4.2;
+                const snf = parseFloat(newVarSnf) || 8.5;
+                const threshold = parseFloat(newVarThreshold) || 100;
+
+                await addProduct({
+                  name: newVarName.trim(),
+                  variant: tag,
+                  unit: 'Liter',
+                  fatContent: fat,
+                  snfContent: snf,
+                  sellingPrice: sp,
+                  costPrice: cp,
+                  availableStock: 0,
+                  lowStockThreshold: threshold,
+                  status: 'In Stock',
+                });
+
+                setIsAddingVar(false);
+                setStockVariant(tag);
+                setRate(cp.toString());
+                setNewVarName('');
+                setNewVarVariant('');
+                openModal('addStock');
               }}
               className="space-y-4"
             >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Milk Variant</label>
-                <select
-                  value={stockVariant}
-                  onChange={(e) => setStockVariant(e.target.value as MilkVariant)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="Cow Milk">Cow Milk (Standard 4.2% FAT)</option>
-                  <option value="Buffalo Milk">Buffalo Milk (Rich 7.0% FAT)</option>
-                  <option value="Toned Milk">Toned Milk (3.0% FAT)</option>
-                  <option value="A2 Desi Cow Milk">A2 Desi Cow Milk (Gir Cow Organic)</option>
-                </select>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Quantity (Liters)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Variety Name</label>
                   <input
-                    type="number"
-                    step="0.5"
+                    type="text"
                     required
-                    value={stockQty}
-                    onChange={(e) => setStockQty(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-semibold"
+                    value={newVarName}
+                    onChange={(e) => {
+                      setNewVarName(e.target.value);
+                      if (!newVarVariant || newVarVariant === newVarName) {
+                        setNewVarVariant(e.target.value);
+                      }
+                    }}
+                    placeholder="e.g. Pure Desi Cow Milk"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Purchase Rate (₹/L)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Variant Code / Short Name</label>
                   <input
-                    type="number"
-                    step="0.5"
+                    type="text"
                     required
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
+                    value={newVarVariant}
+                    onChange={(e) => setNewVarVariant(e.target.value)}
+                    placeholder="e.g. Desi Cow Milk"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Supplier / Dairy Co-Op</label>
-                <input
-                  type="text"
-                  required
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
-                  placeholder="e.g. Sahyadri Farmers Co-Op"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">FAT Content (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="15"
+                    required
+                    value={newVarFat}
+                    onChange={(e) => setNewVarFat(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">SNF Content (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="15"
+                    required
+                    value={newVarSnf}
+                    onChange={(e) => setNewVarSnf(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Batch Notes & Quality Specs</label>
-                <input
-                  type="text"
-                  value={stockNotes}
-                  onChange={(e) => setStockNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
-                  placeholder="FAT %, SNF %, temperature check"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Procurement Cost (₹/L)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    required
+                    value={newVarCostPrice}
+                    onChange={(e) => setNewVarCostPrice(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Selling Rate (₹/L)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    required
+                    value={newVarSellingPrice}
+                    onChange={(e) => setNewVarSellingPrice(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800"
+                  />
+                </div>
               </div>
+
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                  onClick={() => openModal('addStock')}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
+                  disabled={isAddingVar}
+                  className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
-                  Record Milk Intake
+                  {isAddingVar ? 'Saving Variety...' : 'Save Variety & Continue'}
                 </button>
               </div>
             </form>
@@ -694,13 +927,26 @@ export function ModalContainer() {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Milk Variant</label>
                   <select
                     value={orderVariant}
-                    onChange={(e) => setOrderVariant(e.target.value as MilkVariant)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500"
+                    onChange={(e) => {
+                      const val = e.target.value as MilkVariant;
+                      setOrderVariant(val);
+                      const matched = products.find((p) => p.variant === val);
+                      if (matched?.sellingPrice) {
+                        setOrderRate(matched.sellingPrice.toString());
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 font-medium text-slate-800"
+                    required
                   >
-                    <option value="Cow Milk">Cow Milk</option>
-                    <option value="Buffalo Milk">Buffalo Milk</option>
-                    <option value="Toned Milk">Toned Milk</option>
-                    <option value="A2 Desi Cow Milk">A2 Desi Cow Milk</option>
+                    {products && products.length > 0 ? (
+                      products.map((p) => (
+                        <option key={p.id || p.variant} value={p.variant}>
+                          {p.name} ({p.variant})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">No varieties available</option>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -769,12 +1015,18 @@ export function ModalContainer() {
                 <select
                   value={wastageVariant}
                   onChange={(e) => setWastageVariant(e.target.value as MilkVariant)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 font-medium text-slate-800"
+                  required
                 >
-                  <option value="Cow Milk">Cow Milk</option>
-                  <option value="Buffalo Milk">Buffalo Milk</option>
-                  <option value="Toned Milk">Toned Milk</option>
-                  <option value="A2 Desi Cow Milk">A2 Desi Cow Milk</option>
+                  {products && products.length > 0 ? (
+                    products.map((p) => (
+                      <option key={p.id || p.variant} value={p.variant}>
+                        {p.name} ({p.variant}) • {p.availableStock} L in stock
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No varieties available</option>
+                  )}
                 </select>
               </div>
 

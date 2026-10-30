@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Plus,
@@ -18,7 +18,7 @@ import { MilkVariant, Subscription } from '@/types';
 import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
 
 export default function HouseholdSubscriptionsPage() {
-  const { subscriptions, toggleSubscriptionPause, addSubscription, customers } = useDairyPulse();
+  const { subscriptions, toggleSubscriptionPause, addSubscription, customers, products } = useDairyPulse();
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'PAUSED'>('ALL');
   const [search, setSearch] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -26,9 +26,15 @@ export default function HouseholdSubscriptionsPage() {
 
   // New Subscription state
   const [subCustomer, setSubCustomer] = useState(customers[1]?.id || '');
-  const [subVariant, setSubVariant] = useState<MilkVariant>('Cow Milk');
+  const [subVariant, setSubVariant] = useState<MilkVariant>(products[0]?.variant || 'Cow Milk');
   const [subQty, setSubQty] = useState('1.0');
   const [subSlot, setSubSlot] = useState<'Morning (6:00 AM - 7:30 AM)' | 'Evening (5:30 PM - 7:00 PM)' | 'Both'>('Morning (6:00 AM - 7:30 AM)');
+
+  useEffect(() => {
+    if (products && products.length > 0 && !products.some((p) => p.variant === subVariant)) {
+      setSubVariant(products[0].variant);
+    }
+  }, [products]);
 
   const activeCount = subscriptions.filter((s) => s.status === 'Active').length;
   const pausedCount = subscriptions.filter((s) => s.status === 'Paused').length;
@@ -114,7 +120,7 @@ export default function HouseholdSubscriptionsPage() {
                 quantityLiters: parseFloat(subQty) || 1.0,
                 timeSlot: subSlot,
                 frequency: 'Daily',
-                unitPrice: subVariant === 'Buffalo Milk' ? 78 : subVariant === 'A2 Desi Cow Milk' ? 95 : 62,
+                unitPrice: products.find((p) => p.variant === subVariant)?.sellingPrice || (subVariant === 'Buffalo Milk' ? 78 : subVariant === 'A2 Desi Cow Milk' ? 95 : 62),
                 startDate: new Date().toISOString().split('T')[0],
                 status: 'Active',
               });
@@ -143,12 +149,17 @@ export default function HouseholdSubscriptionsPage() {
               <select
                 value={subVariant}
                 onChange={(e) => setSubVariant(e.target.value as MilkVariant)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
               >
-                <option value="Cow Milk">Cow Milk (₹62/L)</option>
-                <option value="Buffalo Milk">Buffalo Milk (₹78/L)</option>
-                <option value="Toned Milk">Toned Milk (₹54/L)</option>
-                <option value="A2 Desi Cow Milk">A2 Desi Cow Milk (₹95/L)</option>
+                {products && products.length > 0 ? (
+                  products.map((p) => (
+                    <option key={p.id || p.variant} value={p.variant}>
+                      {p.name} ({p.variant}) — ₹{p.sellingPrice}/L
+                    </option>
+                  ))
+                ) : (
+                  <option value="Cow Milk">No varieties added yet</option>
+                )}
               </select>
             </div>
             <div>

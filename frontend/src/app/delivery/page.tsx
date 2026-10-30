@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Truck,
   MapPin,
@@ -51,6 +51,7 @@ export default function DeliveryManagementPage() {
     updateDeliveryAddress,
     generateDailyDeliveries,
     dairies,
+    products,
   } = useDairyPulse();
 
   // Filters
@@ -121,6 +122,12 @@ export default function DeliveryManagementPage() {
   // Form State: Single Reassign
   const [targetRider, setTargetRider] = useState('');
   const [targetSlot, setTargetSlot] = useState('');
+
+  useEffect(() => {
+    if (products && products.length > 0 && !products.some((p) => p.variant === newVariant)) {
+      setNewVariant(products[0].variant);
+    }
+  }, [products]);
 
   // Active Delivery Riders
   const deliveryRiders = staff.filter((s) => s.role === 'Delivery Rider');
@@ -1170,10 +1177,15 @@ export default function DeliveryManagementPage() {
                     onChange={(e) => setNewVariant(e.target.value)}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="Cow Milk">Cow Milk</option>
-                    <option value="Buffalo Milk">Buffalo Milk</option>
-                    <option value="Toned Milk">Toned Milk</option>
-                    <option value="A2 Desi Cow Milk">A2 Desi Cow Milk</option>
+                    {products && products.length > 0 ? (
+                      products.map((p) => (
+                        <option key={p.id || p.variant} value={p.variant}>
+                          {p.name} ({p.variant})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="Cow Milk">No varieties added yet</option>
+                    )}
                   </select>
                 </div>
                 <div>

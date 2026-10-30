@@ -248,8 +248,28 @@ export default function MilkInventoryPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {products.map((p) => {
+        {products.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Milk className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-800">No Milk Varieties Configured</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                Add your first milk variety (e.g. Cow Milk, Buffalo Milk) to manage inventory stock, pricing, and intake.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAddVarietyOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add Milk Variety</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {products.map((p) => {
             const percentage = Math.min(100, Math.round((p.availableStock / 2000) * 100));
             return (
               <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5 hover:border-slate-300 transition">
@@ -331,6 +351,7 @@ export default function MilkInventoryPage() {
             );
           })}
         </div>
+        )}
       </section>
 
       {/* Movement Ledger Table */}

@@ -136,60 +136,7 @@ interface DairyPulseContextType {
   generateDailyDeliveries: (deliveryDate?: string, slot?: string) => Promise<{ success: boolean; created_count: number; skipped_duplicates: number; total_stops: number } | null>;
 }
 
-const initialProducts: Product[] = [
-  {
-    id: 'p1',
-    name: 'Fresh Cow Milk',
-    variant: 'Cow Milk',
-    unit: 'Liter',
-    fatContent: 4.2,
-    snfContent: 8.5,
-    sellingPrice: 62,
-    costPrice: 48,
-    availableStock: 0,
-    lowStockThreshold: 100,
-    status: 'Out of Stock',
-  },
-  {
-    id: 'p2',
-    name: 'Pure Buffalo Milk',
-    variant: 'Buffalo Milk',
-    unit: 'Liter',
-    fatContent: 7.0,
-    snfContent: 9.0,
-    sellingPrice: 78,
-    costPrice: 60,
-    availableStock: 0,
-    lowStockThreshold: 100,
-    status: 'Out of Stock',
-  },
-  {
-    id: 'p3',
-    name: 'Homogenized Toned Milk',
-    variant: 'Toned Milk',
-    unit: 'Liter',
-    fatContent: 3.0,
-    snfContent: 8.5,
-    sellingPrice: 54,
-    costPrice: 42,
-    availableStock: 0,
-    lowStockThreshold: 100,
-    status: 'Out of Stock',
-  },
-  {
-    id: 'p4',
-    name: 'A2 Gir Cow Organic Milk',
-    variant: 'A2 Desi Cow Milk',
-    unit: 'Liter',
-    fatContent: 4.5,
-    snfContent: 8.8,
-    sellingPrice: 95,
-    costPrice: 70,
-    availableStock: 0,
-    lowStockThreshold: 50,
-    status: 'Out of Stock',
-  },
-];
+const initialProducts: Product[] = [];
 
 const initialMovements: InventoryMovement[] = [];
 
@@ -842,6 +789,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     const res = await postProductApi(prodData);
     if (res && res.id) {
       newProduct.id = res.id;
+      setProducts((prev) => prev.map((p) => (p.variant === newProduct.variant ? { ...p, id: res.id } : p)));
       return res as Product;
     }
     return newProduct;

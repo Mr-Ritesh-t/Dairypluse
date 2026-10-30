@@ -30,7 +30,7 @@ import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle, loginWithPhoneOtp, verifyPhoneOtp } = useAuth();
-  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies } = useDairyPulse();
+  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products } = useDairyPulse();
 
   // Tab: 'signin' | 'customer' | 'dairy'
   const [activeTab, setActiveTab] = useState<'signin' | 'customer' | 'dairy'>('signin');
@@ -273,7 +273,7 @@ export default function LoginPage() {
         quantityLiters: parseFloat(custQuantity) || 1.0,
         timeSlot: custSlot,
         frequency: 'Daily',
-        unitPrice: custVariant === 'A2 Desi Cow Milk' ? 85 : custVariant === 'Buffalo Milk' ? 70 : 62,
+        unitPrice: products.find((p) => p.variant === custVariant)?.sellingPrice || (custVariant === 'A2 Desi Cow Milk' ? 85 : custVariant === 'Buffalo Milk' ? 70 : 62),
         startDate: new Date().toISOString().split('T')[0],
         status: 'Active',
       });
@@ -1118,10 +1118,20 @@ export default function LoginPage() {
                             onChange={(e) => setCustVariant(e.target.value as MilkVariant)}
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
                           >
-                            <option value="Cow Milk">Cow Milk (₹62/L)</option>
-                            <option value="Buffalo Milk">Buffalo Milk (₹70/L)</option>
-                            <option value="Toned Milk">Toned Milk (₹54/L)</option>
-                            <option value="A2 Desi Cow Milk">A2 Desi Cow Milk (₹85/L)</option>
+                            {products && products.length > 0 ? (
+                              products.map((p) => (
+                                <option key={p.id || p.variant} value={p.variant}>
+                                  {p.name} ({p.variant}) (₹{p.sellingPrice}/L)
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value="Cow Milk">Cow Milk (₹62/L)</option>
+                                <option value="Buffalo Milk">Buffalo Milk (₹70/L)</option>
+                                <option value="Toned Milk">Toned Milk (₹54/L)</option>
+                                <option value="A2 Desi Cow Milk">A2 Desi Cow Milk (₹85/L)</option>
+                              </>
+                            )}
                           </select>
                         </div>
                       </div>
