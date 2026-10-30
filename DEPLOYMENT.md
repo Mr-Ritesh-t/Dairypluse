@@ -61,10 +61,10 @@ python seed_supabase.py
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
    - **Plan**: `Free`
-5. Click **Advanced** and add the following **Environment Variables**:
+5. Under **Environment Variables**, add:
    | Key | Value | Notes |
    | :--- | :--- | :--- |
-   | `DATABASE_URL` | `postgresql://postgres.[REF]:[PASS]...` | Your Supabase connection URI from Step 1 |
+   | `DATABASE_URL` | `postgresql://postgres.vgpflayyocspsrakuvvs:riteshtayade68@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require` | Supabase IPv4 Session Pooler (Render compatible) |
    | `SECRET_KEY` | `dairypulse-production-secret-key-2026` | Any secure random string |
    | `ALLOWED_ORIGINS` | `https://*.vercel.app,http://localhost:3000` | Allows your Vercel frontend |
    | `TIMEZONE` | `Asia/Kolkata` | Standard farm operating timezone |
