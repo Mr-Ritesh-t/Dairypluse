@@ -1191,7 +1191,7 @@ def update_dairy(dairy_id: str, dairy_update: DairyUpdate, db: Session = Depends
 # ----------------- AUTHENTICATION -----------------
 @api_router.post("/auth/login", response_model=AuthUserResponse)
 def login(login_req: LoginRequest, db: Session = Depends(get_db)):
-    role = (login_req.role or "OWNER").upper()
+    requested_role = (login_req.role or "OWNER").upper()
     login_id = (login_req.login_id or "").strip()
 
     if not login_id:
@@ -1199,15 +1199,39 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
 
     phone_patterns = get_phone_search_patterns(login_id)
 
-    # 1. OWNER / ADMIN ROLE
-    if role in ["OWNER", "ADMIN"]:
-        user = db.query(User).filter(
-            (User.email.ilike(login_id)) | (User.phone.in_(phone_patterns))
-        ).first()
+    # Cross-role lookup to automatically detect user's actual role
+    user_any = db.query(User).filter(
+        (User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))
+    ).first()
 
-        matched_dairy = db.query(Dairy).filter(
-            (Dairy.email.ilike(login_id)) | (Dairy.phone.in_(phone_patterns)) | (Dairy.owner_name.ilike(f"%{login_id}%"))
-        ).first()
+    staff_any = db.query(Staff).filter(
+        (Staff.phone.in_(phone_patterns)) | (Staff.email.ilike(login_id)) | (Staff.name.ilike(f"%{login_id}%"))
+    ).first()
+
+    dairy_any = db.query(Dairy).filter(
+        (Dairy.email.ilike(login_id)) | (Dairy.phone.in_(phone_patterns)) | (Dairy.owner_name.ilike(f"%{login_id}%"))
+    ).first()
+
+    customer_any = db.query(Customer).filter(
+        (Customer.phone.in_(phone_patterns)) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
+    ).first()
+
+    # Determine effective role
+    if user_any and user_any.role:
+        effective_role = user_any.role.upper()
+    elif staff_any:
+        effective_role = "DELIVERY"
+    elif dairy_any:
+        effective_role = "OWNER"
+    elif customer_any:
+        effective_role = "CUSTOMER"
+    else:
+        effective_role = requested_role
+
+    # 1. OWNER / ADMIN ROLE
+    if effective_role in ["OWNER", "ADMIN"]:
+        user = user_any if (user_any and user_any.role in ["OWNER", "ADMIN"]) else None
+        matched_dairy = dairy_any
 
         if not user and not matched_dairy:
             raise HTTPException(
@@ -1239,17 +1263,9 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         )
 
     # 2. DELIVERY RIDER / STAFF ROLE
-    elif role in ["DELIVERY", "STAFF"]:
-        user_account = db.query(User).filter(
-            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
-            User.role.in_(["DELIVERY", "STAFF"])
-        ).first()
-
-        staff = db.query(Staff).filter(
-            (Staff.phone.in_(phone_patterns)) | 
-            (Staff.email.ilike(login_id)) | 
-            (Staff.name.ilike(f"%{login_id}%"))
-        ).first()
+    elif effective_role in ["DELIVERY", "STAFF"]:
+        user_account = user_any if (user_any and user_any.role in ["DELIVERY", "STAFF"]) else None
+        staff = staff_any
 
         if not user_account and not staff:
             raise HTTPException(
@@ -1308,15 +1324,9 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         )
 
     # 3. CUSTOMER / SUBSCRIBER ROLE
-    elif role == "CUSTOMER":
-        cust = db.query(Customer).filter(
-            (Customer.phone.in_(phone_patterns)) | (Customer.email.ilike(login_id)) | (Customer.name.ilike(f"%{login_id}%"))
-        ).first()
-
-        user_account = db.query(User).filter(
-            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns))),
-            User.role == "CUSTOMER"
-        ).first()
+    elif effective_role == "CUSTOMER":
+        cust = customer_any
+        user_account = user_any if (user_any and user_any.role == "CUSTOMER") else None
 
         if not cust and not user_account:
             raise HTTPException(

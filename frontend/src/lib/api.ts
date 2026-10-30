@@ -1,8 +1,21 @@
 import { DairyInfo, RouteInfo, RouteBuildPayload } from '@/types';
 
-// Robust normalization for Vercel -> Render deployments
-const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
-const API_BASE_URL = RAW_API_URL.endsWith('/api/v1') ? RAW_API_URL : `${RAW_API_URL}/api/v1`;
+// Robust normalization for Vercel -> Render deployments & local development
+function resolveApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const isLocalhost =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    const envUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    if (isLocalhost && (envUrl.includes('dairypulse-backend.onrender.com') || !envUrl)) {
+      return 'http://localhost:8000/api/v1';
+    }
+  }
+  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
+  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 const BACKEND_ROOT_URL = API_BASE_URL.replace(/\/api\/v1$/, '');
 
 // Health check

@@ -30,13 +30,14 @@ import {
   Check,
   BarChart3,
   UserPlus,
+  ExternalLink,
 } from 'lucide-react';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle, loginWithPhoneOtp, verifyPhoneOtp } = useAuth();
-  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products } = useDairyPulse();
+  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products, addStaff } = useDairyPulse();
 
   // Tab: 'signin' | 'customer' | 'dairy'
   const [activeTab, setActiveTab] = useState<'signin' | 'customer' | 'dairy'>('signin');
@@ -190,8 +191,9 @@ export default function LoginPage() {
       });
 
       if (res.success) {
+        const targetRole = res.user?.role || selectedRole;
         setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting...`);
-        redirectToRole(selectedRole);
+        redirectToRole(targetRole);
       } else {
         if (res.notFound) {
           setNotFoundPrompt(true);
@@ -677,6 +679,30 @@ export default function LoginPage() {
                   </div>
                 </div>
 
+                {/* Quick Hint for Delivery Rider */}
+                {selectedRole === 'DELIVERY' && (
+                  <div className="bg-blue-50/80 border border-blue-200/70 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between text-xs animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+                      <span className="text-blue-900 font-medium truncate text-[11px] sm:text-xs">
+                        Demo Rider: <strong className="font-mono text-blue-700">9876543210</strong> (pwd: <strong className="font-mono text-blue-700">rider123</strong>)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginId('9876543210');
+                        setPassword('rider123');
+                        setErrorMessage(null);
+                        setNotFoundPrompt(false);
+                      }}
+                      className="text-[11px] sm:text-xs font-bold text-blue-700 hover:text-blue-900 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs hover:bg-blue-100/50 transition cursor-pointer shrink-0"
+                    >
+                      Fill
+                    </button>
+                  </div>
+                )}
+
                 {/* Authentication Method Toggle */}
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
@@ -720,7 +746,7 @@ export default function LoginPage() {
                 {/* Email or Phone Number Input */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Email or Phone Number
+                    {selectedRole === 'DELIVERY' ? 'Rider Phone Number or Email' : 'Email or Phone Number'}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -734,7 +760,11 @@ export default function LoginPage() {
                         setLoginId(e.target.value);
                         setNotFoundPrompt(false);
                       }}
-                      placeholder="owner@dairypulse.in or +91 98765 43210"
+                      placeholder={
+                        selectedRole === 'DELIVERY'
+                          ? 'Enter 10-digit mobile number or email'
+                          : 'owner@dairypulse.in or +91 98765 43210'
+                      }
                       className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
                     />
                   </div>
@@ -882,9 +912,60 @@ export default function LoginPage() {
                       )}
 
                       {selectedRole === 'DELIVERY' && (
-                        <p className="text-[11px] text-amber-800">
-                          Delivery rider accounts are provisioned directly by dairy farm owners under the Staff section.
-                        </p>
+                        <div className="w-full space-y-2 pt-1">
+                          <p className="text-[11px] text-amber-800">
+                            No rider account found for &quot;{notFoundId}&quot;. You can auto-create this rider now or open the staff portal.
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setIsSubmitting(true);
+                                try {
+                                  const phoneVal = /\d{5,}/.test(notFoundId) ? notFoundId : '9876543210';
+                                  const emailVal = notFoundId.includes('@') ? notFoundId : undefined;
+                                  const riderName = notFoundId.includes('@') ? notFoundId.split('@')[0] : `Rider ${notFoundId.slice(-4)}`;
+                                  await addStaff({
+                                    name: riderName,
+                                    role: 'Delivery Rider',
+                                    phone: phoneVal,
+                                    email: emailVal,
+                                    password: password || 'rider123',
+                                    assignedArea: 'Main Delivery Route',
+                                    status: 'On Duty',
+                                    deliveriesToday: 0,
+                                    rating: 5.0,
+                                  });
+                                  setNotFoundPrompt(false);
+                                  setSuccessMessage('Rider created! Logging in now...');
+                                  const res = await login({
+                                    loginId: notFoundId,
+                                    password: password || 'rider123',
+                                    role: 'DELIVERY',
+                                  });
+                                  if (res.success) {
+                                    redirectToRole('DELIVERY');
+                                  }
+                                } catch (e: any) {
+                                  setErrorMessage(e.message || 'Auto-creation failed.');
+                                } finally {
+                                  setIsSubmitting(false);
+                                }
+                              }}
+                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
+                            >
+                              <span>Auto-Create & Sign In as Rider</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                            <a
+                              href="/staff"
+                              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition flex items-center gap-1 text-xs"
+                            >
+                              <span>Staff Portal</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
