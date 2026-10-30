@@ -283,6 +283,7 @@ export async function patchCustomerApi(
     address?: string;
     area?: string;
     route?: string;
+    dairyName?: string;
     latitude?: number;
     longitude?: number;
     preferredTime?: string;
@@ -296,6 +297,7 @@ export async function patchCustomerApi(
     if (data.address !== undefined) payload.address = data.address;
     if (data.area !== undefined) payload.area = data.area;
     if (data.route !== undefined) payload.route = data.route;
+    if (data.dairyName !== undefined) payload.dairy_name = data.dairyName;
     if (data.latitude !== undefined) payload.latitude = data.latitude;
     if (data.longitude !== undefined) payload.longitude = data.longitude;
     if (data.preferredTime !== undefined) payload.preferred_time = data.preferredTime;
@@ -1667,21 +1669,34 @@ export async function getDairiesApi(): Promise<DairyInfo[]> {
     const res = await fetch(`${API_BASE_URL}/dairies`, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch dairies');
     const data = await res.json();
-    const mapped = data.map((d: any) => ({
+    const mapped: DairyInfo[] = data.map((d: any) => ({
       id: d.id,
       name: d.name,
-      ownerName: d.owner_name,
+      ownerName: d.owner_name || d.ownerName || 'Farm Owner',
       email: d.email,
       phone: d.phone,
-      city: d.city,
+      city: d.city || 'Pune',
       address: d.address,
       latitude: d.latitude,
       longitude: d.longitude,
-      rating: d.rating,
-      createdAt: d.created_at,
+      rating: d.rating || 4.9,
+      createdAt: d.created_at || d.createdAt,
     }));
-    if (typeof window !== 'undefined' && mapped.length > 0) {
+
+    // Merge with any user-registered dairies stored in localStorage
+    if (typeof window !== 'undefined') {
       try {
+        const cached = localStorage.getItem('dairypulse_registered_dairies');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              if (!mapped.some((m) => m.name.toLowerCase() === item.name.toLowerCase())) {
+                mapped.unshift(item);
+              }
+            }
+          }
+        }
         localStorage.setItem('dairypulse_registered_dairies', JSON.stringify(mapped));
       } catch (e) {}
     }

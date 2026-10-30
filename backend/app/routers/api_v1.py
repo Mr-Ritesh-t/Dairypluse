@@ -255,8 +255,14 @@ def update_customer(customer_id: str, cust_data: CustomerUpdate, db: Session = D
         customer.longitude = cust_data.longitude
     if cust_data.preferred_time is not None:
         customer.preferred_time = cust_data.preferred_time
+    if cust_data.dairy_name is not None:
+        customer.dairy_name = cust_data.dairy_name
+        # Cascade supplying dairy change to active subscriptions
+        subs = db.query(Subscription).filter(Subscription.customer_id == customer.id).all()
+        for s in subs:
+            s.dairy_name = cust_data.dairy_name
 
-    # Also sync updated location coordinates & address to any pending deliveries
+    # Also sync updated location coordinates & address & dairy to any pending deliveries
     pending_deliveries = db.query(DeliveryTask).filter(
         (DeliveryTask.customer_name == customer.name) | (DeliveryTask.customer_phone == customer.phone),
         DeliveryTask.status != "Delivered"
@@ -270,6 +276,8 @@ def update_customer(customer_id: str, cust_data: CustomerUpdate, db: Session = D
             task.latitude = cust_data.latitude
         if cust_data.longitude is not None:
             task.longitude = cust_data.longitude
+        if cust_data.dairy_name is not None:
+            task.dairy_name = cust_data.dairy_name
 
     db.commit()
     db.refresh(customer)

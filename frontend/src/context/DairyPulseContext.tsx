@@ -505,6 +505,14 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         })
       );
     }
+    if (updateData.dairyName) {
+      setSubscriptions((prev) =>
+        prev.map((s) => (s.customerId === id || s.customerName === updateData.name ? { ...s, dairyName: updateData.dairyName } : s))
+      );
+      setDeliveries((prev) =>
+        prev.map((d) => (d.customerId === id || d.customerName === updateData.name ? { ...d, dairyName: updateData.dairyName } : d))
+      );
+    }
     const res = await patchCustomerApi(id, {
       name: updateData.name,
       phone: updateData.phone,
@@ -512,6 +520,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       address: updateData.address,
       area: updateData.area,
       route: updateData.route,
+      dairyName: updateData.dairyName,
       latitude: updateData.latitude,
       longitude: updateData.longitude,
       preferredTime: updateData.preferredTime,

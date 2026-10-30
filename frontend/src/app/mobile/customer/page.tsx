@@ -27,6 +27,9 @@ import {
   Compass,
   Star,
   ThumbsUp,
+  Building2,
+  Repeat,
+  Search,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -36,9 +39,12 @@ import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
 export default function CustomerSelfServiceApp() {
   const {
+    allCustomers,
+    customers,
+    dairies,
+    refreshDairies,
     subscriptions,
     toggleSubscriptionPause,
-    customers,
     updateCustomer,
     deliveries,
     staff,
@@ -49,9 +55,10 @@ export default function CustomerSelfServiceApp() {
   } = useDairyPulse();
   const { user, logout, updateUser } = useAuth();
 
-  // Find current customer details from context
+  // Find current customer details from all customers or filtered customers
+  const customerList = allCustomers && allCustomers.length > 0 ? allCustomers : customers;
   const currentCustomer =
-    customers.find(
+    customerList.find(
       (c) =>
         (user?.customerId && c.id === user.customerId) ||
         c.id === user?.id ||
@@ -59,13 +66,14 @@ export default function CustomerSelfServiceApp() {
         (user?.email && c.email?.toLowerCase() === user.email.toLowerCase()) ||
         (user?.phone && c.phone === user.phone)
     ) ||
-    customers[0] || {
+    customerList[0] || {
       id: 'c1',
       name: user?.name || 'Priya Kulkarni',
       phone: user?.phone || '+91 94230 77812',
       email: user?.email || 'priya.kulkarni@gmail.com',
       address: 'Flat 402, Rohan Nilay, Baner Road',
       area: 'Baner',
+      dairyName: user?.dairyName || 'Amrut Dairy Farm',
       latitude: 18.5593,
       longitude: 73.7788,
       status: 'Active',
@@ -142,6 +150,50 @@ export default function CustomerSelfServiceApp() {
         (r.customerName.toLowerCase() === (currentCustomer.name || '').toLowerCase() ||
           (currentCustomer.id && r.customerId === currentCustomer.id)))
   );
+
+  // Supplying Dairy Resolution & Switch state
+  const currentDairyName =
+    currentCustomer.dairyName ||
+    user?.dairyName ||
+    (dairies.length > 0 ? dairies[0].name : 'DairyPulse Farm HQ');
+
+  const supplyingDairy =
+    dairies.find((d) => d.name.toLowerCase() === currentDairyName.toLowerCase()) ||
+    dairies[0] || {
+      id: 'd-current',
+      name: currentDairyName,
+      ownerName: 'DairyPulse Partner',
+      city: 'Pune',
+      rating: 4.9,
+    };
+
+  const [isChangeDairyOpen, setIsChangeDairyOpen] = useState(false);
+  const [dairySwitchSearch, setDairySwitchSearch] = useState('');
+  const [isSwitchingDairy, setIsSwitchingDairy] = useState(false);
+
+  const handleSwitchDairy = async (targetDairy: any) => {
+    if (targetDairy.name.toLowerCase() === currentDairyName.toLowerCase()) {
+      setIsChangeDairyOpen(false);
+      return;
+    }
+    setIsSwitchingDairy(true);
+    try {
+      const custId = currentCustomer.id || user?.customerId || 'c1';
+      await updateCustomer(custId, {
+        dairyName: targetDairy.name,
+      });
+      updateUser({
+        dairyName: targetDairy.name,
+      });
+      showToast(`Supplying farm changed to ${targetDairy.name}! Daily milk will now be delivered by ${targetDairy.name}.`);
+      setIsChangeDairyOpen(false);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to switch dairy farm. Please try again.');
+    } finally {
+      setIsSwitchingDairy(false);
+    }
+  };
 
   // Profile & Map Location Modal state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -280,6 +332,40 @@ export default function CustomerSelfServiceApp() {
         </div>
 
         <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-12">
+          {/* Supplying Dairy Farm Card with Switch Option */}
+          <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-3xl p-4 shadow-md border border-emerald-700/50 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white shrink-0">
+                <Building2 className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                  <span>Supplying Dairy Farm</span>
+                  <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-800/80 px-1.5 py-0.2 rounded text-emerald-200">
+                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                    {supplyingDairy.rating || 4.9}
+                  </span>
+                </div>
+                <h4 className="font-extrabold text-sm text-white truncate leading-tight mt-0.5">
+                  {supplyingDairy.name}
+                </h4>
+                <p className="text-[11px] text-emerald-200/90 truncate mt-0.5">
+                  Owner: {supplyingDairy.ownerName || (supplyingDairy as any).owner_name || 'Farm Partner'} • {supplyingDairy.city || 'Pune'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                refreshDairies();
+                setIsChangeDairyOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
+            >
+              <Repeat className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Change</span>
+            </button>
+          </div>
+
           {/* Active Subscription Card */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4">
             <div className="flex items-start justify-between">
@@ -792,6 +878,117 @@ export default function CustomerSelfServiceApp() {
             showToast(`⭐ Rating saved for ${assignedDriver.name}! Thank you!`);
           }}
         />
+
+        {/* SWITCH DAIRY MODAL */}
+        {isChangeDairyOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
+              <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-emerald-600" />
+                    <span>Change Supplying Dairy</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Choose which local dairy farm delivers your daily fresh milk.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsChangeDairyOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search bar */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={dairySwitchSearch}
+                  onChange={(e) => setDairySwitchSearch(e.target.value)}
+                  placeholder="Search dairy farm, owner, or city..."
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+              </div>
+
+              {/* Dairies List */}
+              <div className="space-y-2 overflow-y-auto flex-1 pr-1 max-h-72">
+                {dairies
+                  .filter((d) => {
+                    const q = dairySwitchSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    const dName = (d.name || '').toLowerCase();
+                    const dCity = (d.city || '').toLowerCase();
+                    const dOwner = (d.ownerName || (d as any).owner_name || '').toLowerCase();
+                    return dName.includes(q) || dCity.includes(q) || dOwner.includes(q);
+                  })
+                  .map((d) => {
+                    const isCurrent = d.name.toLowerCase() === currentDairyName.toLowerCase();
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => !isSwitchingDairy && handleSwitchDairy(d)}
+                        className={`p-3 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
+                          isCurrent
+                            ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                              isCurrent ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>{d.name}</span>
+                              {isCurrent && (
+                                <span className="text-[9px] font-extrabold uppercase bg-emerald-600 text-white px-1.5 py-0.2 rounded-md">
+                                  Current Farm
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                              Owner: {d.ownerName || (d as any).owner_name || 'Farm Owner'} • {d.city || 'Pune'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            {d.rating || 4.9}
+                          </span>
+                          {isCurrent ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200">
+                              Select
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-slate-400 text-[11px]">{dairies.length} farms registered</span>
+                <button
+                  type="button"
+                  onClick={() => setIsChangeDairyOpen(false)}
+                  className="py-1.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

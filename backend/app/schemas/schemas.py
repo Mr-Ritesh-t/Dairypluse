@@ -75,6 +75,7 @@ class CustomerUpdate(BaseModel):
     address: Optional[str] = None
     area: Optional[str] = None
     route: Optional[str] = None
+    dairy_name: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     preferred_time: Optional[str] = None

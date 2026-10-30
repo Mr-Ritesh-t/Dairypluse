@@ -58,6 +58,10 @@ export default function LoginPage() {
 
   // Keep selectedDairyName synchronized with available dairies list
   React.useEffect(() => {
+    refreshDairies();
+  }, []);
+
+  React.useEffect(() => {
     if (dairies && dairies.length > 0) {
       if (!selectedDairyName || !dairies.some((d) => d.name.toLowerCase() === selectedDairyName.toLowerCase())) {
         setSelectedDairyName(dairies[0].name);
@@ -167,6 +171,7 @@ export default function LoginPage() {
       setErrorMessage('Please provide your Full Name and Mobile Phone.');
       return;
     }
+    refreshDairies();
     setCustomerStep(2);
   };
 
@@ -659,9 +664,18 @@ export default function LoginPage() {
                     <div className="space-y-3.5">
                       <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>Select the dairy farm to deliver your daily fresh milk:</span>
-                        <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
-                          {dairies.length} available
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => refreshDairies()}
+                            className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold underline cursor-pointer"
+                          >
+                            Refresh
+                          </button>
+                          <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
+                            {dairies.length} available
+                          </span>
+                        </div>
                       </div>
 
                       {/* Search / Filter dairies */}
@@ -678,12 +692,14 @@ export default function LoginPage() {
 
                       <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                         {dairies
-                          .filter((d) =>
-                            !dairySearch.trim() ||
-                            d.name.toLowerCase().includes(dairySearch.toLowerCase()) ||
-                            (d.city && d.city.toLowerCase().includes(dairySearch.toLowerCase())) ||
-                            (d.ownerName && d.ownerName.toLowerCase().includes(dairySearch.toLowerCase()))
-                          )
+                          .filter((d) => {
+                            const q = dairySearch.trim().toLowerCase();
+                            if (!q) return true;
+                            const dName = (d.name || '').toLowerCase();
+                            const dCity = (d.city || '').toLowerCase();
+                            const dOwner = (d.ownerName || (d as any).owner_name || '').toLowerCase();
+                            return dName.includes(q) || dCity.includes(q) || dOwner.includes(q);
+                          })
                           .map((d) => {
                             const isSelected = selectedDairyName.toLowerCase() === d.name.toLowerCase();
                             const isCreatedByUser = (dairySuccess && d.name.toLowerCase() === dairySuccess.name.toLowerCase()) || d.name.toLowerCase() === 'ritesh';
@@ -713,7 +729,7 @@ export default function LoginPage() {
                                       )}
                                     </div>
                                     <div className="text-[10px] text-slate-500">
-                                      Owner: {d.ownerName} • {d.city || 'Pune'}
+                                      Owner: {d.ownerName || (d as any).owner_name || 'Farm Owner'} • {d.city || 'Pune'}
                                     </div>
                                   </div>
                                 </div>
