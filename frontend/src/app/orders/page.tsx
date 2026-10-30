@@ -156,7 +156,9 @@ export default function ShopOrdersPage() {
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-xs font-medium text-slate-500">Total B2B Volume Today</p>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalVolume} L</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Bulk can dispatches</p>
+          <p className="text-[11px] text-emerald-600 font-medium mt-1">
+            {totalVolume > 0 ? 'Bulk can dispatches' : 'No bulk dispatches today'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -164,7 +166,9 @@ export default function ShopOrdersPage() {
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             ₹{totalRevenue.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Gross order value</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {totalRevenue > 0 ? 'Gross order value' : 'No commercial revenue yet'}
+          </p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
@@ -172,7 +176,9 @@ export default function ShopOrdersPage() {
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
             {pendingOrders} {pendingOrders === 1 ? 'Order' : 'Orders'}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Requires loading & route dispatch</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {pendingOrders > 0 ? 'Requires loading & route dispatch' : 'All orders fulfilled'}
+          </p>
         </div>
 
         <div
@@ -187,9 +193,11 @@ export default function ShopOrdersPage() {
             </span>
           </div>
           <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-purple-600">
-            {totalCommercialClients} {totalCommercialClients === 1 ? 'Client' : 'Clients'}
+            {totalCommercialClients} {totalCommercialClients === 1 ? 'Shop' : 'Shops'}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Bakeries, Halwais, Cafes</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {totalCommercialClients > 0 ? 'Bakeries, Halwais, Cafes' : 'No commercial shops yet'}
+          </p>
         </div>
       </section>
 
