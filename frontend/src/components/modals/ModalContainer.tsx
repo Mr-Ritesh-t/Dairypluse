@@ -130,8 +130,8 @@ export function ModalContainer() {
   if (!activeModal) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${activeModal === 'dairyProfile' ? 'max-w-2xl max-h-[92vh] flex flex-col' : 'max-w-lg'} overflow-hidden animate-in zoom-in-95 duration-150`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${activeModal === 'dairyProfile' ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150`}>
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-3">

@@ -59,7 +59,7 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Hero Welcome Banner (Premium Pastoral Operations Hub) */}
       <section
-        className="pastoral-banner rounded-3xl border border-emerald-100/90 shadow-xs relative px-6 sm:px-8 py-6 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between min-h-[175px] overflow-hidden gap-6"
+        className="pastoral-banner rounded-3xl border border-emerald-100/90 shadow-xs relative px-4 sm:px-8 py-5 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between min-h-[175px] overflow-hidden gap-5 sm:gap-6"
         data-purpose="hero-banner"
       >
         {/* Decorative Scenic Rolling Hills & Soft Morning Light */}
@@ -183,26 +183,26 @@ export default function DashboardPage() {
       </section>
 
       {/* Key Metric Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5" data-purpose="metrics-row">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" data-purpose="metrics-row">
         {/* Today's Sales */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <TrendingUp className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-slate-500">Today's Sales</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Today's Sales</p>
+              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
                   ₹{todaySales.toLocaleString()}
                 </span>
-                <span className="text-xs font-semibold text-emerald-600 flex items-center">
+                <span className="text-[10px] sm:text-xs font-semibold text-emerald-600">
                   Live
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
                 {shopOrders.length + subscriptions.length > 0
-                  ? `${shopOrders.length + subscriptions.length} active revenue streams`
+                  ? `${shopOrders.length + subscriptions.length} active streams`
                   : 'No orders logged today'}
               </p>
             </div>
@@ -210,22 +210,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Milk in Stock */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Droplets className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+              <Droplets className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-slate-500">Milk in Stock</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Milk in Stock</p>
+              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
                   {totalStockLitres.toLocaleString()} L
                 </span>
-                <span className={`text-xs font-semibold ${totalStockLitres > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {totalStockLitres > 0 ? 'Optimal' : 'Zero Stock'}
+                <span className={`text-[10px] sm:text-xs font-semibold ${totalStockLitres > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {totalStockLitres > 0 ? 'Optimal' : 'Zero'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
                 {totalStockLitres > 0 ? 'across active silos' : 'Awaiting milk intake'}
               </p>
             </div>
@@ -233,27 +233,27 @@ export default function DashboardPage() {
         </div>
 
         {/* Deliveries */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Truck className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+              <Truck className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-slate-500">Deliveries Today</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Deliveries Today</p>
+              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
                   {deliveredCount} / {totalDeliveries}
                 </span>
               </div>
-              <div className="mt-2.5">
-                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div className="mt-1.5 sm:mt-2.5">
+                <div className="w-full bg-slate-100 rounded-full h-1 sm:h-1.5 overflow-hidden">
                   <div
-                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
+                    className="bg-emerald-500 h-1 sm:h-1.5 rounded-full transition-all duration-300"
                     style={{ width: `${deliveryPercentage}%` }}
                   ></div>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">
-                  {totalDeliveries > 0 ? `${deliveryPercentage}% completed` : 'No runs scheduled'}
+                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                  {totalDeliveries > 0 ? `${deliveryPercentage}% done` : 'No runs'}
                 </p>
               </div>
             </div>
@@ -261,23 +261,23 @@ export default function DashboardPage() {
         </div>
 
         {/* Pending Payments */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Wallet className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+              <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-slate-500">Pending Dues</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Pending Dues</p>
+              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
                   ₹{pendingPayments.toLocaleString()}
                 </span>
-                <span className={`text-xs font-semibold ${pendingPayments > 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
-                  {pendingPayments > 0 ? 'Active' : 'All Clear'}
+                <span className={`text-[10px] sm:text-xs font-semibold ${pendingPayments > 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                  {pendingPayments > 0 ? 'Dues' : 'Clear'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                {invoices.filter((i) => i.status !== 'Paid').length} pending accounts
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
+                {invoices.filter((i) => i.status !== 'Paid').length} accounts
               </p>
             </div>
           </div>
@@ -488,63 +488,63 @@ export default function DashboardPage() {
       </section>
 
       {/* Bottom Quick Action Tiles (Stitch Exact UI) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2" data-purpose="quick-actions">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 pt-2" data-purpose="quick-actions">
         {/* Quick Action 1: Add Milk Stock */}
         <button
           onClick={() => openModal('addStock')}
-          className="flex items-center gap-3.5 p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Plus className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-snug">Add Milk Stock</h4>
-            <p className="text-xs text-emerald-100 font-normal">Record incoming milk batch</p>
+          <div className="min-w-0">
+            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Add Milk Stock</h4>
+            <p className="text-[10px] sm:text-xs text-emerald-100 font-normal truncate">Incoming batch</p>
           </div>
         </button>
 
         {/* Quick Action 2: Add Customer */}
         <button
           onClick={() => openModal('addCustomer')}
-          className="flex items-center gap-3.5 p-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <UserPlus className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-snug">Add Customer</h4>
-            <p className="text-xs text-blue-100 font-normal">Register household or shop</p>
+          <div className="min-w-0">
+            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Add Customer</h4>
+            <p className="text-[10px] sm:text-xs text-blue-100 font-normal truncate">New subscriber</p>
           </div>
         </button>
 
         {/* Quick Action 3: Generate Bill */}
         <button
           onClick={() => openModal('generateBill')}
-          className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#EA580C] hover:bg-[#C2410C] text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-[#EA580C] hover:bg-[#C2410C] text-white shadow-xs transition group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Receipt className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-snug">Generate Bill</h4>
-            <p className="text-xs text-orange-100 font-normal">Create customer invoice</p>
+          <div className="min-w-0">
+            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Generate Bill</h4>
+            <p className="text-[10px] sm:text-xs text-orange-100 font-normal truncate">Create invoice</p>
           </div>
         </button>
 
         {/* Quick Action 4: Assign Deliveries */}
         <a
           href="/delivery"
-          className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-xs transition group text-left cursor-pointer"
         >
-          <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Truck className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-snug">Assign Deliveries</h4>
-            <p className="text-xs text-purple-100 font-normal">Route dispatch planner</p>
+          <div className="min-w-0">
+            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Deliveries</h4>
+            <p className="text-[10px] sm:text-xs text-purple-100 font-normal truncate">Route runs</p>
           </div>
         </a>
       </section>

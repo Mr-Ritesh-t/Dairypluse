@@ -60,8 +60,8 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
             <Search className="w-4 h-4" />
           </div>
           <input
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition placeholder:text-slate-400"
-            placeholder="Search customers, milk orders, routes, or invoices..."
+            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition placeholder:text-slate-400"
+            placeholder="Search farm, orders, routes..."
             type="text"
           />
         </div>
@@ -71,6 +71,7 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Quick Actions Dropdown */}
         <div className="relative">
+          {/* Desktop full button */}
           <button
             onClick={() => setQuickActionOpen(!quickActionOpen)}
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-xs transition"
@@ -78,6 +79,15 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
             <Plus className="w-4 h-4" />
             <span>New Action</span>
             <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+          </button>
+
+          {/* Mobile compact (+) button */}
+          <button
+            onClick={() => setQuickActionOpen(!quickActionOpen)}
+            aria-label="New Action"
+            className="sm:hidden flex items-center justify-center w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition"
+          >
+            <Plus className="w-4 h-4" />
           </button>
 
           {quickActionOpen && (
@@ -137,7 +147,7 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
 
         {/* Active Dairy Selector / Switcher */}
         {dairies && dairies.length > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-xs font-semibold text-emerald-900 shadow-2xs">
+          <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-[11px] sm:text-xs font-semibold text-emerald-900 shadow-2xs">
             <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
             {dairies.length > 1 ? (
               <select
@@ -146,7 +156,7 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
                   const found = dairies.find((d) => d.name === e.target.value);
                   if (found) setActiveDairy(found);
                 }}
-                className="bg-transparent text-xs font-bold text-emerald-950 border-none focus:outline-none cursor-pointer max-w-[140px] truncate"
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-emerald-950 border-none focus:outline-none cursor-pointer max-w-[90px] sm:max-w-[140px] truncate"
                 title="Switch Active Dairy Farm"
               >
                 {dairies.map((d) => (
@@ -156,7 +166,7 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
                 ))}
               </select>
             ) : (
-              <span className="truncate max-w-[140px]">{activeDairy?.name || 'DairyPulse HQ'}</span>
+              <span className="truncate max-w-[85px] sm:max-w-[140px] text-[11px] sm:text-xs">{activeDairy?.name || 'DairyPulse HQ'}</span>
             )}
           </div>
         )}

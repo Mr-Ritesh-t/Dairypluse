@@ -63,39 +63,39 @@ export default function HouseholdSubscriptionsPage() {
       </section>
 
       {/* Summary KPI Cards (Stitch Exact) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Active Subscribers</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{activeCount}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">
-            {activeCount > 0 ? 'Daily morning doorstep run' : 'No active subscribers'}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Subscribers</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{activeCount}</h3>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
+            {activeCount > 0 ? 'Daily morning doorstep' : 'No subscribers'}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Committed Daily Volume</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Committed Volume</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             {totalDailyLiters.toFixed(1)} L
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {totalDailyLiters > 0 ? 'Morning & Evening dispatch' : 'No recurring volume committed'}
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
+            {totalDailyLiters > 0 ? 'Morning & Evening' : 'No committed vol'}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Paused (On Vacation)</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Paused Plans</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
             {pausedCount}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Temporary hold active</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Vacation hold</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Extra Milk Requests</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Extra Requests</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
             {subscriptions.filter((s: any) => s.isExtraOrder || s.extraLitres).length}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Festival & guest add-ons</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Festival add-ons</p>
         </div>
       </section>
 
@@ -174,7 +174,7 @@ export default function HouseholdSubscriptionsPage() {
       )}
 
       {/* Subscriptions Table */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <button
@@ -215,8 +215,8 @@ export default function HouseholdSubscriptionsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs min-w-[650px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Customer / Household</th>

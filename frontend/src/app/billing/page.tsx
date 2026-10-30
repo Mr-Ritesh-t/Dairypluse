@@ -52,44 +52,44 @@ export default function BillingPaymentsPage() {
       </section>
 
       {/* KPI Cards (Stitch Exact UI) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Invoiced (This Month)</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Invoiced</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
             ₹{totalInvoiced.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {invoices.length > 0 ? `Across ${invoices.length} customer invoices` : 'No invoices generated yet'}
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
+            {invoices.length > 0 ? `${invoices.length} invoices` : 'No invoices'}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Payments Collected</p>
-          <h3 className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Payments Collected</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums truncate">
             ₹{totalCollected.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
             {totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0}% recovery rate
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Outstanding Balance</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Outstanding</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
             ₹{outstanding.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Pending client receipts</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Pending receipts</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Overdue Accounts</p>
-          <h3 className="text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">{overdueCount}</h3>
-          <p className="text-[11px] text-rose-500 mt-1">Requires payment reminder</p>
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Overdue</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">{overdueCount}</h3>
+          <p className="text-[10px] sm:text-[11px] text-rose-500 mt-0.5 truncate">Requires reminder</p>
         </div>
       </section>
 
       {/* Invoices Table */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             {['ALL', 'Paid', 'Partial', 'Unpaid', 'Overdue'].map((st) => (
@@ -117,8 +117,8 @@ export default function BillingPaymentsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Invoice #</th>

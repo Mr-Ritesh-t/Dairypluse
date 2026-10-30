@@ -90,42 +90,42 @@ export default function ReportsDashboardPage() {
       </section>
 
       {/* Macro Performance Indicators (Stitch Exact UI) */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Gross Monthly Revenue</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Gross Revenue</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
             ₹{totalRevenue.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-            {totalRevenue > 0 ? 'Live recorded collections' : 'No collections logged yet'}
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-0.5 truncate">
+            {totalRevenue > 0 ? 'Recorded receipts' : 'No collections'}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Milk Sold</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Sold</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
             {totalLitersSold.toLocaleString()} L
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {totalLitersSold > 0 ? 'Delivered across routes' : 'Awaiting delivery runs'}
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
+            {totalLitersSold > 0 ? 'Delivered across routes' : 'Awaiting runs'}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Operational Expenses</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Expenses</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
             ₹{totalCost.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Procurement, feed & logistics</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Procurement & feed</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Estimated Net Profit</p>
-          <h3 className="text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Net Profit</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums truncate">
             ₹{netEstimatedProfit.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">
-            {totalRevenue > 0 ? `${Math.round((netEstimatedProfit / totalRevenue) * 100)}% Operating Margin` : 'Net operational balance'}
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
+            {totalRevenue > 0 ? `${Math.round((netEstimatedProfit / totalRevenue) * 100)}% Margin` : 'Net balance'}
           </p>
         </div>
       </section>

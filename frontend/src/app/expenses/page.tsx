@@ -42,36 +42,36 @@ export default function ExpensesPage() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Monthly Expenses</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Total Monthly Expenses</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             ₹{totalExpense.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Across operational categories</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Across operational categories</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Logged Expense Entries</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Logged Entries</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             {expenses.length}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
             {expenses.length === 1 ? '1 active transaction' : `${expenses.length} active transactions`}
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Active Categories</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Active Categories</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             {new Set(expenses.map((e) => e.category)).size}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Feed, utilities, fuel & logistics</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Feed, utilities, fuel & logistics</p>
         </div>
       </section>
 
       {/* Expenses Table */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <h3 className="text-base font-bold text-slate-900">Recorded Expense Transactions</h3>
@@ -93,8 +93,8 @@ export default function ExpensesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs min-w-[650px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Date</th>

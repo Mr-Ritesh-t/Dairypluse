@@ -98,40 +98,40 @@ export default function CustomersPage() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Registered Clients</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{customers.length}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Active customer directory</p>
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Clients</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{customers.length}</h3>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">Active directory</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Household Subscribers</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{householdCount}</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Daily recurring doorstep runs</p>
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Households</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{householdCount}</h3>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Recurring runs</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Commercial / B2B Accounts</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Commercial</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
             {commercialCount}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Bakeries, sweet shops, cafes</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Shops & cafes</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Outstanding Dues</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-rose-600">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Outstanding</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-rose-600">
             ₹{totalDues.toLocaleString()}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1">Net receivable balance</p>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Net receivable</p>
         </div>
       </section>
 
       {/* Main Customers Grid with Detail Drawer */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Table View (8 cols) */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+        <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <button
@@ -172,8 +172,8 @@ export default function CustomersPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[650px]">
               <thead>
                 <tr className="text-slate-400 border-b border-slate-100">
                   <th className="pb-2.5 font-medium">Customer Name</th>

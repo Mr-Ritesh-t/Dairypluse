@@ -202,7 +202,7 @@ export default function StaffManagementPage() {
             setSuccessInfo(null);
             setShowAddModal(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Create Rider / Staff ID</span>
@@ -210,34 +210,34 @@ export default function StaffManagementPage() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Total Team Members</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{staff.length}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Active team roster</p>
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Crew</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{staff.length}</h3>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">Active roster</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">On Duty Today</p>
-          <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{onDutyCount}</h3>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Clocked in for shift</p>
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">On Duty</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{onDutyCount}</h3>
+          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">Clocked in</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Delivery Riders</p>
-          <h3 className="text-2xl font-extrabold text-blue-600 mt-1 tabular-nums">{ridersCount}</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Doorstep route runners</p>
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Delivery Riders</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-blue-600 mt-1 tabular-nums">{ridersCount}</h3>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Route runners</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-xs font-medium text-slate-500">Average Rider Rating</p>
-          <h3 className="text-2xl font-extrabold text-amber-500 mt-1 tabular-nums">4.9 ★</h3>
-          <p className="text-[11px] text-slate-400 mt-1">Customer satisfaction score</p>
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Avg Rating</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-amber-500 mt-1 tabular-nums">4.9 ★</h3>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Customer score</p>
         </div>
       </section>
 
       {/* Staff Directory Table */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <h3 className="text-base font-bold text-slate-900">Delivery Rider & Staff Directory</h3>
@@ -250,8 +250,8 @@ export default function StaffManagementPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Staff Member</th>
@@ -400,8 +400,8 @@ export default function StaffManagementPage() {
       {selectedStaff && (() => {
         const metrics = getStaffMetrics(selectedStaff);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 text-left shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-5">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-6 text-left shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-5">
               {/* Modal Header */}
               <div className="flex items-start justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3.5">
@@ -856,8 +856,8 @@ export default function StaffManagementPage() {
       {/* 3. CREATE RIDER / STAFF MODAL */}
       {/* ======================================================== */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 text-left shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-4 sm:p-6 text-left shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">

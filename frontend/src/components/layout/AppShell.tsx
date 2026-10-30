@@ -6,6 +6,7 @@ import { DairyPulseProvider } from '@/context/DairyPulseContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNavbar } from '@/components/layout/TopNavbar';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ModalContainer } from '@/components/modals/ModalContainer';
 import { Loader2 } from 'lucide-react';
 
@@ -125,16 +126,17 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   }
 
   // 4. Owner Dashboard & Modules Layout
-  // Full desktop admin workspace with Sidebar, TopNavbar, and ModalContainer
+  // Responsive workspace with Sidebar, TopNavbar, Mobile Bottom Nav, and ModalContainer
   return (
     <div className="min-h-screen bg-[#F4F7FB] flex text-slate-800">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200">
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 sm:pb-8">
           {children}
         </main>
       </div>
+      <MobileBottomNav onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <ModalContainer />
     </div>
   );

@@ -162,67 +162,67 @@ export default function MilkInventoryPage() {
       </section>
 
       {/* 4 Metric KPI Cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-purpose="inventory-metrics">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" data-purpose="inventory-metrics">
         {/* Total Stock */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Total Milk in Stock</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Stock</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
                 {totalStock.toLocaleString()} L
               </h3>
-              <p className="text-[11px] text-emerald-600 font-medium mt-1">{products.length} Active Milk Varieties</p>
+              <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">{products.length} Varieties</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Milk className="w-6 h-6" />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Milk className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
 
         {/* Received Today */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Milk Received Today</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-                {totalReceivedToday.toLocaleString()} L
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Intake Today</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+                +{totalReceivedToday.toLocaleString()} L
               </h3>
-              <p className="text-[11px] text-slate-400 mt-1">Morning intake batches</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Intake batches</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <ArrowDownRight className="w-6 h-6" />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
 
         {/* Dispatched Today */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Milk Dispatched Today</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-                {totalDispatchedToday.toLocaleString()} L
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Dispatched</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
+                -{totalDispatchedToday.toLocaleString()} L
               </h3>
-              <p className="text-[11px] text-slate-400 mt-1">Routes 1, 2, 3 and Bulk</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Active routes</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-              <ArrowUpRight className="w-6 h-6" />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
 
         {/* Wastage */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500">Wastage / Loss Today</p>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-rose-600">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Wastage / Loss</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">
                 {totalWastageToday} L
               </h3>
-              <p className="text-[11px] text-slate-400 mt-1">0.3% of total handling</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Handling loss</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-6 h-6" />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function MilkInventoryPage() {
       </section>
 
       {/* Movement Ledger Table */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-900">Auditable Inventory Movement Ledger</h3>
@@ -357,8 +357,8 @@ export default function MilkInventoryPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs min-w-[650px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Timestamp</th>

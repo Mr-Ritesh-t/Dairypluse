@@ -15,6 +15,8 @@ import {
   Briefcase,
   Receipt,
   BarChart3,
+  X,
+  Building2,
 } from 'lucide-react';
 
 const navItems = [
@@ -52,25 +54,37 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         {/* Top Branding & Navigation */}
         <div>
           {/* Brand Logo & Title */}
-          <div className="px-5 pt-5 pb-4 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden">
-              <Image
-                src="/logo.png"
-                alt="DairyPulse Cow Analytics Logo"
-                width={40}
-                height={40}
-                className="w-full h-full object-contain"
-                priority
-              />
+          <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-slate-100 lg:border-none">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden">
+                <Image
+                  src="/logo.png"
+                  alt="DairyPulse Cow Analytics Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center">
+                  Dairy<span className="text-emerald-600">Pulse</span>
+                </h1>
+                <p className="text-[10px] text-slate-500 font-medium tracking-tight mt-1">
+                  Farm Operations Hub
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center">
-                Dairy<span className="text-emerald-600">Pulse</span>
-              </h1>
-              <p className="text-[10px] text-slate-500 font-medium tracking-tight mt-1">
-                Fresh Milk, Healthier Tomorrows
-              </p>
-            </div>
+
+            {/* Mobile close button */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close Navigation"
+              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation Menu */}
