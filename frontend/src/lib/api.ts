@@ -1,11 +1,14 @@
 import { DairyInfo, RouteInfo, RouteBuildPayload } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+// Robust normalization for Vercel -> Render deployments
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
+const API_BASE_URL = RAW_API_URL.endsWith('/api/v1') ? RAW_API_URL : `${RAW_API_URL}/api/v1`;
+const BACKEND_ROOT_URL = API_BASE_URL.replace(/\/api\/v1$/, '');
 
 // Health check
 export async function checkBackendHealth(): Promise<{ online: boolean; message?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL.replace('/api/v1', '')}/health`, {
+    const res = await fetch(`${BACKEND_ROOT_URL}/health`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
@@ -510,16 +513,20 @@ export async function getRoutesApi(): Promise<RouteInfo[]> {
       totalStops: r.total_stops || 0,
       totalLiters: r.total_liters || 0,
       maxCapacityLiters: r.max_capacity_liters || 60.0,
+      dairyName: r.dairy_name,
     }));
   } catch (err) {
-    console.warn('API error fetching routes, using defaults:', err);
-    return [
-      { id: 'rt-1', routeCode: 'R-04', name: 'Baner Morning Express', area: 'Baner', assignedRider: 'Rahul Deshmukh', slot: 'Morning (6:00 AM - 7:30 AM)', societies: 'Rohan Nilay, Green Glen, Marvel Zephyr', totalStops: 18, totalLiters: 28.5, maxCapacityLiters: 60.0 },
-      { id: 'rt-2', routeCode: 'A-01', name: 'Aundh Heritage Loop', area: 'Aundh', assignedRider: 'Sunil Patil', slot: 'Morning (6:00 AM - 7:30 AM)', societies: 'Sindh Society, ITI Road, DP Road', totalStops: 14, totalLiters: 21.0, maxCapacityLiters: 60.0 },
-      { id: 'rt-3', routeCode: 'K-02', name: 'Kothrud Western Line', area: 'Kothrud', assignedRider: 'Vikram Shinde', slot: 'Morning (6:00 AM - 7:30 AM)', societies: 'Dahanukar Colony, Mayur Colony', totalStops: 12, totalLiters: 19.5, maxCapacityLiters: 60.0 },
-      { id: 'rt-4', routeCode: 'W-01', name: 'Wanowrie Green Circuit', area: 'Wanowrie', assignedRider: 'Rahul Deshmukh', slot: 'Evening (5:30 PM - 7:00 PM)', societies: 'Salunke Vihar, Oxford Village', totalStops: 9, totalLiters: 14.0, maxCapacityLiters: 60.0 },
-      { id: 'rt-5', routeCode: 'WK-03', name: 'Wakad Tech Corridor', area: 'Wakad', assignedRider: 'Sunil Patil', slot: 'Morning (6:00 AM - 7:30 AM)', societies: 'Mont Vert, Pride Purple', totalStops: 11, totalLiters: 16.5, maxCapacityLiters: 60.0 },
-    ];
+    console.warn('API error fetching routes, returning empty route list:', err);
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('dairypulse_routes');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
   }
 }
 

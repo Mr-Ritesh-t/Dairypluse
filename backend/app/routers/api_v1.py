@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from app.database import get_db
@@ -277,8 +277,11 @@ def update_customer(customer_id: str, cust_data: CustomerUpdate, db: Session = D
 
 # ----------------- SUBSCRIPTIONS -----------------
 @api_router.get("/subscriptions", response_model=List[SubscriptionResponse])
-def get_subscriptions(db: Session = Depends(get_db)):
-    return db.query(Subscription).all()
+def get_subscriptions(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Subscription)
+    if dairy_name:
+        query = query.filter(Subscription.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/subscriptions", response_model=SubscriptionResponse)
 def create_subscription(sub: SubscriptionCreate, db: Session = Depends(get_db)):
@@ -299,8 +302,11 @@ def toggle_subscription_pause(sub_id: str, db: Session = Depends(get_db)):
 
 # ----------------- ORDERS -----------------
 @api_router.get("/orders", response_model=List[OrderResponse])
-def get_orders(db: Session = Depends(get_db)):
-    return db.query(Order).all()
+def get_orders(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Order)
+    if dairy_name:
+        query = query.filter(Order.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/orders", response_model=OrderResponse)
 def create_order(order_data: OrderCreate, db: Session = Depends(get_db)):
@@ -335,8 +341,11 @@ def create_order(order_data: OrderCreate, db: Session = Depends(get_db)):
 
 # ----------------- DELIVERIES & ROUTES -----------------
 @api_router.get("/deliveries/today", response_model=List[DeliveryTaskResponse])
-def get_deliveries(db: Session = Depends(get_db)):
-    return db.query(DeliveryTask).order_by(DeliveryTask.sequence_order.asc(), DeliveryTask.id.asc()).all()
+def get_deliveries(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(DeliveryTask)
+    if dairy_name:
+        query = query.filter(DeliveryTask.dairy_name.ilike(dairy_name.strip()))
+    return query.order_by(DeliveryTask.sequence_order.asc(), DeliveryTask.id.asc()).all()
 
 @api_router.patch("/deliveries/reorder")
 def reorder_deliveries(req: ReorderStopsRequest, db: Session = Depends(get_db)):
@@ -348,8 +357,11 @@ def reorder_deliveries(req: ReorderStopsRequest, db: Session = Depends(get_db)):
     return {"success": True, "reordered_count": len(req.stops)}
 
 @api_router.get("/routes", response_model=List[RouteResponse])
-def get_routes(db: Session = Depends(get_db)):
-    routes = db.query(Route).all()
+def get_routes(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Route)
+    if dairy_name:
+        query = query.filter(Route.dairy_name.ilike(dairy_name.strip()))
+    routes = query.all()
     for r in routes:
         tasks = db.query(DeliveryTask).filter(DeliveryTask.area == r.area).all()
         r.total_stops = len(tasks)
@@ -799,8 +811,11 @@ def get_all_ratings(db: Session = Depends(get_db)):
 
 # ----------------- BILLING & INVOICES -----------------
 @api_router.get("/invoices", response_model=List[InvoiceResponse])
-def get_invoices(db: Session = Depends(get_db)):
-    return db.query(Invoice).all()
+def get_invoices(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Invoice)
+    if dairy_name:
+        query = query.filter(Invoice.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/invoices", response_model=InvoiceResponse)
 def create_invoice(inv_data: InvoiceCreate, db: Session = Depends(get_db)):
@@ -850,8 +865,11 @@ def record_payment(invoice_id: str, payment: PaymentRecord, db: Session = Depend
 
 # ----------------- EXPENSES -----------------
 @api_router.get("/expenses", response_model=List[ExpenseResponse])
-def get_expenses(db: Session = Depends(get_db)):
-    return db.query(Expense).all()
+def get_expenses(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Expense)
+    if dairy_name:
+        query = query.filter(Expense.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/expenses", response_model=ExpenseResponse)
 def create_expense(exp_data: ExpenseCreate, db: Session = Depends(get_db)):
@@ -863,8 +881,11 @@ def create_expense(exp_data: ExpenseCreate, db: Session = Depends(get_db)):
 
 # ----------------- STAFF -----------------
 @api_router.get("/staff", response_model=List[StaffResponse])
-def get_staff(db: Session = Depends(get_db)):
-    return db.query(Staff).all()
+def get_staff(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Staff)
+    if dairy_name:
+        query = query.filter(Staff.dairy_name.ilike(dairy_name.strip()))
+    return query.all()
 
 @api_router.post("/staff", response_model=StaffResponse)
 def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):

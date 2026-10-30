@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import {
   Product,
   InventoryMovement,
@@ -63,6 +64,7 @@ interface DairyPulseContextType {
   products: Product[];
   movements: InventoryMovement[];
   customers: Customer[];
+  allCustomers: Customer[];
   subscriptions: Subscription[];
   shopOrders: ShopOrder[];
   deliveries: DeliveryTask[];
@@ -206,15 +208,30 @@ const initialStaff: StaffMember[] = [];
 const DairyPulseContext = createContext<DairyPulseContextType | undefined>(undefined);
 
 export function DairyPulseProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [movements, setMovements] = useState<InventoryMovement[]>(initialMovements);
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
-  const [shopOrders, setShopOrders] = useState<ShopOrder[]>(initialShopOrders);
-  const [deliveries, setDeliveries] = useState<DeliveryTask[]>(initialDeliveries);
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [staff, setStaff] = useState<StaffMember[]>(initialStaff);
+  
+  // Master raw state arrays
+  const [rawCustomers, setRawCustomers] = useState<Customer[]>(initialCustomers);
+  const [rawSubscriptions, setRawSubscriptions] = useState<Subscription[]>(initialSubscriptions);
+  const [rawShopOrders, setRawShopOrders] = useState<ShopOrder[]>(initialShopOrders);
+  const [rawDeliveries, setRawDeliveries] = useState<DeliveryTask[]>(initialDeliveries);
+  const [rawInvoices, setRawInvoices] = useState<Invoice[]>(initialInvoices);
+  const [rawExpenses, setRawExpenses] = useState<Expense[]>(initialExpenses);
+  const [rawStaff, setRawStaff] = useState<StaffMember[]>(initialStaff);
+  const [rawRoutes, setRawRoutes] = useState<RouteInfo[]>([]);
+
+  // Aliases so all existing mutators cleanly update the master raw state
+  const setCustomers = setRawCustomers;
+  const setSubscriptions = setRawSubscriptions;
+  const setShopOrders = setRawShopOrders;
+  const setDeliveries = setRawDeliveries;
+  const setInvoices = setRawInvoices;
+  const setExpenses = setRawExpenses;
+  const setStaff = setRawStaff;
+  const setRoutes = setRawRoutes;
+
   const [dairies, setDairies] = useState<DairyInfo[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -232,8 +249,99 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     ];
   });
   const [selectedActiveDairy, setSelectedActiveDairy] = useState<DairyInfo | null>(null);
-  const activeDairy = selectedActiveDairy || (dairies.length > 0 ? dairies[0] : null);
+
+  // Active Dairy: prioritized by explicit user selection, or user's assigned dairyName, or first registered dairy
+  const activeDairy = useMemo(() => {
+    if (selectedActiveDairy) return selectedActiveDairy;
+    if (user?.dairyName) {
+      const match = dairies.find((d) => d.name.trim().toLowerCase() === user.dairyName?.trim().toLowerCase());
+      if (match) return match;
+    }
+    return dairies.length > 0 ? dairies[0] : null;
+  }, [selectedActiveDairy, user, dairies]);
+
   const setActiveDairy = (dairy: DairyInfo) => setSelectedActiveDairy(dairy);
+
+  // Scoped views: strictly filter data so customers and operations only show for their related dairy
+  const customers = useMemo(() => {
+    if (!activeDairy) return rawCustomers;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    return rawCustomers.filter((c) => {
+      if (!c.dairyName) {
+        return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+      }
+      return c.dairyName.trim().toLowerCase() === activeName;
+    });
+  }, [rawCustomers, activeDairy]);
+
+  const subscriptions = useMemo(() => {
+    if (!activeDairy) return rawSubscriptions;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    const custIds = new Set(customers.map((c) => c.id));
+    return rawSubscriptions.filter((s) => {
+      if (custIds.has(s.customerId)) return true;
+      if (s.dairyName) return s.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawSubscriptions, activeDairy, customers]);
+
+  const deliveries = useMemo(() => {
+    if (!activeDairy) return rawDeliveries;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    const custNames = new Set(customers.map((c) => c.name.trim().toLowerCase()));
+    return rawDeliveries.filter((d) => {
+      if (custNames.has(d.customerName.trim().toLowerCase())) return true;
+      if (d.dairyName) return d.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawDeliveries, activeDairy, customers]);
+
+  const shopOrders = useMemo(() => {
+    if (!activeDairy) return rawShopOrders;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    return rawShopOrders.filter((o) => {
+      if (o.dairyName) return o.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawShopOrders, activeDairy]);
+
+  const staff = useMemo(() => {
+    if (!activeDairy) return rawStaff;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    return rawStaff.filter((st) => {
+      if (st.dairyName) return st.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawStaff, activeDairy]);
+
+  const routes = useMemo(() => {
+    if (!activeDairy) return rawRoutes;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    return rawRoutes.filter((r) => {
+      if (r.dairyName) return r.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawRoutes, activeDairy]);
+
+  const invoices = useMemo(() => {
+    if (!activeDairy) return rawInvoices;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    const custIds = new Set(customers.map((c) => c.id));
+    return rawInvoices.filter((inv) => {
+      if (custIds.has(inv.customerId)) return true;
+      if (inv.dairyName) return inv.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawInvoices, activeDairy, customers]);
+
+  const expenses = useMemo(() => {
+    if (!activeDairy) return rawExpenses;
+    const activeName = activeDairy.name.trim().toLowerCase();
+    return rawExpenses.filter((e) => {
+      if (e.dairyName) return e.dairyName.trim().toLowerCase() === activeName;
+      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+    });
+  }, [rawExpenses, activeDairy]);
 
   const refreshDairies = async (): Promise<DairyInfo[]> => {
     try {
@@ -253,7 +361,6 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return dairies;
   };
 
-  const [routes, setRoutes] = useState<RouteInfo[]>([]);
   const [driverRatings, setDriverRatings] = useState<DriverRating[]>([]);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
@@ -267,31 +374,31 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       if (data && Array.isArray(data)) setProducts(data);
     });
     getCustomers().then((data) => {
-      if (data && Array.isArray(data)) setCustomers(data);
+      if (data && Array.isArray(data)) setRawCustomers(data);
     });
     getSubscriptions().then((data) => {
-      if (data && Array.isArray(data)) setSubscriptions(data);
+      if (data && Array.isArray(data)) setRawSubscriptions(data);
     });
     getShopOrders().then((data) => {
-      if (data && Array.isArray(data)) setShopOrders(data);
+      if (data && Array.isArray(data)) setRawShopOrders(data);
     });
     getDeliveriesToday().then((data) => {
       if (data && Array.isArray(data)) {
         const sorted = [...data].sort((a: any, b: any) => (a.sequenceOrder || 1) - (b.sequenceOrder || 1));
-        setDeliveries(sorted);
+        setRawDeliveries(sorted);
       }
     });
     getInvoices().then((data) => {
-      if (data && Array.isArray(data)) setInvoices(data);
+      if (data && Array.isArray(data)) setRawInvoices(data);
     });
     getExpenses().then((data) => {
-      if (data && Array.isArray(data)) setExpenses(data);
+      if (data && Array.isArray(data)) setRawExpenses(data);
     });
     getStaff().then((data) => {
-      if (data && Array.isArray(data)) setStaff(data);
+      if (data && Array.isArray(data)) setRawStaff(data);
     });
     getRoutesApi().then((data) => {
-      if (data && Array.isArray(data)) setRoutes(data);
+      if (data && Array.isArray(data)) setRawRoutes(data);
     });
     getDriverRatingsApi().then((data) => {
       if (data && Array.isArray(data)) setDriverRatings(data);
@@ -1011,6 +1118,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         products,
         movements,
         customers,
+        allCustomers: rawCustomers,
         subscriptions,
         shopOrders,
         deliveries,

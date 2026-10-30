@@ -673,3 +673,23 @@ def seed_database(clear_existing=True, db_session=None):
 if __name__ == "__main__":
     clear = "--keep" not in sys.argv
     seed_database(clear_existing=clear)
+
+
+def seed_initial_data(db_session=None):
+    """Safe auto-seed for cloud deployment (Supabase / Render). Only seeds if Product table is empty."""
+    if db_session is None:
+        db = SessionLocal()
+        should_close = True
+    else:
+        db = db_session
+        should_close = False
+
+    try:
+        if db.query(Product).count() == 0:
+            print("[INFO] Fresh database detected. Auto-seeding initial catalog and records...")
+            seed_database(clear_existing=False, db_session=db)
+    except Exception as e:
+        print("[WARN] Auto-seed check skipped or failed:", e)
+    finally:
+        if should_close:
+            db.close()

@@ -26,7 +26,7 @@ import { checkBackendHealth } from '@/lib/api';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
-  const { openModal } = useDairyPulse();
+  const { openModal, activeDairy, dairies, setActiveDairy } = useDairyPulse();
   const { user, logout } = useAuth();
   const [quickActionOpen, setQuickActionOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -134,6 +134,32 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
             </div>
           )}
         </div>
+
+        {/* Active Dairy Selector / Switcher */}
+        {dairies && dairies.length > 0 && (
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-xs font-semibold text-emerald-900 shadow-2xs">
+            <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+            {dairies.length > 1 ? (
+              <select
+                value={activeDairy?.name || ''}
+                onChange={(e) => {
+                  const found = dairies.find((d) => d.name === e.target.value);
+                  if (found) setActiveDairy(found);
+                }}
+                className="bg-transparent text-xs font-bold text-emerald-950 border-none focus:outline-none cursor-pointer max-w-[140px] truncate"
+                title="Switch Active Dairy Farm"
+              >
+                {dairies.map((d) => (
+                  <option key={d.id} value={d.name} className="text-slate-800 bg-white font-medium">
+                    {d.name} {d.city ? `(${d.city})` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="truncate max-w-[140px]">{activeDairy?.name || 'DairyPulse HQ'}</span>
+            )}
+          </div>
+        )}
 
         {/* Date Selector Badge */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-slate-200 rounded-xl text-xs font-medium text-slate-700">

@@ -12,18 +12,30 @@ import {
   CreditCard,
   Plus,
   Users,
+  Building2,
+  Settings2,
 } from 'lucide-react';
 import { Customer, Subscription } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
-import { Settings2 } from 'lucide-react';
 
 export default function CustomersPage() {
-  const { customers, subscriptions, openModal } = useDairyPulse();
+  const { customers, subscriptions, openModal, activeDairy, dairies, setActiveDairy } = useDairyPulse();
   const [filterType, setFilterType] = useState<'ALL' | 'HOUSEHOLD' | 'SHOP' | 'RESTAURANT'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
   const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
+
+  // Sync selected customer when active dairy changes or customers list updates
+  React.useEffect(() => {
+    if (customers.length > 0) {
+      if (!selectedCust || !customers.some((c) => c.id === selectedCust.id)) {
+        setSelectedCust(customers[0]);
+      }
+    } else {
+      setSelectedCust(null);
+    }
+  }, [customers, selectedCust]);
 
   const totalDues = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
   const householdCount = customers.filter((c) => c.type === 'HOUSEHOLD').length;
@@ -42,18 +54,47 @@ export default function CustomersPage() {
       {/* Page Header */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Management</h2>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Management</h2>
+            {activeDairy && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-semibold">
+                <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{activeDairy.name}</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-1">
             Maintain client directories, household subscriptions, shop credits, and outstanding balances.
           </p>
         </div>
-        <button
-          onClick={() => openModal('addCustomer')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Add New Customer</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {dairies.length > 1 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs shadow-2xs">
+              <Building2 className="w-4 h-4 text-slate-500" />
+              <select
+                value={activeDairy?.name || ''}
+                onChange={(e) => {
+                  const d = dairies.find((dairy) => dairy.name === e.target.value);
+                  if (d) setActiveDairy(d);
+                }}
+                className="bg-transparent text-xs font-bold text-slate-700 border-none focus:outline-none cursor-pointer"
+              >
+                {dairies.map((d) => (
+                  <option key={d.id} value={d.name}>
+                    {d.name} {d.city ? `(${d.city})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={() => openModal('addCustomer')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add New Customer</span>
+          </button>
+        </div>
       </section>
 
       {/* KPI Cards */}
@@ -136,6 +177,7 @@ export default function CustomersPage() {
               <thead>
                 <tr className="text-slate-400 border-b border-slate-100">
                   <th className="pb-2.5 font-medium">Customer Name</th>
+                  <th className="pb-2.5 font-medium">Supplying Dairy</th>
                   <th className="pb-2.5 font-medium">Type</th>
                   <th className="pb-2.5 font-medium">Phone</th>
                   <th className="pb-2.5 font-medium">Route / Area</th>
@@ -146,7 +188,7 @@ export default function CustomersPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Users className="w-8 h-8 text-slate-300" />
                         <span className="font-semibold text-sm text-slate-600">No customers registered yet</span>
@@ -168,6 +210,12 @@ export default function CustomersPage() {
                         <td className="py-3.5 font-semibold text-slate-800">
                           <div>{c.name}</div>
                           <div className="text-[10px] text-slate-400 font-normal">{c.address}</div>
+                        </td>
+                        <td className="py-3.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-medium text-slate-700 max-w-[130px] truncate">
+                            <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{c.dairyName || 'DairyPulse Farm HQ'}</span>
+                          </span>
                         </td>
                         <td className="py-3.5">
                           <span
@@ -228,6 +276,10 @@ export default function CustomersPage() {
               </div>
 
               <div className="space-y-3 text-xs">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Dairy: <strong className="text-slate-800 font-semibold">{selectedCust.dairyName || activeDairy?.name || 'DairyPulse Farm HQ'}</strong></span>
+                </div>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
                   <a href={`tel:${selectedCust.phone}`} className="font-semibold text-slate-800 hover:underline">
