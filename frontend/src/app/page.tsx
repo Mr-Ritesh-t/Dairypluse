@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   TrendingUp,
   Droplets,
@@ -15,7 +14,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  ShieldCheck,
   Sun,
   Sparkles,
   ShoppingBag,
@@ -90,7 +88,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Left Side: Dynamic Greeting & Quick Shortcuts */}
-        <div className="relative z-10 max-w-xl">
+        <div className="relative z-10 max-w-3xl">
           {/* Farm telemetry pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/90 text-emerald-900 text-xs font-bold border border-emerald-200/90 shadow-2xs mb-2.5">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
@@ -125,59 +123,6 @@ export default function DashboardPage() {
               <Truck className="w-3.5 h-3.5 text-emerald-600" />
               <span>View Route Dispatches</span>
             </Link>
-          </div>
-        </div>
-
-        {/* Right Side: Operations Showcase & Quality Hub */}
-        <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-          {/* Card 1: Certified Quality & Cold-Chain */}
-          <div className="bg-white/85 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-white/90 shadow-xs flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-white p-1 shadow-2xs border border-emerald-100 flex items-center justify-center shrink-0">
-              <Image
-                src="/logo.png"
-                alt="DairyPulse Logo"
-                width={44}
-                height={44}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-extrabold text-slate-900">A+ Certified Milk</span>
-                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-extrabold rounded-md">
-                  100% PURE
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                Fat: <span className="font-bold text-slate-700">4.2%</span> • SNF: <span className="font-bold text-slate-700">8.7%</span>
-              </p>
-              <div className="flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-700">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>Cold-Chain 3.8°C (Optimal)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Live Morning Route Completion Progress */}
-          <div className="bg-white/85 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-white/90 shadow-xs flex flex-col justify-between min-w-[170px]">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5 text-blue-600" />
-                <span>Today's Runs</span>
-              </span>
-              <span className="font-mono font-extrabold text-emerald-700">{deliveryPercentage}%</span>
-            </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden my-2 border border-slate-200/50">
-              <div
-                className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${deliveryPercentage}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-              <span className="font-semibold text-slate-700">{deliveredCount} delivered</span>
-              <span>{totalDeliveries} total drops</span>
-            </div>
           </div>
         </div>
       </section>
