@@ -676,7 +676,11 @@ if __name__ == "__main__":
 
 
 def seed_initial_data(db_session=None):
-    """Safe auto-seed for cloud deployment (Supabase / Render). Only seeds if Product table is empty."""
+    """Auto-seed only if explicitly requested via AUTO_SEED=true environment variable."""
+    import os
+    if os.getenv("AUTO_SEED", "false").lower() not in ("true", "1", "yes"):
+        return
+
     if db_session is None:
         db = SessionLocal()
         should_close = True
@@ -686,7 +690,7 @@ def seed_initial_data(db_session=None):
 
     try:
         if db.query(Product).count() == 0:
-            print("[INFO] Fresh database detected. Auto-seeding initial catalog and records...")
+            print("[INFO] AUTO_SEED enabled. Auto-seeding initial catalog and records...")
             seed_database(clear_existing=False, db_session=db)
     except Exception as e:
         print("[WARN] Auto-seed check skipped or failed:", e)
