@@ -55,6 +55,8 @@ export default function DeliveryPartnerMobileApp() {
     markAttendance,
     confirmMilkPickup,
     refreshRiderShift,
+    completeShift,
+    salaryPayments,
   } = useDairyPulse();
   const { user, logout } = useAuth();
 
@@ -303,6 +305,22 @@ export default function DeliveryPartnerMobileApp() {
     setSyncToast(`🥛 Confirmed ${totalLitersAssigned}L (${cratesCount} crates) picked up from ${matchedDairy.name}! Ready for route.`);
     setTimeout(() => setSyncToast(null), 4000);
     setIsConfirmingPickup(false);
+  };
+
+  // Shift Completion & Daily Salary Claiming
+  const [isCompletingShift, setIsCompletingShift] = useState<boolean>(false);
+  const dailySalaryRate = matchedStaff?.dailySalary || riderShiftStatus?.dailySalaryRate || 500;
+  const isAllStopsDelivered = totalStopsCount > 0 && pendingStops.length === 0;
+
+  const handleCompleteShiftAndClaimSalary = async () => {
+    setIsCompletingShift(true);
+    try {
+      await completeShift(completedStops.length, 'All daily morning milk bottles delivered to doorsteps');
+      setSyncToast(`🎉 Shift Complete! ₹${dailySalaryRate} credited to your salary account!`);
+      setTimeout(() => setSyncToast(null), 4500);
+    } finally {
+      setIsCompletingShift(false);
+    }
   };
 
   return (
@@ -589,8 +607,76 @@ export default function DeliveryPartnerMobileApp() {
                   <span>{isConfirmingPickup ? 'Confirming Pickup...' : 'Confirm Milk Picked Up & Start Route 🚀'}</span>
                 </button>
               </div>
+            ) : isAllStopsDelivered && !riderShiftStatus?.shiftCompleted ? (
+              // STEP 3A: ALL DELIVERIES COMPLETED - CLAIM DAILY SALARY
+              <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-2xl p-4 shadow-lg space-y-3 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
+                      <Award className="w-5 h-5 text-amber-300" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-100 bg-white/10 px-2 py-0.5 rounded-full">
+                        All Deliveries Complete 🎉
+                      </span>
+                      <h3 className="font-extrabold text-sm text-white mt-0.5">
+                        Claim Today's Salary
+                      </h3>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs">
+                    +₹{dailySalaryRate}
+                  </span>
+                </div>
+
+                <p className="text-xs text-emerald-50 leading-relaxed">
+                  Excellent work, <strong>{riderName}</strong>! All <strong>{totalLitersDelivered} Liters</strong> across <strong>{completedStops.length} customer stops</strong> have been successfully delivered. Click below to close your shift and credit today&apos;s daily wage to your account balance.
+                </p>
+
+                <button
+                  onClick={handleCompleteShiftAndClaimSalary}
+                  disabled={isCompletingShift}
+                  className="w-full py-3 bg-white hover:bg-slate-100 text-emerald-950 font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>
+                    {isCompletingShift
+                      ? 'Crediting Daily Salary...'
+                      : `Complete Shift & Add ₹${dailySalaryRate} to Account 💰`}
+                  </span>
+                </button>
+              </div>
+            ) : riderShiftStatus?.shiftCompleted ? (
+              // STEP 3B: SHIFT COMPLETED & SALARY CREDITED
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-black text-slate-900">Shift Finished & Milk Delivered</span>
+                      <span className="text-[9px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                        ₹{riderShiftStatus.dailySalaryEarned || dailySalaryRate} CREDITED
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 mt-0.5 truncate">
+                      Completed at {riderShiftStatus.shiftCompletedTime || currentTimeString} • Daily wage added to your pending balance (Owner can pay)
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 border ${
+                    riderShiftStatus.payoutStatus === 'PAID'
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}
+                >
+                  {riderShiftStatus.payoutStatus === 'PAID' ? 'PAID ✓' : 'PAYOUT PENDING'}
+                </span>
+              </div>
             ) : (
-              // STEP 3: SHIFT & PICKUP ACTIVE SUMMARY
+              // STEP 3C: ROUTE ACTIVE & RUNNING
               <div className="bg-white border border-emerald-200 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -942,6 +1028,66 @@ export default function DeliveryPartnerMobileApp() {
         {/* 2. STATS & PERFORMANCE VIEW */}
         {navTab === 'STATS' && (
           <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto">
+            {/* Rider Wallet & Daily Salary Earnings Card */}
+            <div className="bg-gradient-to-br from-slate-900 to-emerald-950 text-white rounded-3xl p-4 sm:p-5 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
+                    <IndianRupee className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-white">Rider Wallet & Salary</h4>
+                    <p className="text-[10px] text-emerald-300">Daily wage managed by {matchedDairy.name}</p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                    (matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0) > 0
+                      ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                      : 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40'
+                  }`}
+                >
+                  {(matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0) > 0
+                    ? 'Payout Pending'
+                    : 'All Settled ✓'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
+                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Daily Wage Rate</span>
+                  <span className="text-base font-black text-white mt-0.5 block">₹{dailySalaryRate}/day</span>
+                  <span className="text-[9px] text-emerald-300">Owner set</span>
+                </div>
+
+                <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
+                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Today&apos;s Shift</span>
+                  <span className="text-base font-black text-amber-300 mt-0.5 block">
+                    ₹{riderShiftStatus?.shiftCompleted ? (riderShiftStatus.dailySalaryEarned || dailySalaryRate) : 0}
+                  </span>
+                  <span className="text-[9px] text-slate-300">
+                    {riderShiftStatus?.shiftCompleted ? '✓ Credited' : isAllStopsDelivered ? 'Ready to Claim' : 'In Progress'}
+                  </span>
+                </div>
+
+                <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
+                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Pending Payout</span>
+                  <span className="text-base font-black text-rose-300 mt-0.5 block">
+                    ₹{matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0}
+                  </span>
+                  <span className="text-[9px] text-rose-200">Owner to pay</span>
+                </div>
+
+                <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
+                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Total Paid</span>
+                  <span className="text-base font-black text-emerald-300 mt-0.5 block">
+                    ₹{matchedStaff?.totalSalaryPaid ?? riderShiftStatus?.totalSalaryPaid ?? 0}
+                  </span>
+                  <span className="text-[9px] text-emerald-200">Received to date</span>
+                </div>
+              </div>
+            </div>
+
             {/* Shift Performance Summary */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
@@ -1228,31 +1374,151 @@ export default function DeliveryPartnerMobileApp() {
                     </span>
                   </span>
                 </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-500 block">Deliveries Run</span>
+                  <span className="font-extrabold text-slate-900 text-sm block">
+                    {completedStops.length} / {totalStopsCount} Stops
+                  </span>
+                  <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                    isAllStopsDelivered ? 'text-emerald-700' : 'text-amber-700'
+                  }`}>
+                    <Truck className="w-3 h-3" />
+                    <span>{isAllStopsDelivered ? '100% Completed' : `${progressPercent}% Finished`}</span>
+                  </span>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-500 block">Today's Daily Wage</span>
+                  <span className="font-extrabold text-emerald-800 text-sm block">
+                    ₹{dailySalaryRate}/day
+                  </span>
+                  <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                    riderShiftStatus?.shiftCompleted
+                      ? riderShiftStatus.payoutStatus === 'PAID'
+                        ? 'text-emerald-700 font-bold'
+                        : 'text-amber-700 font-bold'
+                      : 'text-slate-500'
+                  }`}>
+                    <IndianRupee className="w-3 h-3" />
+                    <span>
+                      {riderShiftStatus?.shiftCompleted
+                        ? riderShiftStatus.payoutStatus === 'PAID'
+                          ? 'Settled & Paid'
+                          : 'Credited to Balance'
+                        : 'Earn upon completion'}
+                    </span>
+                  </span>
+                </div>
               </div>
 
-              {/* Quick Action buttons if either step is pending */}
-              {(!riderShiftStatus?.attendanceMarked || !riderShiftStatus?.pickupConfirmed) && (
-                <div className="flex gap-2 pt-1">
+              {/* Action buttons if shift actions pending */}
+              {(!riderShiftStatus?.attendanceMarked ||
+                !riderShiftStatus?.pickupConfirmed ||
+                (isAllStopsDelivered && !riderShiftStatus?.shiftCompleted)) && (
+                <div className="flex flex-col gap-2 pt-1">
                   {!riderShiftStatus?.attendanceMarked && (
                     <button
                       onClick={handleMarkAttendance}
                       disabled={isCheckingIn}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
                     >
-                      {isCheckingIn ? 'Marking...' : 'Mark Attendance'}
+                      {isCheckingIn ? 'Marking...' : 'Mark Present for Morning Shift'}
                     </button>
                   )}
                   {riderShiftStatus?.attendanceMarked && !riderShiftStatus?.pickupConfirmed && (
                     <button
                       onClick={handleConfirmPickup}
                       disabled={isConfirmingPickup}
-                      className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
                     >
-                      {isConfirmingPickup ? 'Confirming...' : 'Confirm Milk Pickup'}
+                      {isConfirmingPickup ? 'Confirming...' : 'Confirm Milk Pickup from Dairy'}
                     </button>
                   )}
+                  {riderShiftStatus?.attendanceMarked &&
+                    riderShiftStatus?.pickupConfirmed &&
+                    isAllStopsDelivered &&
+                    !riderShiftStatus?.shiftCompleted && (
+                      <button
+                        onClick={handleCompleteShiftAndClaimSalary}
+                        disabled={isCompletingShift}
+                        className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
+                      >
+                        <Award className="w-4 h-4 text-amber-300" />
+                        <span>{isCompletingShift ? 'Crediting...' : `Complete Shift & Claim ₹${dailySalaryRate} 💰`}</span>
+                      </button>
+                    )}
                 </div>
               )}
+            </div>
+
+            {/* RECENT SALARY PAYOUT RECEIPTS CARD */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                    <Receipt className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900">Salary Payout Receipts</h4>
+                    <p className="text-[10px] text-slate-500">Payments made by {matchedDairy.name}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {salaryPayments.filter(
+                    (p) =>
+                      p.staffId === matchedStaff?.id ||
+                      (riderName && p.staffName && p.staffName.toLowerCase().includes(riderName.toLowerCase()))
+                  ).length}{' '}
+                  Settled
+                </span>
+              </div>
+
+              {(() => {
+                const myPayments = salaryPayments.filter(
+                  (p) =>
+                    p.staffId === matchedStaff?.id ||
+                    (riderName && p.staffName && p.staffName.toLowerCase().includes(riderName.toLowerCase()))
+                );
+
+                if (myPayments.length === 0) {
+                  return (
+                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center space-y-1">
+                      <p className="text-xs font-semibold text-slate-700">No payout receipts yet</p>
+                      <p className="text-[10px] text-slate-400">
+                        When the dairy owner settles your pending shift salary via UPI or Cash, transaction receipts will appear here.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2 max-h-56 overflow-y-auto">
+                    {myPayments.map((p) => (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-emerald-50/50 transition"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                            <span>₹{p.amount}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">
+                              {p.paymentMode}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">
+                            {p.paymentDate} • Ref: {p.referenceId || 'N/A'}
+                          </p>
+                          {p.notes && <p className="text-[10px] text-slate-600 italic">&ldquo;{p.notes}&rdquo;</p>}
+                        </div>
+                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Paid ✓
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* RIDER PROFILE & IDENTITY CARD */}

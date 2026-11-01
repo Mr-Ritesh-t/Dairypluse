@@ -309,6 +309,9 @@ class StaffCreate(BaseModel):
     status: str = "On Duty"
     deliveries_today: int = 0
     rating: float = 5.0
+    daily_salary: Optional[float] = 500.0
+    pending_salary: Optional[float] = 0.0
+    total_salary_paid: Optional[float] = 0.0
     joining_date: Optional[str] = None
 
 class StaffResponse(BaseModel):
@@ -322,6 +325,9 @@ class StaffResponse(BaseModel):
     status: str
     deliveries_today: int
     rating: float
+    daily_salary: Optional[float] = 500.0
+    pending_salary: Optional[float] = 0.0
+    total_salary_paid: Optional[float] = 0.0
     joining_date: str
     model_config = ConfigDict(from_attributes=True)
 
@@ -336,6 +342,9 @@ class StaffUpdate(BaseModel):
     status: Optional[str] = None
     deliveries_today: Optional[int] = None
     rating: Optional[float] = None
+    daily_salary: Optional[float] = None
+    pending_salary: Optional[float] = None
+    total_salary_paid: Optional[float] = None
 
 class DairyCreate(BaseModel):
     name: str
@@ -600,8 +609,50 @@ class AttendanceResponse(BaseModel):
     pickup_time: Optional[str] = None
     pickup_liters: float = 0.0
     pickup_crates: int = 0
+    shift_completed: bool = False
+    shift_completed_time: Optional[str] = None
+    deliveries_completed: int = 0
+    daily_salary_earned: float = 0.0
+    salary_credited: bool = False
+    payout_status: str = "PENDING"
+    payout_id: Optional[str] = None
     notes: Optional[str] = None
     created_at: Optional[Any] = None
+
+# ----------------- SALARY & SHIFT PAYOUT SCHEMAS -----------------
+class StaffDailySalaryUpdate(BaseModel):
+    daily_salary: float
+
+class ShiftCompleteRequest(BaseModel):
+    staff_id: Optional[str] = None
+    staff_name: str
+    dairy_name: Optional[str] = "DairyPulse Farm HQ"
+    deliveries_completed: int = 0
+    shift_completed_time: Optional[str] = None
+    notes: Optional[str] = None
+
+class SalaryPayoutRequest(BaseModel):
+    staff_id: str
+    staff_name: Optional[str] = None
+    dairy_name: Optional[str] = "DairyPulse Farm HQ"
+    amount: float
+    payment_mode: str = "UPI"  # UPI, Cash, Bank Transfer
+    reference_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class SalaryPaymentResponse(BaseModel):
+    id: str
+    staff_id: str
+    staff_name: str
+    dairy_name: Optional[str] = None
+    amount: float
+    payment_date: str
+    payment_time: Optional[str] = None
+    payment_mode: str
+    reference_id: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[Any] = None
+    model_config = ConfigDict(from_attributes=True)
 
 
 

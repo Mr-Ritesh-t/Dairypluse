@@ -17,6 +17,42 @@ from app.seed import seed_initial_data
 # Create tables on startup (PostgreSQL / SQLite)
 Base.metadata.create_all(bind=engine)
 
+def ensure_db_columns():
+    try:
+        with engine.connect() as conn:
+            # Check staff columns
+            cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(staff)").fetchall()]
+            if cols:
+                if "daily_salary" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE staff ADD COLUMN daily_salary FLOAT DEFAULT 500.0")
+                if "pending_salary" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE staff ADD COLUMN pending_salary FLOAT DEFAULT 0.0")
+                if "total_salary_paid" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE staff ADD COLUMN total_salary_paid FLOAT DEFAULT 0.0")
+
+            # Check staff_attendance columns
+            att_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(staff_attendance)").fetchall()]
+            if att_cols:
+                if "shift_completed" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN shift_completed BOOLEAN DEFAULT 0")
+                if "shift_completed_time" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN shift_completed_time VARCHAR")
+                if "deliveries_completed" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN deliveries_completed INTEGER DEFAULT 0")
+                if "daily_salary_earned" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN daily_salary_earned FLOAT DEFAULT 0.0")
+                if "salary_credited" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN salary_credited BOOLEAN DEFAULT 0")
+                if "payout_status" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN payout_status VARCHAR DEFAULT 'PENDING'")
+                if "payout_id" not in att_cols:
+                    conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN payout_id VARCHAR")
+            conn.commit()
+    except Exception as e:
+        print(f"Column check migration warning: {e}")
+
+ensure_db_columns()
+
 # Auto-seed core product catalog and default farm if empty
 with SessionLocal() as db:
     seed_initial_data(db)

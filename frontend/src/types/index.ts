@@ -196,6 +196,9 @@ export interface StaffMember {
   status: 'On Duty' | 'Off Duty' | 'On Leave';
   deliveriesToday: number;
   rating: number;
+  dailySalary?: number;
+  pendingSalary?: number;
+  totalSalaryPaid?: number;
   joiningDate: string;
   dairyName?: string;
 }
@@ -423,7 +426,7 @@ export interface DeliveryBatchSyncResponse {
   }>;
 }
 
-// ----------------- ATTENDANCE & MILK PICKUP TYPES -----------------
+// ----------------- ATTENDANCE, SALARY & MILK PICKUP TYPES -----------------
 export interface AttendanceRecord {
   id?: string;
   staffId?: string;
@@ -436,6 +439,13 @@ export interface AttendanceRecord {
   pickupTime?: string;
   pickupLiters?: number;
   pickupCrates?: number;
+  shiftCompleted?: boolean;
+  shiftCompletedTime?: string;
+  deliveriesCompleted?: number;
+  dailySalaryEarned?: number;
+  salaryCredited?: boolean;
+  payoutStatus?: 'PENDING' | 'PAID';
+  payoutId?: string;
   notes?: string;
 }
 
@@ -448,10 +458,61 @@ export interface RiderShiftStatus {
   pickupTime?: string;
   pickupLiters?: number;
   pickupCrates?: number;
+  shiftCompleted?: boolean;
+  shiftCompletedTime?: string;
+  deliveriesCompleted?: number;
+  dailySalaryEarned?: number;
+  salaryCredited?: boolean;
+  payoutStatus?: 'PENDING' | 'PAID';
+  payoutId?: string;
+  dailySalaryRate?: number;
+  pendingSalary?: number;
+  totalSalaryPaid?: number;
   notes?: string;
   date: string;
   dairyName?: string;
   staffName?: string;
+}
+
+export interface SalaryPaymentRecord {
+  id: string;
+  staffId: string;
+  staffName: string;
+  dairyName?: string;
+  amount: number;
+  paymentDate: string;
+  paymentTime?: string;
+  paymentMode: 'UPI' | 'Cash' | 'Bank Transfer';
+  referenceId?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface RiderSalarySummary {
+  staffId: string;
+  staffName: string;
+  dailySalaryRate: number;
+  pendingSalary: number;
+  totalSalaryPaid: number;
+  completedShiftsCount: number;
+  recentPayouts: Array<{
+    id: string;
+    amount: number;
+    date: string;
+    time?: string;
+    mode: string;
+    referenceId?: string;
+    notes?: string;
+  }>;
+  recentAttendances: Array<{
+    date: string;
+    checkInTime?: string;
+    shiftCompleted?: boolean;
+    shiftCompletedTime?: string;
+    deliveriesCompleted?: number;
+    dailySalaryEarned?: number;
+    payoutStatus?: string;
+  }>;
 }
 
 

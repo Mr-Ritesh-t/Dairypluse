@@ -926,6 +926,9 @@ export async function getStaff() {
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 4.9,
+      dailySalary: st.daily_salary ?? 500,
+      pendingSalary: st.pending_salary ?? 0,
+      totalSalaryPaid: st.total_salary_paid ?? 0,
       joiningDate: st.joining_date,
       dairyName: st.dairy_name,
     }));
@@ -945,6 +948,9 @@ export async function postStaff(data: {
   status?: string;
   deliveriesToday?: number;
   rating?: number;
+  dailySalary?: number;
+  pendingSalary?: number;
+  totalSalaryPaid?: number;
   joiningDate?: string;
   dairyName?: string;
 }) {
@@ -962,6 +968,9 @@ export async function postStaff(data: {
         status: data.status || 'On Duty',
         deliveries_today: data.deliveriesToday || 0,
         rating: data.rating || 5.0,
+        daily_salary: data.dailySalary ?? 500.0,
+        pending_salary: data.pendingSalary ?? 0.0,
+        total_salary_paid: data.totalSalaryPaid ?? 0.0,
         joining_date: data.joiningDate || new Date().toISOString().split('T')[0],
         dairy_name: data.dairyName,
       }),
@@ -978,6 +987,9 @@ export async function postStaff(data: {
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 5.0,
+      dailySalary: st.daily_salary ?? 500,
+      pendingSalary: st.pending_salary ?? 0,
+      totalSalaryPaid: st.total_salary_paid ?? 0,
       joiningDate: st.joining_date,
       dairyName: st.dairy_name,
     };
@@ -1009,6 +1021,9 @@ export async function patchStaffApi(
     password?: string;
     role?: string;
     rating?: number;
+    dailySalary?: number;
+    pendingSalary?: number;
+    totalSalaryPaid?: number;
     dairyName?: string;
   }
 ) {
@@ -1024,6 +1039,9 @@ export async function patchStaffApi(
         password: updateData.password,
         role: updateData.role,
         rating: updateData.rating,
+        daily_salary: updateData.dailySalary,
+        pending_salary: updateData.pendingSalary,
+        total_salary_paid: updateData.totalSalaryPaid,
         dairy_name: updateData.dairyName,
       }),
     });
@@ -1039,6 +1057,9 @@ export async function patchStaffApi(
       status: st.status,
       deliveriesToday: st.deliveries_today || 0,
       rating: st.rating || 5.0,
+      dailySalary: st.daily_salary ?? 500,
+      pendingSalary: st.pending_salary ?? 0,
+      totalSalaryPaid: st.total_salary_paid ?? 0,
       joiningDate: st.joining_date,
       dairyName: st.dairy_name,
     };
@@ -1998,6 +2019,93 @@ export async function getAttendanceListApi(dairy_name?: string): Promise<any[]> 
   } catch (err) {
     console.warn('API error fetching attendance list:', err);
     return [];
+  }
+}
+
+// ----------------- RIDER SHIFT COMPLETION & SALARY PAYOUT APIS -----------------
+export async function updateRiderDailySalaryApi(staffId: string, dailySalary: number): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/staff/${staffId}/daily-salary`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ daily_salary: dailySalary }),
+    });
+    if (!res.ok) throw new Error('Failed to update rider daily salary');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error updating daily salary:', err);
+    return null;
+  }
+}
+
+export async function completeRiderShiftApi(payload: {
+  staff_name: string;
+  staff_id?: string;
+  dairy_name?: string;
+  deliveries_completed: number;
+  shift_completed_time?: string;
+  notes?: string;
+}): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/attendance/complete-shift`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to complete shift and credit salary');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error completing shift:', err);
+    return null;
+  }
+}
+
+export async function postSalaryPayoutApi(payload: {
+  staff_id: string;
+  staff_name?: string;
+  dairy_name?: string;
+  amount: number;
+  payment_mode?: string;
+  reference_id?: string;
+  notes?: string;
+}): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/salary/payout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to record salary payout');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error settling salary payout:', err);
+    return null;
+  }
+}
+
+export async function getSalaryPayoutsApi(staff_id?: string, dairy_name?: string): Promise<any[]> {
+  try {
+    const params = new URLSearchParams();
+    if (staff_id) params.append('staff_id', staff_id);
+    if (dairy_name) params.append('dairy_name', dairy_name);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/salary/payouts${queryStr}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch salary payouts');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching salary payouts:', err);
+    return [];
+  }
+}
+
+export async function getRiderSalarySummaryApi(staff_id: string): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/staff/${staff_id}/salary-summary`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch staff salary summary');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching salary summary:', err);
+    return null;
   }
 }
 

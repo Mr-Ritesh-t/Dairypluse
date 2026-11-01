@@ -30,13 +30,31 @@ import {
   EyeOff,
   Copy,
   Check,
+  IndianRupee,
+  Receipt,
+  Edit2,
+  Wallet,
+  Banknote,
+  CreditCard,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { StaffMember } from '@/types';
 import { isSupabaseConfigured, signUpWithEmailPassword } from '@/lib/supabaseClient';
 
 export default function StaffManagementPage() {
-  const { staff, addStaff, updateStaff, deleteStaff, deliveries, routes, driverRatings } = useDairyPulse();
+  const {
+    staff,
+    addStaff,
+    updateStaff,
+    deleteStaff,
+    deliveries,
+    routes,
+    driverRatings,
+    setRiderDailySalary,
+    payRiderSalary,
+    salaryPayments,
+    attendanceList,
+  } = useDairyPulse();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [deleteConfirmStaff, setDeleteConfirmStaff] = useState<StaffMember | null>(null);
@@ -61,14 +79,86 @@ export default function StaffManagementPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [assignedArea, setAssignedArea] = useState('Baner Morning Route R-04');
   const [status, setStatus] = useState<'On Duty' | 'Off Duty'>('On Duty');
+  const [dailySalaryInput, setDailySalaryInput] = useState<string>('500');
+
+  // Daily Salary Inline Editing States
+  const [editingSalaryId, setEditingSalaryId] = useState<string | null>(null);
+  const [editingSalaryValue, setEditingSalaryValue] = useState<number>(500);
+  const [isSavingSalary, setIsSavingSalary] = useState(false);
+
+  // Settle Payout Modal state
+  const [payoutStaff, setPayoutStaff] = useState<StaffMember | null>(null);
+  const [payoutAmount, setPayoutAmount] = useState<number>(0);
+  const [payoutMode, setPayoutMode] = useState<'UPI' | 'Cash' | 'Bank Transfer'>('UPI');
+  const [payoutReference, setPayoutReference] = useState<string>('');
+  const [payoutNotes, setPayoutNotes] = useState<string>('');
+  const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
 
   const onDutyCount = staff.filter((s) => s.status === 'On Duty').length;
   const ridersCount = staff.filter((s) => s.role === 'Delivery Rider').length;
+  const totalPendingSalary = staff.reduce((sum, s) => sum + (s.pendingSalary || 0), 0);
+  const pendingRidersCount = staff.filter((s) => (s.pendingSalary || 0) > 0).length;
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard?.writeText(text);
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2500);
+  };
+
+  // Save per-day salary rate
+  const handleSaveDailySalary = async (staffId: string, newRate: number) => {
+    setIsSavingSalary(true);
+    try {
+      await setRiderDailySalary(staffId, newRate);
+      if (selectedStaff && selectedStaff.id === staffId) {
+        setSelectedStaff({ ...selectedStaff, dailySalary: newRate });
+      }
+      setEditingSalaryId(null);
+      setActionMessage(`✓ Daily wage updated to ₹${newRate}/day.`);
+      setTimeout(() => setActionMessage(null), 3500);
+    } finally {
+      setIsSavingSalary(false);
+    }
+  };
+
+  // Open payout dialog
+  const handleOpenPayoutModal = (staffMember: StaffMember) => {
+    setPayoutStaff(staffMember);
+    setPayoutAmount(staffMember.pendingSalary || staffMember.dailySalary || 500);
+    setPayoutMode('UPI');
+    setPayoutReference(`UPI-${Date.now().toString().slice(-6)}`);
+    setPayoutNotes('Daily delivery shift payout');
+  };
+
+  // Execute payout to rider
+  const handleExecutePayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payoutStaff || payoutAmount <= 0) return;
+    setIsSubmittingPayout(true);
+    try {
+      await payRiderSalary({
+        staffId: payoutStaff.id,
+        staffName: payoutStaff.name,
+        amount: payoutAmount,
+        paymentMode: payoutMode,
+        referenceId: payoutReference.trim() || undefined,
+        notes: payoutNotes.trim() || undefined,
+      });
+
+      if (selectedStaff && selectedStaff.id === payoutStaff.id) {
+        setSelectedStaff({
+          ...selectedStaff,
+          pendingSalary: Math.max(0, (selectedStaff.pendingSalary || 0) - payoutAmount),
+          totalSalaryPaid: (selectedStaff.totalSalaryPaid || 0) + payoutAmount,
+        });
+      }
+
+      setActionMessage(`🎉 Successfully paid ₹${payoutAmount} to ${payoutStaff.name} via ${payoutMode}!`);
+      setPayoutStaff(null);
+      setTimeout(() => setActionMessage(null), 4500);
+    } finally {
+      setIsSubmittingPayout(false);
+    }
   };
 
   // Create staff
@@ -91,6 +181,9 @@ export default function StaffManagementPage() {
         status,
         deliveriesToday: 0,
         rating: 5.0,
+        dailySalary: dailySalaryInput ? parseFloat(dailySalaryInput) : 500,
+        pendingSalary: 0,
+        totalSalaryPaid: 0,
       });
 
       // Sync with Supabase Auth if configured
@@ -224,7 +317,7 @@ export default function StaffManagementPage() {
       </section>
 
       {/* KPI Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
           <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Crew</p>
           <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{staff.length}</h3>
@@ -244,6 +337,16 @@ export default function StaffManagementPage() {
         </div>
 
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Pending Payouts</p>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">
+            ₹{totalPendingSalary.toLocaleString('en-IN')}
+          </h3>
+          <p className="text-[10px] sm:text-[11px] text-rose-500 font-medium mt-0.5 truncate">
+            {pendingRidersCount} rider{pendingRidersCount !== 1 ? 's' : ''} unpaid
+          </p>
+        </div>
+
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs col-span-2 sm:col-span-1">
           <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Avg Rating</p>
           <h3 className="text-xl sm:text-2xl font-extrabold text-amber-500 mt-1 tabular-nums">4.9 ★</h3>
           <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Customer score</p>
@@ -256,7 +359,7 @@ export default function StaffManagementPage() {
           <div>
             <h3 className="text-base font-bold text-slate-900">Delivery Rider & Staff Directory</h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Click on any staff member row to view his full profile, route, and delivery history.
+              Owner can set per-day salaries, pay completed shift wages, inspect routes, and manage staff IDs.
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg">
@@ -265,12 +368,13 @@ export default function StaffManagementPage() {
         </div>
 
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="w-full text-left text-xs min-w-[700px]">
+          <table className="w-full text-left text-xs min-w-[760px]">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="pb-2.5 font-medium">Staff Member</th>
                 <th className="pb-2.5 font-medium">Role</th>
-                <th className="pb-2.5 font-medium">Login (Phone / Gmail)</th>
+                <th className="pb-2.5 font-medium">Daily Wage</th>
+                <th className="pb-2.5 font-medium">Pending Payout</th>
                 <th className="pb-2.5 font-medium">Assigned Route / Plant</th>
                 <th className="pb-2.5 font-medium">Today's Deliveries</th>
                 <th className="pb-2.5 font-medium">Rating</th>
@@ -281,7 +385,7 @@ export default function StaffManagementPage() {
             <tbody className="divide-y divide-slate-100">
               {staff.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Users className="w-8 h-8 text-slate-300" />
                       <span className="font-semibold text-sm text-slate-600">No staff members enrolled yet</span>
@@ -297,7 +401,7 @@ export default function StaffManagementPage() {
                     key={s.id}
                     onClick={() => setSelectedStaff(s)}
                     className="hover:bg-emerald-50/40 transition cursor-pointer group"
-                    title="Click to view full staff profile and deliveries"
+                    title="Click to view full staff profile, salary, and deliveries"
                   >
                     <td className="py-3.5 font-semibold text-slate-800 flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-emerald-200 transition">
@@ -325,20 +429,70 @@ export default function StaffManagementPage() {
                         {s.role}
                       </span>
                     </td>
-                    <td className="py-3.5 text-slate-700">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 font-bold font-mono text-slate-800">
-                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{s.phone}</span>
+
+                    {/* Daily Wage Rate Column */}
+                    <td className="py-3.5 text-slate-800" onClick={(e) => e.stopPropagation()}>
+                      {editingSalaryId === s.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-slate-400 text-xs">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={10}
+                            value={editingSalaryValue}
+                            onChange={(e) => setEditingSalaryValue(parseFloat(e.target.value) || 0)}
+                            className="w-16 px-1.5 py-0.5 text-xs font-bold border border-emerald-400 rounded bg-white text-slate-900"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            disabled={isSavingSalary}
+                            onClick={() => handleSaveDailySalary(s.id, editingSalaryValue)}
+                            className="p-1 text-emerald-700 hover:bg-emerald-100 rounded"
+                            title="Save Daily Salary"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingSalaryId(null)}
+                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        {s.email && (
-                          <div className="text-[11px] font-sans font-medium text-slate-500 flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-emerald-600 shrink-0" />
-                            <span className="truncate max-w-[170px]" title={s.email}>{s.email}</span>
-                          </div>
-                        )}
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 group/edit">
+                          <span className="font-extrabold text-slate-900 text-xs">₹{s.dailySalary ?? 500}</span>
+                          <span className="text-[10px] text-slate-400">/day</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSalaryId(s.id);
+                              setEditingSalaryValue(s.dailySalary ?? 500);
+                            }}
+                            className="opacity-0 group-hover/edit:opacity-100 p-0.5 text-slate-400 hover:text-emerald-700 transition"
+                            title="Edit Daily Salary"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </td>
+
+                    {/* Pending Salary Payout Balance */}
+                    <td className="py-3.5">
+                      {(s.pendingSalary || 0) > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-extrabold text-[10px]">
+                          ₹{s.pendingSalary} Pending
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
+                          Settled ✓
+                        </span>
+                      )}
+                    </td>
+
                     <td className="py-3.5 text-slate-600 font-medium">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
@@ -381,6 +535,17 @@ export default function StaffManagementPage() {
                     </td>
                     <td className="py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {(s.pendingSalary || 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPayoutModal(s)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+                            title={`Pay ₹${s.pendingSalary} to ${s.name}`}
+                          >
+                            <Banknote className="w-3 h-3" />
+                            <span>Pay ₹{s.pendingSalary}</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setSelectedStaff(s)}
@@ -511,6 +676,134 @@ export default function StaffManagementPage() {
                   </div>
                   <p className="text-[10px] text-amber-700 mt-0.5 font-medium">98.4% on-time delivery</p>
                 </div>
+              </div>
+
+              {/* ======================================================== */}
+              {/* DAILY SALARY & SHIFT PAYOUTS MANAGEMENT */}
+              {/* ======================================================== */}
+              <div className="p-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-white rounded-2xl border-2 border-emerald-200 shadow-xs space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                      <IndianRupee className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-900">Per-Day Salary & Payout Management</h4>
+                      <p className="text-[10px] text-slate-500">Configure daily wage and settle completed milk delivery shifts</p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    (selectedStaff.pendingSalary || 0) > 0
+                      ? 'bg-rose-100 text-rose-800 border-rose-300'
+                      : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  }`}>
+                    {(selectedStaff.pendingSalary || 0) > 0 ? `₹${selectedStaff.pendingSalary} Unpaid` : 'All Settled ✓'}
+                  </span>
+                </div>
+
+                {/* Rate Editor & Balance Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Rate Editor */}
+                  <div className="p-3 bg-white rounded-xl border border-emerald-100 space-y-1.5 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Per-Day Salary Rate</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900">₹</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={20}
+                        value={selectedStaff.dailySalary ?? 500}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setSelectedStaff({ ...selectedStaff, dailySalary: val });
+                        }}
+                        className="w-20 px-2 py-1 text-xs font-black bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={isSavingSalary}
+                        onClick={() => handleSaveDailySalary(selectedStaff.id, selectedStaff.dailySalary ?? 500)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs cursor-pointer"
+                      >
+                        {isSavingSalary ? '...' : 'Save'}
+                      </button>
+                    </div>
+                    <p className="text-[9px] text-slate-400">Credited when rider delivers all milk</p>
+                  </div>
+
+                  {/* Pending Payout */}
+                  <div className="p-3 bg-white rounded-xl border border-emerald-100 space-y-1 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Pending Payout Balance</span>
+                    <div className="text-xl font-black text-rose-600 tabular-nums">
+                      ₹{selectedStaff.pendingSalary || 0}
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium">Earned from completed shifts</p>
+                  </div>
+
+                  {/* Lifetime Paid */}
+                  <div className="p-3 bg-white rounded-xl border border-emerald-100 space-y-1 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total Lifetime Paid</span>
+                    <div className="text-xl font-black text-emerald-800 tabular-nums">
+                      ₹{selectedStaff.totalSalaryPaid || 0}
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium">Settled via UPI / Cash</p>
+                  </div>
+                </div>
+
+                {/* Settle Payout Button */}
+                <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white/80 p-3 rounded-xl border border-emerald-100">
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900 block">Settle Salary with Rider</span>
+                    <span className="text-[10px] text-slate-500">
+                      {(selectedStaff.pendingSalary || 0) > 0
+                        ? `Outstanding balance of ₹${selectedStaff.pendingSalary} ready for settlement.`
+                        : 'All previous delivery shifts have been settled.'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPayoutModal(selectedStaff)}
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-extrabold rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                  >
+                    <Banknote className="w-4 h-4 text-emerald-200" />
+                    <span>{(selectedStaff.pendingSalary || 0) > 0 ? `Pay ₹${selectedStaff.pendingSalary} Now` : 'Record Salary Payment'}</span>
+                  </button>
+                </div>
+
+                {/* Payout History for this staff member */}
+                {(() => {
+                  const staffPayments = salaryPayments.filter((p) => p.staffId === selectedStaff.id);
+                  if (staffPayments.length === 0) return null;
+                  return (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                        Recent Payout Receipts ({staffPayments.length})
+                      </span>
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        {staffPayments.map((p) => (
+                          <div
+                            key={p.id}
+                            className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-slate-900">₹{p.amount}</span>
+                                <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 font-bold text-[9px] rounded">
+                                  {p.paymentMode}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">Ref: {p.referenceId || 'N/A'}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 mt-0.5">{p.paymentDate} • {p.notes || 'Shift payout'}</p>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                              Paid ✓
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Account & Login Credentials */}
@@ -1101,6 +1394,27 @@ export default function StaffManagementPage() {
                 </div>
 
                 <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Per-Day Salary / Daily Wage (₹) *
+                  </label>
+                  <div className="relative">
+                    <IndianRupee className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                    <input
+                      type="number"
+                      min={0}
+                      step={10}
+                      value={dailySalaryInput}
+                      onChange={(e) => setDailySalaryInput(e.target.value)}
+                      placeholder="e.g. 500"
+                      className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-bold"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    This amount will be automatically credited to the rider&apos;s balance when they finish their daily delivery run.
+                  </p>
+                </div>
+
+                <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Initial Status</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -1147,6 +1461,132 @@ export default function StaffManagementPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. SETTLE SALARY PAYOUT MODAL */}
+      {/* ======================================================== */}
+      {payoutStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 text-left shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <Banknote className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">Settle Salary Payout</h3>
+                  <p className="text-[11px] text-slate-500">Record wage payment to {payoutStaff.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPayoutStaff(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Rider / Staff Member:</span>
+                <strong className="text-slate-900">{payoutStaff.name}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Per-Day Salary Rate:</span>
+                <span className="font-bold text-slate-800">₹{payoutStaff.dailySalary ?? 500}/day</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Accumulated Pending Balance:</span>
+                <span className="font-black text-rose-600">₹{payoutStaff.pendingSalary || 0}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleExecutePayout} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Payout Amount to Settle (₹) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(parseFloat(e.target.value) || 0)}
+                    placeholder="Enter amount"
+                    className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Mode *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['UPI', 'Cash', 'Bank Transfer'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setPayoutMode(mode)}
+                      className={`py-2 px-2 text-center rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        payoutMode === mode
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Reference ID / Voucher Number
+                </label>
+                <input
+                  type="text"
+                  value={payoutReference}
+                  onChange={(e) => setPayoutReference(e.target.value)}
+                  placeholder="e.g. UPI-TXN-984321 or Cash-Voucher-01"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Notes / Remarks</label>
+                <input
+                  type="text"
+                  value={payoutNotes}
+                  onChange={(e) => setPayoutNotes(e.target.value)}
+                  placeholder="e.g. Settled morning deliveries salary"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setPayoutStaff(null)}
+                  disabled={isSubmittingPayout}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingPayout || payoutAmount <= 0}
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl text-xs font-extrabold hover:from-emerald-700 hover:to-teal-800 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-md"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{isSubmittingPayout ? 'Processing...' : `Confirm Payment of ₹${payoutAmount}`}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

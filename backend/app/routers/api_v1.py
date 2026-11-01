@@ -21,6 +21,7 @@ from app.models.models import (
     InventoryTransaction,
     DriverRating,
     StaffAttendance,
+    StaffSalaryPayment,
 )
 from app.schemas.schemas import (
     ProductCreate,
@@ -83,6 +84,10 @@ from app.schemas.schemas import (
     AttendanceCheckInRequest,
     MilkPickupRequest,
     AttendanceResponse,
+    StaffDailySalaryUpdate,
+    ShiftCompleteRequest,
+    SalaryPayoutRequest,
+    SalaryPaymentResponse,
 )
 import re
 from datetime import datetime, timedelta
@@ -979,6 +984,9 @@ def create_staff(staff_data: StaffCreate, db: Session = Depends(get_db)):
         status=staff_data.status,
         deliveries_today=staff_data.deliveries_today or 0,
         rating=staff_data.rating or 5.0,
+        daily_salary=staff_data.daily_salary if staff_data.daily_salary is not None else 500.0,
+        pending_salary=staff_data.pending_salary or 0.0,
+        total_salary_paid=staff_data.total_salary_paid or 0.0,
         joining_date=joining_date,
     )
     db.add(new_staff)
@@ -1043,6 +1051,12 @@ def update_staff(staff_id: str, staff_data: StaffUpdate, db: Session = Depends(g
         staff.deliveries_today = staff_data.deliveries_today
     if staff_data.rating is not None:
         staff.rating = staff_data.rating
+    if staff_data.daily_salary is not None:
+        staff.daily_salary = staff_data.daily_salary
+    if staff_data.pending_salary is not None:
+        staff.pending_salary = staff_data.pending_salary
+    if staff_data.total_salary_paid is not None:
+        staff.total_salary_paid = staff_data.total_salary_paid
 
     # Sync login account if phone/email/password updated
     user = db.query(User).filter((User.phone == staff.phone) | (User.email == staff.email)).first()
@@ -2203,8 +2217,14 @@ def get_today_rider_shift(
     dairy_name: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    """Retrieve today's shift status (attendance & milk pickup) for a rider."""
+    """Retrieve today's shift status (attendance, milk pickup, shift completion, salary) for a rider."""
     today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    
+    # Also find staff member profile to attach daily salary rate and balance
+    rider = None
+    if staff_name:
+        rider = db.query(Staff).filter(Staff.name == staff_name).first()
+
     query = db.query(StaffAttendance).filter(StaffAttendance.date == today_str)
     if staff_name:
         query = query.filter(StaffAttendance.staff_name == staff_name)
@@ -2221,6 +2241,15 @@ def get_today_rider_shift(
             "pickupTime": None,
             "pickupLiters": 0.0,
             "pickupCrates": 0,
+            "shiftCompleted": False,
+            "shiftCompletedTime": None,
+            "deliveriesCompleted": 0,
+            "dailySalaryEarned": 0.0,
+            "salaryCredited": False,
+            "payoutStatus": "PENDING",
+            "dailySalaryRate": rider.daily_salary if rider else 500.0,
+            "pendingSalary": rider.pending_salary if rider else 0.0,
+            "totalSalaryPaid": rider.total_salary_paid if rider else 0.0,
             "date": today_str,
         }
 
@@ -2233,10 +2262,20 @@ def get_today_rider_shift(
         "pickupTime": att.pickup_time,
         "pickupLiters": att.pickup_liters,
         "pickupCrates": att.pickup_crates,
+        "shiftCompleted": bool(att.shift_completed),
+        "shiftCompletedTime": att.shift_completed_time,
+        "deliveriesCompleted": att.deliveries_completed or 0,
+        "dailySalaryEarned": att.daily_salary_earned or 0.0,
+        "salaryCredited": bool(att.salary_credited),
+        "payoutStatus": att.payout_status or "PENDING",
+        "payoutId": att.payout_id,
         "notes": att.notes,
         "date": att.date,
         "dairyName": att.dairy_name,
         "staffName": att.staff_name,
+        "dailySalaryRate": rider.daily_salary if rider else 500.0,
+        "pendingSalary": rider.pending_salary if rider else 0.0,
+        "totalSalaryPaid": rider.total_salary_paid if rider else 0.0,
     }
 
 
@@ -2251,6 +2290,267 @@ def list_today_attendance(
     if dairy_name:
         query = query.filter(StaffAttendance.dairy_name == dairy_name)
     return query.all()
+
+
+# ----------------- RIDER SHIFT COMPLETION & SALARY PAYOUT ENDPOINTS -----------------
+@api_router.post("/attendance/complete-shift", response_model=Dict[str, Any])
+def complete_rider_shift(req: ShiftCompleteRequest, db: Session = Depends(get_db)):
+    """
+    Rider finishes all doorstep milk deliveries and marks shift as complete.
+    The per-day salary set by the owner is calculated and credited to the rider's pending salary account.
+    """
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.now().strftime("%I:%M %p")
+
+    # 1. Find rider staff record
+    rider = None
+    if req.staff_id:
+        rider = db.query(Staff).filter(Staff.id == req.staff_id).first()
+    if not rider and req.staff_name:
+        rider = db.query(Staff).filter(Staff.name == req.staff_name).first()
+
+    daily_wage = rider.daily_salary if (rider and rider.daily_salary is not None) else 500.0
+
+    # 2. Find or create today's attendance record
+    att = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.date == today_str, StaffAttendance.staff_name == req.staff_name)
+        .first()
+    )
+
+    if not att:
+        att = StaffAttendance(
+            staff_id=rider.id if rider else req.staff_id,
+            staff_name=req.staff_name,
+            dairy_name=req.dairy_name or (rider.dairy_name if rider else "DairyPulse Farm HQ"),
+            date=today_str,
+            check_in_time=now_time,
+            status="Present",
+            pickup_confirmed=True,
+            pickup_time=now_time,
+            shift_completed=True,
+            shift_completed_time=req.shift_completed_time or now_time,
+            deliveries_completed=req.deliveries_completed,
+            daily_salary_earned=daily_wage,
+            salary_credited=True,
+            payout_status="PENDING",
+            notes=req.notes,
+        )
+        db.add(att)
+        if rider:
+            rider.pending_salary = (rider.pending_salary or 0.0) + daily_wage
+    else:
+        att.shift_completed = True
+        att.shift_completed_time = req.shift_completed_time or now_time
+        att.deliveries_completed = req.deliveries_completed
+        if req.notes:
+            att.notes = (att.notes or "") + " | " + req.notes
+
+        # Credit daily salary once per shift
+        if not att.salary_credited:
+            att.daily_salary_earned = daily_wage
+            att.salary_credited = True
+            att.payout_status = "PENDING"
+            if rider:
+                rider.pending_salary = (rider.pending_salary or 0.0) + daily_wage
+
+    db.commit()
+    db.refresh(att)
+    if rider:
+        db.refresh(rider)
+
+    return {
+        "success": True,
+        "message": f"🎉 Shift completed! Today's salary of ₹{daily_wage:.0f} credited to {req.staff_name}'s account.",
+        "shiftCompleted": True,
+        "shiftCompletedTime": att.shift_completed_time,
+        "deliveriesCompleted": att.deliveries_completed,
+        "dailySalaryEarned": att.daily_salary_earned,
+        "salaryCredited": att.salary_credited,
+        "payoutStatus": att.payout_status,
+        "pendingSalary": rider.pending_salary if rider else daily_wage,
+        "totalSalaryPaid": rider.total_salary_paid if rider else 0.0,
+        "dailySalaryRate": daily_wage,
+    }
+
+
+@api_router.patch("/staff/{staff_id}/daily-salary", response_model=StaffResponse)
+def update_rider_daily_salary(
+    staff_id: str,
+    req: StaffDailySalaryUpdate,
+    db: Session = Depends(get_db),
+):
+    """Owner sets or updates the per-day salary for a delivery rider / staff member."""
+    staff = db.query(Staff).filter(Staff.id == staff_id).first()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    staff.daily_salary = req.daily_salary
+    db.commit()
+    db.refresh(staff)
+    return staff
+
+
+@api_router.post("/salary/payout", response_model=Dict[str, Any])
+def pay_rider_salary(req: SalaryPayoutRequest, db: Session = Depends(get_db)):
+    """
+    Owner pays the rider's pending salary balance via Cash, UPI, or Bank Transfer.
+    Updates the rider's account balance, records payout transaction, and logs a farm expense.
+    """
+    staff = db.query(Staff).filter(Staff.id == req.staff_id).first()
+    if not staff and req.staff_name:
+        staff = db.query(Staff).filter(Staff.name == req.staff_name).first()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Payout amount must be greater than zero")
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.now().strftime("%I:%M %p")
+    ref_id = req.reference_id or f"PAY-{datetime.now().strftime('%Y%m%d%H%M')}"
+
+    # 1. Create StaffSalaryPayment record
+    payment = StaffSalaryPayment(
+        staff_id=staff.id,
+        staff_name=staff.name,
+        dairy_name=staff.dairy_name or req.dairy_name or "DairyPulse Farm HQ",
+        amount=req.amount,
+        payment_date=today_str,
+        payment_time=now_time,
+        payment_mode=req.payment_mode or "UPI",
+        reference_id=ref_id,
+        notes=req.notes,
+    )
+    db.add(payment)
+
+    # 2. Deduct from rider's pending salary and add to total paid
+    current_pending = staff.pending_salary or 0.0
+    staff.pending_salary = max(0.0, current_pending - req.amount)
+    staff.total_salary_paid = (staff.total_salary_paid or 0.0) + req.amount
+
+    # 3. Mark pending attendance records for this staff as PAID
+    pending_attendances = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.staff_name == staff.name, StaffAttendance.payout_status == "PENDING")
+        .all()
+    )
+    for p_att in pending_attendances:
+        p_att.payout_status = "PAID"
+        p_att.payout_id = payment.id
+
+    # 4. Auto-log an Expense under Staff Salary for farm bookkeeping
+    expense = Expense(
+        category="Staff Salary",
+        amount=req.amount,
+        date=today_str,
+        vendor=staff.name,
+        payment_method=req.payment_mode or "UPI",
+        notes=f"Rider Daily Salary Payout ({req.payment_mode}) - Ref: {ref_id}. {req.notes or ''}".strip(),
+    )
+    db.add(expense)
+
+    db.commit()
+    db.refresh(payment)
+    db.refresh(staff)
+
+    return {
+        "success": True,
+        "message": f"Successfully paid ₹{req.amount:.0f} to {staff.name} via {req.payment_mode}.",
+        "payment": {
+            "id": payment.id,
+            "staffId": payment.staff_id,
+            "staffName": payment.staff_name,
+            "dairyName": payment.dairy_name,
+            "amount": payment.amount,
+            "paymentDate": payment.payment_date,
+            "paymentTime": payment.payment_time,
+            "paymentMode": payment.payment_mode,
+            "referenceId": payment.reference_id,
+            "notes": payment.notes,
+            "createdAt": payment.created_at.isoformat() if payment.created_at else None,
+        },
+        "pendingSalary": staff.pending_salary,
+        "totalSalaryPaid": staff.total_salary_paid,
+    }
+
+
+@api_router.get("/salary/payouts", response_model=List[SalaryPaymentResponse])
+def list_salary_payouts(
+    staff_id: Optional[str] = None,
+    dairy_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Retrieve list of all salary payments made by the dairy owner."""
+    query = db.query(StaffSalaryPayment)
+    if staff_id:
+        query = query.filter(StaffSalaryPayment.staff_id == staff_id)
+    if dairy_name:
+        query = query.filter(StaffSalaryPayment.dairy_name == dairy_name)
+    return query.order_by(StaffSalaryPayment.created_at.desc()).all()
+
+
+@api_router.get("/staff/{staff_id}/salary-summary", response_model=Dict[str, Any])
+def get_staff_salary_summary(staff_id: str, db: Session = Depends(get_db)):
+    """Retrieve complete earnings, pending balance, and payout history for a specific rider."""
+    staff = db.query(Staff).filter(Staff.id == staff_id).first()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    payouts = (
+        db.query(StaffSalaryPayment)
+        .filter(StaffSalaryPayment.staff_id == staff_id)
+        .order_by(StaffSalaryPayment.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    attendances = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.staff_name == staff.name)
+        .order_by(StaffAttendance.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    completed_shifts_count = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.staff_name == staff.name, StaffAttendance.shift_completed == True)
+        .count()
+    )
+
+    return {
+        "staffId": staff.id,
+        "staffName": staff.name,
+        "dailySalaryRate": staff.daily_salary or 500.0,
+        "pendingSalary": staff.pending_salary or 0.0,
+        "totalSalaryPaid": staff.total_salary_paid or 0.0,
+        "completedShiftsCount": completed_shifts_count,
+        "recentPayouts": [
+            {
+                "id": p.id,
+                "amount": p.amount,
+                "date": p.payment_date,
+                "time": p.payment_time,
+                "mode": p.payment_mode,
+                "referenceId": p.reference_id,
+                "notes": p.notes,
+            }
+            for p in payouts
+        ],
+        "recentAttendances": [
+            {
+                "date": a.date,
+                "checkInTime": a.check_in_time,
+                "shiftCompleted": a.shift_completed,
+                "shiftCompletedTime": a.shift_completed_time,
+                "deliveriesCompleted": a.deliveries_completed,
+                "dailySalaryEarned": a.daily_salary_earned,
+                "payoutStatus": a.payout_status,
+            }
+            for a in attendances
+        ],
+    }
 
 
 

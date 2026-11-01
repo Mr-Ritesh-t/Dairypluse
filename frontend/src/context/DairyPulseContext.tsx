@@ -19,6 +19,7 @@ import {
   DriverRating,
   AttendanceRecord,
   RiderShiftStatus,
+  SalaryPaymentRecord,
 } from '@/types';
 import {
   getProducts,
@@ -64,6 +65,11 @@ import {
   postMilkPickupApi,
   getTodayAttendanceApi,
   getAttendanceListApi,
+  updateRiderDailySalaryApi,
+  completeRiderShiftApi,
+  postSalaryPayoutApi,
+  getSalaryPayoutsApi,
+  getRiderSalarySummaryApi,
 } from '@/lib/api';
 
 interface DairyPulseContextType {
@@ -147,6 +153,21 @@ interface DairyPulseContextType {
   markAttendance: (riderName: string, dairyName?: string, notes?: string) => Promise<boolean>;
   confirmMilkPickup: (riderName: string, liters: number, crates: number, dairyName?: string, notes?: string) => Promise<boolean>;
   refreshRiderShift: (riderName: string, dairyName?: string) => Promise<RiderShiftStatus | null>;
+
+  // Salary & Payouts
+  salaryPayments: SalaryPaymentRecord[];
+  setRiderDailySalary: (staffId: string, dailySalary: number) => Promise<boolean>;
+  completeShift: (deliveriesCompleted: number, notes?: string) => Promise<boolean>;
+  payRiderSalary: (payload: {
+    staffId: string;
+    staffName?: string;
+    amount: number;
+    paymentMode?: 'UPI' | 'Cash' | 'Bank Transfer';
+    referenceId?: string;
+    notes?: string;
+    dairyName?: string;
+  }) => Promise<boolean>;
+  refreshSalaryData: () => Promise<void>;
 }
 
 const initialProducts: Product[] = [];
@@ -331,6 +352,15 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const [driverRatings, setDriverRatings] = useState<DriverRating[]>([]);
   const [attendanceList, setAttendanceList] = useState<AttendanceRecord[]>([]);
   const [riderShiftStatus, setRiderShiftStatus] = useState<RiderShiftStatus | null>(null);
+  const [salaryPayments, setSalaryPayments] = useState<SalaryPaymentRecord[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dairypulse_salary_payments');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const openModal = (name: string) => setActiveModal(name);
@@ -387,6 +417,19 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     });
     getDriverRatingsApi().then((data) => {
       if (data && Array.isArray(data)) setDriverRatings(data);
+    });
+    getSalaryPayoutsApi().then((data) => {
+      if (data && Array.isArray(data)) {
+        setSalaryPayments(data);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_salary_payments', JSON.stringify(data));
+          } catch (e) {}
+        }
+      }
+    });
+    getAttendanceListApi().then((data) => {
+      if (data && Array.isArray(data)) setAttendanceList(data);
     });
   }, []);
 
@@ -1262,6 +1305,209 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return driverRatings.filter((r) => r.driverName.toLowerCase() === driverName.toLowerCase());
   };
 
+  const refreshSalaryData = async () => {
+    try {
+      const payouts = await getSalaryPayoutsApi();
+      if (payouts && Array.isArray(payouts)) {
+        setSalaryPayments(payouts);
+      }
+      const st = await getStaff();
+      if (st && Array.isArray(st)) {
+        setRawStaff(st);
+      }
+    } catch (e) {
+      console.warn('Error refreshing salary data:', e);
+    }
+  };
+
+  const setRiderDailySalary = async (staffId: string, dailySalary: number): Promise<boolean> => {
+    setStaff((prev) => {
+      const updated = prev.map((s) => (s.id === staffId ? { ...s, dailySalary } : s));
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+    const res = await updateRiderDailySalaryApi(staffId, dailySalary);
+    if (res) {
+      setStaff((prev) =>
+        prev.map((s) => (s.id === staffId ? { ...s, dailySalary: res.daily_salary ?? dailySalary } : s))
+      );
+    }
+    return true;
+  };
+
+  const completeShift = async (deliveriesCompleted: number, notes?: string): Promise<boolean> => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const riderName = user?.name || riderShiftStatus?.staffName || 'Rahul Deshmukh';
+    const riderMember = staff.find((s) => s.name.toLowerCase() === riderName.toLowerCase() || s.id === user?.id);
+    const wage = riderMember?.dailySalary ?? 500;
+
+    // 1. Optimistic shift update
+    const updatedStatus: RiderShiftStatus = {
+      ...(riderShiftStatus || {
+        attendanceMarked: true,
+        checkInTime: nowTime,
+        status: 'Present',
+        pickupConfirmed: true,
+        pickupTime: nowTime,
+        pickupLiters: 0,
+        pickupCrates: 0,
+        date: todayStr,
+        dairyName: user?.dairyName || 'DairyPulse Farm HQ',
+        staffName: riderName,
+      }),
+      shiftCompleted: true,
+      shiftCompletedTime: nowTime,
+      deliveriesCompleted,
+      dailySalaryEarned: wage,
+      salaryCredited: true,
+      payoutStatus: 'PENDING',
+      dailySalaryRate: wage,
+      pendingSalary: (riderMember?.pendingSalary || 0) + wage,
+    };
+    setRiderShiftStatus(updatedStatus);
+
+    if (riderMember) {
+      setStaff((prev) => {
+        const updated = prev.map((s) =>
+          s.id === riderMember.id ? { ...s, pendingSalary: (s.pendingSalary || 0) + wage } : s
+        );
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+            localStorage.setItem(`dairypulse_shift_${riderName}_${todayStr}`, JSON.stringify(updatedStatus));
+          } catch (e) {}
+        }
+        return updated;
+      });
+    }
+
+    // 2. Call backend API
+    const res = await completeRiderShiftApi({
+      staff_id: riderMember?.id || user?.id,
+      staff_name: riderName,
+      dairy_name: user?.dairyName,
+      deliveries_completed: deliveriesCompleted,
+      shift_completed_time: nowTime,
+      notes,
+    });
+
+    if (res && res.success) {
+      setRiderShiftStatus((prev) => ({
+        ...prev,
+        ...res,
+        shiftCompleted: true,
+        salaryCredited: true,
+      }));
+      if (riderMember && res.pendingSalary !== undefined) {
+        setStaff((prev) =>
+          prev.map((s) => (s.id === riderMember.id ? { ...s, pendingSalary: res.pendingSalary } : s))
+        );
+      }
+    }
+    return true;
+  };
+
+  const payRiderSalary = async (payload: {
+    staffId: string;
+    staffName?: string;
+    amount: number;
+    paymentMode?: 'UPI' | 'Cash' | 'Bank Transfer';
+    referenceId?: string;
+    notes?: string;
+    dairyName?: string;
+  }): Promise<boolean> => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const targetStaff = staff.find((s) => s.id === payload.staffId);
+    const staffName = payload.staffName || targetStaff?.name || 'Delivery Partner';
+
+    // 1. Optimistic staff balance update
+    if (targetStaff) {
+      setStaff((prev) => {
+        const updated = prev.map((s) => {
+          if (s.id === targetStaff.id) {
+            return {
+              ...s,
+              pendingSalary: Math.max(0, (s.pendingSalary || 0) - payload.amount),
+              totalSalaryPaid: (s.totalSalaryPaid || 0) + payload.amount,
+            };
+          }
+          return s;
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_staff', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
+    }
+
+    // 2. Add local SalaryPaymentRecord
+    const newPayment: SalaryPaymentRecord = {
+      id: `pay_${Date.now()}`,
+      staffId: payload.staffId,
+      staffName,
+      dairyName: payload.dairyName || activeDairy?.name || 'DairyPulse Farm HQ',
+      amount: payload.amount,
+      paymentDate: todayStr,
+      paymentTime: nowTime,
+      paymentMode: payload.paymentMode || 'UPI',
+      referenceId: payload.referenceId || `PAY-${Date.now().toString().slice(-6)}`,
+      notes: payload.notes,
+      createdAt: new Date().toISOString(),
+    };
+
+    setSalaryPayments((prev) => {
+      const updated = [newPayment, ...prev];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_salary_payments', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    // 3. Auto-log farm Expense under Staff Salaries
+    addExpense({
+      category: 'Staff Salaries',
+      amount: payload.amount,
+      date: todayStr,
+      vendor: staffName,
+      paymentMethod: payload.paymentMode || 'UPI',
+      notes: `Rider salary payout (${payload.paymentMode || 'UPI'}) - Ref: ${newPayment.referenceId}. ${payload.notes || ''}`.trim(),
+    });
+
+    // 4. Call backend API
+    const res = await postSalaryPayoutApi({
+      staff_id: payload.staffId,
+      staff_name: staffName,
+      dairy_name: payload.dairyName,
+      amount: payload.amount,
+      payment_mode: payload.paymentMode || 'UPI',
+      reference_id: payload.referenceId,
+      notes: payload.notes,
+    });
+
+    if (res && res.success) {
+      if (res.pendingSalary !== undefined) {
+        setStaff((prev) =>
+          prev.map((s) =>
+            s.id === payload.staffId
+              ? { ...s, pendingSalary: res.pendingSalary, totalSalaryPaid: res.totalSalaryPaid }
+              : s
+          )
+        );
+      }
+    }
+    return true;
+  };
+
   return (
     <DairyPulseContext.Provider
       value={{
@@ -1320,6 +1566,11 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         markAttendance,
         confirmMilkPickup,
         refreshRiderShift,
+        salaryPayments,
+        setRiderDailySalary,
+        completeShift,
+        payRiderSalary,
+        refreshSalaryData,
       }}
     >
       {children}

@@ -57,6 +57,9 @@ class Staff(Base):
     status = Column(String, default="On Duty")  # On Duty, Off Duty, On Leave
     deliveries_today = Column(Integer, default=0)
     rating = Column(Float, default=4.9)
+    daily_salary = Column(Float, default=500.0)
+    pending_salary = Column(Float, default=0.0)
+    total_salary_paid = Column(Float, default=0.0)
     joining_date = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -275,5 +278,27 @@ class StaffAttendance(Base):
     pickup_time = Column(String, nullable=True)  # e.g. "05:55 AM"
     pickup_liters = Column(Float, default=0.0)
     pickup_crates = Column(Integer, default=0)
+    shift_completed = Column(Boolean, default=False)
+    shift_completed_time = Column(String, nullable=True)
+    deliveries_completed = Column(Integer, default=0)
+    daily_salary_earned = Column(Float, default=0.0)
+    salary_credited = Column(Boolean, default=False)
+    payout_status = Column(String, default="PENDING")  # PENDING, PAID
+    payout_id = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class StaffSalaryPayment(Base):
+    __tablename__ = "staff_salary_payments"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    staff_id = Column(String, nullable=False)
+    staff_name = Column(String, nullable=False)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
+    amount = Column(Float, nullable=False)
+    payment_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
+    payment_time = Column(String, nullable=True)
+    payment_mode = Column(String, default="UPI")  # UPI, Cash, Bank Transfer
+    reference_id = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
