@@ -423,6 +423,38 @@ export interface DeliveryBatchSyncResponse {
   }>;
 }
 
+// ----------------- ATTENDANCE & MILK PICKUP TYPES -----------------
+export interface AttendanceRecord {
+  id?: string;
+  staffId?: string;
+  staffName: string;
+  dairyName?: string;
+  date: string;
+  checkInTime?: string;
+  status: 'Present' | 'Late' | 'Half Day' | 'Not Marked';
+  pickupConfirmed: boolean;
+  pickupTime?: string;
+  pickupLiters?: number;
+  pickupCrates?: number;
+  notes?: string;
+}
+
+export interface RiderShiftStatus {
+  id?: string;
+  attendanceMarked: boolean;
+  checkInTime?: string;
+  status: 'Present' | 'Late' | 'Half Day' | 'Not Marked';
+  pickupConfirmed: boolean;
+  pickupTime?: string;
+  pickupLiters?: number;
+  pickupCrates?: number;
+  notes?: string;
+  date: string;
+  dairyName?: string;
+  staffName?: string;
+}
+
+
 
 
 

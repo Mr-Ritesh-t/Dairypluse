@@ -260,3 +260,20 @@ class Expense(Base):
     vendor = Column(String, nullable=False)
     payment_method = Column(String, default="UPI")  # UPI, Cash, Bank Transfer, Cheque
     notes = Column(Text, nullable=True)
+
+class StaffAttendance(Base):
+    __tablename__ = "staff_attendance"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    staff_id = Column(String, nullable=True)
+    staff_name = Column(String, nullable=False)
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
+    date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))  # YYYY-MM-DD
+    check_in_time = Column(String, nullable=True)  # e.g. "05:30 AM"
+    status = Column(String, default="Present")  # Present, Late, Half Day
+    pickup_confirmed = Column(Boolean, default=False)
+    pickup_time = Column(String, nullable=True)  # e.g. "05:55 AM"
+    pickup_liters = Column(Float, default=0.0)
+    pickup_crates = Column(Integer, default=0)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

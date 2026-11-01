@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Truck,
@@ -34,13 +34,28 @@ import {
   Mail,
   ChevronRight,
   Package,
+  Sun,
+  Box,
+  Check,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { useOfflineDeliverySync } from '@/lib/offlineSync';
 
 export default function DeliveryPartnerMobileApp() {
-  const { deliveries, updateDeliveryStatus, dairies, activeDairy, staff, updateStaff, getRatingsForDriver } = useDairyPulse();
+  const {
+    deliveries,
+    updateDeliveryStatus,
+    dairies,
+    activeDairy,
+    staff,
+    updateStaff,
+    getRatingsForDriver,
+    riderShiftStatus,
+    markAttendance,
+    confirmMilkPickup,
+    refreshRiderShift,
+  } = useDairyPulse();
   const { user, logout } = useAuth();
 
   // Navigation tab: Deliveries | Stats | Profile
@@ -242,6 +257,54 @@ export default function DeliveryPartnerMobileApp() {
     return counts;
   }, [myDeliveries]);
 
+  // Attendance and Milk Pickup States
+  const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
+  const [isConfirmingPickup, setIsConfirmingPickup] = useState<boolean>(false);
+  const [currentTimeString, setCurrentTimeString] = useState<string>('05:30 AM');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTimeString(
+        now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+      );
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch today's shift status on load
+  useEffect(() => {
+    if (riderName) {
+      refreshRiderShift(riderName, matchedDairy.name);
+    }
+  }, [riderName, matchedDairy.name]);
+
+  const cratesCount = Math.max(1, Math.ceil(totalLitersAssigned / 12));
+
+  const handleMarkAttendance = async () => {
+    setIsCheckingIn(true);
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    await markAttendance(riderName, matchedDairy.name, 'Morning Shift Check-in');
+    setIsOnDuty(true);
+    if (matchedStaff?.id) {
+      updateStaff(matchedStaff.id, { status: 'On Duty' });
+    }
+    setSyncToast(`🌅 Morning Attendance marked Present at ${nowTime}!`);
+    setTimeout(() => setSyncToast(null), 3500);
+    setIsCheckingIn(false);
+  };
+
+  const handleConfirmPickup = async () => {
+    setIsConfirmingPickup(true);
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    await confirmMilkPickup(riderName, totalLitersAssigned, cratesCount, matchedDairy.name, 'Morning route crates verified & sealed');
+    setSyncToast(`🥛 Confirmed ${totalLitersAssigned}L (${cratesCount} crates) picked up from ${matchedDairy.name}! Ready for route.`);
+    setTimeout(() => setSyncToast(null), 4000);
+    setIsConfirmingPickup(false);
+  };
+
   return (
     <div className="py-2 flex justify-center w-full min-h-screen bg-slate-100">
       <div className="w-full max-w-md min-h-[92vh] bg-slate-50 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative pb-16">
@@ -439,6 +502,118 @@ export default function DeliveryPartnerMobileApp() {
         {/* 1. DELIVERIES TAB */}
         {navTab === 'DELIVERIES' && (
           <div className="flex-1 p-3.5 space-y-3 overflow-y-auto">
+            {/* ================= MORNING ATTENDANCE & DAIRY PICKUP CHECKLIST ================= */}
+            {!riderShiftStatus?.attendanceMarked ? (
+              // STEP 1: ATTENDANCE CHECK-IN CARD
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
+                      <Sun className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
+                        Step 1: Daily Check-in
+                      </span>
+                      <h3 className="font-extrabold text-sm text-slate-900 mt-0.5">
+                        Mark Morning Attendance
+                      </h3>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-amber-700 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs tabular-nums">
+                    {currentTimeString}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Good Morning, <strong>{riderName}</strong>! Please mark your daily shift attendance at <strong>{matchedDairy.name}</strong> before picking up your milk crates and starting your route.
+                </p>
+
+                <button
+                  onClick={handleMarkAttendance}
+                  disabled={isCheckingIn}
+                  className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{isCheckingIn ? 'Marking Attendance...' : 'Mark Present for Morning Shift'}</span>
+                </button>
+              </div>
+            ) : !riderShiftStatus?.pickupConfirmed ? (
+              // STEP 2: DAIRY HUB MILK PICKUP CONFIRMATION CARD
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                      <Milk className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 bg-blue-200/70 px-2 py-0.5 rounded-full">
+                        Step 2: Milk Loadout
+                      </span>
+                      <h3 className="font-extrabold text-sm text-slate-900 mt-0.5">
+                        Confirm Dairy Milk Pickup
+                      </h3>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Attended ({riderShiftStatus?.checkInTime || '05:30 AM'})</span>
+                  </span>
+                </div>
+
+                <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>Dairy Hub Location:</span>
+                    <strong className="text-slate-900">{matchedDairy.name}</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>Assigned Route Volume:</span>
+                    <strong className="text-emerald-700 text-sm font-black">{totalLitersAssigned} Liters</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600">
+                    <span>Estimated Crates:</span>
+                    <strong className="text-blue-700 font-bold">{cratesCount} Crates ({totalStopsCount} stops)</strong>
+                  </div>
+                  <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                    <span>Route Area:</span>
+                    <span className="text-slate-800 font-semibold">{user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConfirmPickup}
+                  disabled={isConfirmingPickup}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <Box className="w-4 h-4" />
+                  <span>{isConfirmingPickup ? 'Confirming Pickup...' : 'Confirm Milk Picked Up & Start Route 🚀'}</span>
+                </button>
+              </div>
+            ) : (
+              // STEP 3: SHIFT & PICKUP ACTIVE SUMMARY
+              <div className="bg-white border border-emerald-200 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-black text-slate-900">Morning Shift Dispatched</span>
+                      <span className="text-[9px] font-extrabold bg-emerald-600 text-white px-1.5 py-0.2 rounded">
+                        ROUTE ACTIVE
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                      Checked in: {riderShiftStatus?.checkInTime} • Picked Up: {riderShiftStatus?.pickupLiters || totalLitersAssigned}L at {riderShiftStatus?.pickupTime || '06:00 AM'} from {matchedDairy.name}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0">
+                  Ready
+                </span>
+              </div>
+            )}
+
             {/* Network & Offline Status Banner */}
             <div
               className={`p-2.5 rounded-2xl flex items-center justify-between transition-all border ${
@@ -1000,6 +1175,84 @@ export default function DeliveryPartnerMobileApp() {
                   </a>
                 </div>
               </div>
+            </div>
+
+            {/* TODAY'S ATTENDANCE & DAIRY PICKUP LOG */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                    <Clock className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900">Today's Morning Shift Status</h4>
+                    <p className="text-[11px] text-slate-500">
+                      {new Date().toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                  riderShiftStatus?.attendanceMarked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {riderShiftStatus?.attendanceMarked ? 'Present 🟢' : 'Pending Check-in'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-500 block">Morning Check-in</span>
+                  <span className="font-extrabold text-slate-900 text-sm block">
+                    {riderShiftStatus?.checkInTime || 'Pending'}
+                  </span>
+                  <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                    riderShiftStatus?.attendanceMarked ? 'text-emerald-700' : 'text-amber-700'
+                  }`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>{riderShiftStatus?.attendanceMarked ? 'Attendance Marked' : 'Not Checked In'}</span>
+                  </span>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-500 block">Dairy Hub Pickup</span>
+                  <span className="font-extrabold text-slate-900 text-sm block">
+                    {riderShiftStatus?.pickupConfirmed ? (riderShiftStatus.pickupTime || 'Done') : 'Pending'}
+                  </span>
+                  <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                    riderShiftStatus?.pickupConfirmed ? 'text-blue-700' : 'text-slate-500'
+                  }`}>
+                    <Box className="w-3 h-3" />
+                    <span>
+                      {riderShiftStatus?.pickupConfirmed
+                        ? `${riderShiftStatus.pickupLiters || totalLitersAssigned}L (${riderShiftStatus.pickupCrates || cratesCount} Crates)`
+                        : 'Awaiting Pickup'}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Action buttons if either step is pending */}
+              {(!riderShiftStatus?.attendanceMarked || !riderShiftStatus?.pickupConfirmed) && (
+                <div className="flex gap-2 pt-1">
+                  {!riderShiftStatus?.attendanceMarked && (
+                    <button
+                      onClick={handleMarkAttendance}
+                      disabled={isCheckingIn}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                    >
+                      {isCheckingIn ? 'Marking...' : 'Mark Attendance'}
+                    </button>
+                  )}
+                  {riderShiftStatus?.attendanceMarked && !riderShiftStatus?.pickupConfirmed && (
+                    <button
+                      onClick={handleConfirmPickup}
+                      disabled={isConfirmingPickup}
+                      className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                    >
+                      {isConfirmingPickup ? 'Confirming...' : 'Confirm Milk Pickup'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* RIDER PROFILE & IDENTITY CARD */}

@@ -20,6 +20,7 @@ from app.models.models import (
     StockReceipt,
     InventoryTransaction,
     DriverRating,
+    StaffAttendance,
 )
 from app.schemas.schemas import (
     ProductCreate,
@@ -79,6 +80,9 @@ from app.schemas.schemas import (
     NotificationItem,
     NotificationListResponse,
     NotificationCreateRequest,
+    AttendanceCheckInRequest,
+    MilkPickupRequest,
+    AttendanceResponse,
 )
 import re
 from datetime import datetime, timedelta
@@ -2108,6 +2112,146 @@ def simulate_notification_event(event_type: str = "SKIP"):
 
     NOTIFICATIONS_DB.insert(0, notif)
     return {"success": True, "created_notification": notif}
+
+
+# ----------------- ATTENDANCE & MILK PICKUP ENDPOINTS -----------------
+@api_router.post("/attendance/check-in", response_model=AttendanceResponse)
+def check_in_rider(req: AttendanceCheckInRequest, db: Session = Depends(get_db)):
+    """Mark daily morning attendance for a delivery rider."""
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.now().strftime("%I:%M %p")
+
+    # Look for existing record for today
+    att = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.date == today_str, StaffAttendance.staff_name == req.staff_name)
+        .first()
+    )
+
+    if not att:
+        att = StaffAttendance(
+            staff_id=req.staff_id,
+            staff_name=req.staff_name,
+            dairy_name=req.dairy_name or "DairyPulse Farm HQ",
+            date=today_str,
+            check_in_time=req.check_in_time or now_time,
+            status="Present",
+            pickup_confirmed=False,
+            notes=req.notes,
+        )
+        db.add(att)
+    else:
+        att.check_in_time = req.check_in_time or att.check_in_time or now_time
+        att.status = "Present"
+        if req.notes:
+            att.notes = req.notes
+
+    # Also update staff duty status to 'On Duty'
+    staff_member = db.query(Staff).filter(Staff.name == req.staff_name).first()
+    if staff_member:
+        staff_member.status = "On Duty"
+
+    db.commit()
+    db.refresh(att)
+    return att
+
+
+@api_router.post("/attendance/pickup", response_model=AttendanceResponse)
+def confirm_milk_pickup(req: MilkPickupRequest, db: Session = Depends(get_db)):
+    """Mark milk crate pickup from dairy before rider leaves for morning route."""
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.now().strftime("%I:%M %p")
+
+    att = (
+        db.query(StaffAttendance)
+        .filter(StaffAttendance.date == today_str, StaffAttendance.staff_name == req.staff_name)
+        .first()
+    )
+
+    if not att:
+        # If rider forgot to mark attendance first, auto-mark attendance with pickup
+        att = StaffAttendance(
+            staff_id=req.staff_id,
+            staff_name=req.staff_name,
+            dairy_name=req.dairy_name or "DairyPulse Farm HQ",
+            date=today_str,
+            check_in_time=now_time,
+            status="Present",
+            pickup_confirmed=True,
+            pickup_time=req.pickup_time or now_time,
+            pickup_liters=req.pickup_liters,
+            pickup_crates=req.pickup_crates,
+            notes=req.notes,
+        )
+        db.add(att)
+    else:
+        att.pickup_confirmed = True
+        att.pickup_time = req.pickup_time or now_time
+        att.pickup_liters = req.pickup_liters
+        att.pickup_crates = req.pickup_crates
+        if req.notes:
+            att.notes = (att.notes or "") + " | " + req.notes
+
+    db.commit()
+    db.refresh(att)
+    return att
+
+
+@api_router.get("/attendance/today", response_model=Dict[str, Any])
+def get_today_rider_shift(
+    staff_name: Optional[str] = None,
+    dairy_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Retrieve today's shift status (attendance & milk pickup) for a rider."""
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    query = db.query(StaffAttendance).filter(StaffAttendance.date == today_str)
+    if staff_name:
+        query = query.filter(StaffAttendance.staff_name == staff_name)
+    if dairy_name:
+        query = query.filter(StaffAttendance.dairy_name == dairy_name)
+
+    att = query.first()
+    if not att:
+        return {
+            "attendanceMarked": False,
+            "checkInTime": None,
+            "status": "Not Marked",
+            "pickupConfirmed": False,
+            "pickupTime": None,
+            "pickupLiters": 0.0,
+            "pickupCrates": 0,
+            "date": today_str,
+        }
+
+    return {
+        "id": att.id,
+        "attendanceMarked": True,
+        "checkInTime": att.check_in_time,
+        "status": att.status,
+        "pickupConfirmed": att.pickup_confirmed,
+        "pickupTime": att.pickup_time,
+        "pickupLiters": att.pickup_liters,
+        "pickupCrates": att.pickup_crates,
+        "notes": att.notes,
+        "date": att.date,
+        "dairyName": att.dairy_name,
+        "staffName": att.staff_name,
+    }
+
+
+@api_router.get("/attendance/list", response_model=List[AttendanceResponse])
+def list_today_attendance(
+    dairy_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """List all staff attendances and pickup records for today."""
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    query = db.query(StaffAttendance).filter(StaffAttendance.date == today_str)
+    if dairy_name:
+        query = query.filter(StaffAttendance.dairy_name == dairy_name)
+    return query.all()
+
 
 
 

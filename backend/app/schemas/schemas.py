@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Any, Union
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
@@ -570,6 +570,39 @@ class NotificationCreateRequest(BaseModel):
     severity: Optional[str] = "INFO"
     action_url: Optional[str] = None
     action_label: Optional[str] = None
+
+# ----------------- ATTENDANCE & MILK PICKUP SCHEMAS -----------------
+class AttendanceCheckInRequest(BaseModel):
+    staff_id: Optional[str] = None
+    staff_name: str
+    dairy_name: Optional[str] = "DairyPulse Farm HQ"
+    check_in_time: Optional[str] = None
+    notes: Optional[str] = None
+
+class MilkPickupRequest(BaseModel):
+    staff_id: Optional[str] = None
+    staff_name: str
+    dairy_name: Optional[str] = "DairyPulse Farm HQ"
+    pickup_time: Optional[str] = None
+    pickup_liters: float = 0.0
+    pickup_crates: int = 0
+    notes: Optional[str] = None
+
+class AttendanceResponse(BaseModel):
+    id: str
+    staff_id: Optional[str] = None
+    staff_name: str
+    dairy_name: Optional[str] = None
+    date: str
+    check_in_time: Optional[str] = None
+    status: str
+    pickup_confirmed: bool = False
+    pickup_time: Optional[str] = None
+    pickup_liters: float = 0.0
+    pickup_crates: int = 0
+    notes: Optional[str] = None
+    created_at: Optional[Any] = None
+
 
 
 

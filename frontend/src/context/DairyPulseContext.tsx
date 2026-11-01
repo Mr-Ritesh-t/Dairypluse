@@ -17,6 +17,8 @@ import {
   RouteInfo,
   RouteBuildPayload,
   DriverRating,
+  AttendanceRecord,
+  RiderShiftStatus,
 } from '@/types';
 import {
   getProducts,
@@ -58,6 +60,10 @@ import {
   generateDailyDeliveriesApi,
   postDriverRatingApi,
   getDriverRatingsApi,
+  postAttendanceCheckInApi,
+  postMilkPickupApi,
+  getTodayAttendanceApi,
+  getAttendanceListApi,
 } from '@/lib/api';
 
 interface DairyPulseContextType {
@@ -134,6 +140,13 @@ interface DairyPulseContextType {
   buildAndDispatchRoute: (payload: RouteBuildPayload) => Promise<boolean>;
   updateDeliveryAddress: (id: string, addrData: { address?: string; flatOrUnit?: string; societyOrLandmark?: string; landmark?: string; area?: string; latitude?: number; longitude?: number; notes?: string }) => Promise<boolean>;
   generateDailyDeliveries: (deliveryDate?: string, slot?: string) => Promise<{ success: boolean; created_count: number; skipped_duplicates: number; total_stops: number } | null>;
+  
+  // Attendance & Milk Pickup
+  attendanceList: AttendanceRecord[];
+  riderShiftStatus: RiderShiftStatus | null;
+  markAttendance: (riderName: string, dairyName?: string, notes?: string) => Promise<boolean>;
+  confirmMilkPickup: (riderName: string, liters: number, crates: number, dairyName?: string, notes?: string) => Promise<boolean>;
+  refreshRiderShift: (riderName: string, dairyName?: string) => Promise<RiderShiftStatus | null>;
 }
 
 const initialProducts: Product[] = [];
@@ -316,6 +329,8 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   };
 
   const [driverRatings, setDriverRatings] = useState<DriverRating[]>([]);
+  const [attendanceList, setAttendanceList] = useState<AttendanceRecord[]>([]);
+  const [riderShiftStatus, setRiderShiftStatus] = useState<RiderShiftStatus | null>(null);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const openModal = (name: string) => setActiveModal(name);
@@ -1129,6 +1144,120 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return true;
   };
 
+  const refreshRiderShift = async (riderName: string, dairyName?: string): Promise<RiderShiftStatus | null> => {
+    if (!riderName) return null;
+    const res = await getTodayAttendanceApi(riderName, dairyName);
+    if (res) {
+      setRiderShiftStatus(res);
+      return res;
+    }
+    // Fallback to local storage if API unreachable
+    if (typeof window !== 'undefined') {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const saved = localStorage.getItem(`dairypulse_shift_${riderName}_${todayStr}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setRiderShiftStatus(parsed);
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return null;
+  };
+
+  const markAttendance = async (riderName: string, dairyName?: string, notes?: string): Promise<boolean> => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // 1. Optimistic local update
+    const newStatus: RiderShiftStatus = {
+      attendanceMarked: true,
+      checkInTime: nowTime,
+      status: 'Present',
+      pickupConfirmed: riderShiftStatus?.pickupConfirmed || false,
+      pickupTime: riderShiftStatus?.pickupTime,
+      pickupLiters: riderShiftStatus?.pickupLiters || 0,
+      pickupCrates: riderShiftStatus?.pickupCrates || 0,
+      notes: notes,
+      date: todayStr,
+      dairyName: dairyName || 'DairyPulse Farm HQ',
+      staffName: riderName,
+    };
+    setRiderShiftStatus(newStatus);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`dairypulse_shift_${riderName}_${todayStr}`, JSON.stringify(newStatus));
+      } catch (e) {}
+    }
+
+    // 2. Call backend API
+    const res = await postAttendanceCheckInApi({
+      staff_name: riderName,
+      dairy_name: dairyName,
+      check_in_time: nowTime,
+      notes,
+    });
+    if (res) {
+      setRiderShiftStatus((prev) => ({
+        ...prev,
+        ...res,
+        attendanceMarked: true,
+      }));
+    }
+    return true;
+  };
+
+  const confirmMilkPickup = async (
+    riderName: string,
+    liters: number,
+    crates: number,
+    dairyName?: string,
+    notes?: string
+  ): Promise<boolean> => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // 1. Optimistic local update
+    const newStatus: RiderShiftStatus = {
+      attendanceMarked: true,
+      checkInTime: riderShiftStatus?.checkInTime || nowTime,
+      status: 'Present',
+      pickupConfirmed: true,
+      pickupTime: nowTime,
+      pickupLiters: liters,
+      pickupCrates: crates,
+      notes: notes,
+      date: todayStr,
+      dairyName: dairyName || 'DairyPulse Farm HQ',
+      staffName: riderName,
+    };
+    setRiderShiftStatus(newStatus);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`dairypulse_shift_${riderName}_${todayStr}`, JSON.stringify(newStatus));
+      } catch (e) {}
+    }
+
+    // 2. Call backend API
+    const res = await postMilkPickupApi({
+      staff_name: riderName,
+      dairy_name: dairyName,
+      pickup_time: nowTime,
+      pickup_liters: liters,
+      pickup_crates: crates,
+      notes,
+    });
+    if (res) {
+      setRiderShiftStatus((prev) => ({
+        ...prev,
+        ...res,
+        pickupConfirmed: true,
+      }));
+    }
+    return true;
+  };
+
   const getRatingsForDriver = (driverName: string): DriverRating[] => {
     return driverRatings.filter((r) => r.driverName.toLowerCase() === driverName.toLowerCase());
   };
@@ -1186,6 +1315,11 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         buildAndDispatchRoute,
         updateDeliveryAddress,
         generateDailyDeliveries,
+        attendanceList,
+        riderShiftStatus,
+        markAttendance,
+        confirmMilkPickup,
+        refreshRiderShift,
       }}
     >
       {children}

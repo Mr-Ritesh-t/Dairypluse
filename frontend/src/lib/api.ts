@@ -1930,3 +1930,74 @@ export async function getDriverRatingsApi(driverName?: string) {
     return [];
   }
 }
+
+// ----------------- ATTENDANCE & MILK PICKUP API -----------------
+export async function postAttendanceCheckInApi(payload: {
+  staff_name: string;
+  staff_id?: string;
+  dairy_name?: string;
+  check_in_time?: string;
+  notes?: string;
+}): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/attendance/check-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to record attendance check-in');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error recording check-in, using local storage:', err);
+    return null;
+  }
+}
+
+export async function postMilkPickupApi(payload: {
+  staff_name: string;
+  staff_id?: string;
+  dairy_name?: string;
+  pickup_time?: string;
+  pickup_liters: number;
+  pickup_crates: number;
+  notes?: string;
+}): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/attendance/pickup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to confirm milk pickup');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error confirming milk pickup, using local storage:', err);
+    return null;
+  }
+}
+
+export async function getTodayAttendanceApi(staff_name: string, dairy_name?: string): Promise<any> {
+  try {
+    const params = new URLSearchParams({ staff_name });
+    if (dairy_name) params.append('dairy_name', dairy_name);
+    const res = await fetch(`${API_BASE_URL}/attendance/today?${params.toString()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch today attendance');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching today attendance:', err);
+    return null;
+  }
+}
+
+export async function getAttendanceListApi(dairy_name?: string): Promise<any[]> {
+  try {
+    const params = dairy_name ? `?dairy_name=${encodeURIComponent(dairy_name)}` : '';
+    const res = await fetch(`${API_BASE_URL}/attendance/list${params}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch attendance list');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching attendance list:', err);
+    return [];
+  }
+}
+

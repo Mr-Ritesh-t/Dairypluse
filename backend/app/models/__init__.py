@@ -12,6 +12,7 @@ from app.models.models import (
     Invoice,
     Expense,
     DriverRating,
+    StaffAttendance,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "Invoice",
     "Expense",
     "DriverRating",
+    "StaffAttendance",
 ]
