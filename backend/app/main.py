@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from pathlib import Path
 
 # Ensure 'backend' directory is in sys.path
@@ -7,12 +8,18 @@ backend_dir = Path(__file__).resolve().parent.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.routers.api_v1 import api_router
 from app.seed import seed_initial_data
+
+logger = logging.getLogger("dairypulse.api")
 
 # Create tables on startup (PostgreSQL / SQLite)
 Base.metadata.create_all(bind=engine)
@@ -84,6 +91,48 @@ else:
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+# Global Exception Handlers
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "status_code": exc.status_code},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error for {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": exc.errors(),
+            "message": "Invalid request parameters.",
+            "status_code": 422,
+        },
+    )
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    logger.error(f"Database error on {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "An internal database error occurred. Please try again.",
+            "status_code": 500,
+        },
+    )
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "An unexpected error occurred on the server.",
+            "status_code": 500,
+        },
     )
 
 # Mount API v1 router

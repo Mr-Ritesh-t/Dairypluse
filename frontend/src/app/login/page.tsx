@@ -523,7 +523,7 @@ export default function LoginPage() {
                 }}
                 className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'signin'
-                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -542,7 +542,7 @@ export default function LoginPage() {
                 }}
                 className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'customer'
-                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -559,7 +559,7 @@ export default function LoginPage() {
                 }}
                 className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'dairy'
-                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -616,7 +616,7 @@ export default function LoginPage() {
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                     Welcome to <span className="text-slate-900">Dairy</span><span className="text-emerald-600">Pulse</span>
                   </h2>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Sign in to access your dairy management dashboard
                   </p>
                 </div>
@@ -638,7 +638,7 @@ export default function LoginPage() {
                       }`}
                     >
                       {selectedRole === 'OWNER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
@@ -647,7 +647,9 @@ export default function LoginPage() {
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Admin</span>
-                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Dairy Owner</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'OWNER' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                          Dairy Owner
+                        </span>
                       </div>
                     </button>
 
@@ -662,7 +664,7 @@ export default function LoginPage() {
                       }`}
                     >
                       {selectedRole === 'DELIVERY' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
@@ -671,7 +673,9 @@ export default function LoginPage() {
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Rider</span>
-                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Delivery Staff</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'DELIVERY' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                          Delivery Staff
+                        </span>
                       </div>
                     </button>
 
@@ -686,7 +690,7 @@ export default function LoginPage() {
                       }`}
                     >
                       {selectedRole === 'CUSTOMER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
@@ -695,7 +699,9 @@ export default function LoginPage() {
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Customer</span>
-                        <span className="block text-[9.5px] sm:text-[11px] text-slate-400 truncate">Milk Subscriber</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'CUSTOMER' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                          Milk Subscriber
+                        </span>
                       </div>
                     </button>
                   </div>
@@ -740,7 +746,7 @@ export default function LoginPage() {
                       }}
                       className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
                         authMode === 'password'
-                          ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                          ? 'bg-emerald-700 text-white shadow-xs font-bold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -755,7 +761,7 @@ export default function LoginPage() {
                       }}
                       className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
                         authMode === 'phone_otp'
-                          ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                          ? 'bg-emerald-700 text-white shadow-xs font-bold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -787,7 +793,7 @@ export default function LoginPage() {
                           ? 'Enter 10-digit mobile number or email'
                           : 'owner@dairypulse.in or +91 98765 43210'
                       }
-                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
+                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
                     />
                   </div>
                 </div>
@@ -808,7 +814,7 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
+                        className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
                       />
                       <button
                         type="button"
@@ -1012,7 +1018,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 sm:py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30 hover:shadow-md transition cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 sm:py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm shadow-emerald-700/30 hover:shadow-md transition cursor-pointer disabled:opacity-50"
                 >
                   <span>
                     {isSubmitting
@@ -1029,8 +1035,8 @@ export default function LoginPage() {
                 {/* Divider */}
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-slate-200"></div>
-                  <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    OR CONTINUE WITH
+                  <span className="flex-shrink mx-3 text-xs font-semibold text-slate-600">
+                    Or continue with
                   </span>
                   <div className="flex-grow border-t border-slate-200"></div>
                 </div>

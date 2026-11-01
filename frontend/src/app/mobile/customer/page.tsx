@@ -506,7 +506,7 @@ export default function CustomerSelfServiceApp() {
 
           {/* In-app Toast Feedback */}
           {toastMessage && (
-            <div className="bg-emerald-800 text-white text-xs px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce">
+            <div className="bg-emerald-800 text-white text-xs px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition-transform duration-200">
               <Sparkles className="w-4 h-4 text-emerald-300 shrink-0" />
               <span className="font-semibold">{toastMessage}</span>
             </div>

@@ -17,6 +17,7 @@ import {
   Sun,
   Sparkles,
   ShoppingBag,
+  Milk,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -99,7 +100,7 @@ export default function DashboardPage() {
 
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
             {greeting},{' '}
-            <span className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 bg-clip-text text-transparent">
+            <span className="text-emerald-800">
               {firstName}!
             </span>
           </h2>
@@ -145,7 +146,7 @@ export default function DashboardPage() {
                   Live
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
+              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
                 {shopOrders.length + subscriptions.length > 0
                   ? `${shopOrders.length + subscriptions.length} active streams`
                   : 'No orders logged today'}
@@ -170,7 +171,7 @@ export default function DashboardPage() {
                   {totalStockLitres > 0 ? 'Optimal' : 'Zero'}
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
+              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
                 {totalStockLitres > 0 ? 'across active silos' : 'Awaiting milk intake'}
               </p>
             </div>
@@ -193,8 +194,8 @@ export default function DashboardPage() {
               <div className="mt-1.5 sm:mt-2.5">
                 <div className="w-full bg-slate-100 rounded-full h-1 sm:h-1.5 overflow-hidden">
                   <div
-                    className="bg-emerald-500 h-1 sm:h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: `${deliveryPercentage}%` }}
+                    className="bg-emerald-500 h-1 sm:h-1.5 rounded-full origin-left transition-transform duration-300 w-full"
+                    style={{ transform: `scaleX(${Math.min(deliveryPercentage, 100) / 100})` }}
                   ></div>
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
@@ -208,7 +209,7 @@ export default function DashboardPage() {
         {/* Pending Payments */}
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-xs">
               <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="flex-1 min-w-0">
@@ -221,7 +222,7 @@ export default function DashboardPage() {
                   {pendingPayments > 0 ? 'Dues' : 'Clear'}
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate hidden sm:block">
+              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
                 {invoices.filter((i) => i.status !== 'Paid').length} accounts
               </p>
             </div>
@@ -235,25 +236,25 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-900">Milk Inventory</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Live storage silo levels and available product stock</p>
+            <p className="text-xs text-slate-500 mt-0.5">Live storage silo levels and available product stock</p>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-slate-500">
               Total Storage Volume: <span className="font-bold text-slate-800 text-sm tabular-nums">{totalStockLitres} Litres</span>
             </span>
             <Link href="/inventory" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-              Manage Inventory &rarr;
+              Manage Inventory
             </Link>
           </div>
         </div>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
-                <th className="pb-3 font-medium">Product / Milk Type</th>
-                <th className="pb-3 font-medium text-center">Available Stock</th>
-                <th className="pb-3 font-medium text-center">Unit Price</th>
-                <th className="pb-3 font-medium text-right">Status</th>
+              <tr className="text-slate-500 font-semibold border-b border-slate-100">
+                <th className="pb-3 font-semibold">Product / Milk Type</th>
+                <th className="pb-3 font-semibold text-center">Available Stock</th>
+                <th className="pb-3 font-semibold text-center">Unit Price</th>
+                <th className="pb-3 font-semibold text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -261,11 +262,11 @@ export default function DashboardPage() {
                 <tr key={p.id}>
                   <td className="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
                     <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm shadow-2xs">
-                      🥛
+                      <Milk className="w-4 h-4 text-emerald-700" />
                     </div>
                     <div>
                       <span className="font-bold text-slate-900">{p.variant}</span>
-                      <span className="block text-[11px] text-slate-400 font-normal">{p.name}</span>
+                      <span className="block text-xs text-slate-500 font-normal">{p.name}</span>
                     </div>
                   </td>
                   <td className="py-3 text-center font-bold text-slate-700 tabular-nums">
@@ -276,7 +277,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="py-3 text-right">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
                         p.status === 'In Stock'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -299,7 +300,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-base font-bold text-slate-900">Today's Delivery Route Stops</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Live status from delivery partner app</p>
+              <p className="text-xs text-slate-500 mt-0.5">Live status from delivery partner app</p>
             </div>
             <a href="/delivery" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
               View All
@@ -308,21 +309,21 @@ export default function DashboardPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="pb-2.5 font-medium">Customer</th>
-                  <th className="pb-2.5 font-medium">Qty</th>
-                  <th className="pb-2.5 font-medium">Rider</th>
-                  <th className="pb-2.5 font-medium text-right">Status</th>
+                <tr className="text-slate-500 font-semibold border-b border-slate-100">
+                  <th className="pb-2.5 font-semibold">Customer</th>
+                  <th className="pb-2.5 font-semibold">Qty</th>
+                  <th className="pb-2.5 font-semibold">Rider</th>
+                  <th className="pb-2.5 font-semibold text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {deliveries.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400">
+                    <td colSpan={4} className="py-8 text-center text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-1.5">
                         <Truck className="w-6 h-6 text-slate-300" />
                         <span className="font-medium text-xs text-slate-500">No delivery runs active yet today</span>
-                        <span className="text-[11px] text-slate-400">Add subscribers or generate daily dispatches from the Delivery tab</span>
+                        <span className="text-xs text-slate-500">Add subscribers or generate daily dispatches from the Delivery tab</span>
                       </div>
                     </td>
                   </tr>
@@ -331,7 +332,7 @@ export default function DashboardPage() {
                     <tr key={d.id}>
                       <td className="py-3 font-semibold text-slate-800">
                         <div>{d.customerName}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">{d.area}</div>
+                        <div className="text-xs text-slate-500 font-normal">{d.area}</div>
                       </td>
                       <td className="py-3 font-bold text-slate-700 tabular-nums">
                         {d.quantityLiters} L ({d.productVariant.split(' ')[0]})
@@ -339,7 +340,7 @@ export default function DashboardPage() {
                       <td className="py-3 text-slate-600 font-medium">{d.assignedRider}</td>
                       <td className="py-3 text-right">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                             d.status === 'Delivered'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : d.status === 'In Progress'
@@ -372,7 +373,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-base font-bold text-slate-900">Commercial & Shop Orders</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Bulk B2B orders and restaurant dispatches</p>
+              <p className="text-xs text-slate-500 mt-0.5">Bulk B2B orders and restaurant dispatches</p>
             </div>
             <a href="/orders" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
               View All
@@ -381,21 +382,21 @@ export default function DashboardPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="pb-2.5 font-medium">Order #</th>
-                  <th className="pb-2.5 font-medium">Buyer</th>
-                  <th className="pb-2.5 font-medium">Amount</th>
-                  <th className="pb-2.5 font-medium text-right">Order Status</th>
+                <tr className="text-slate-500 font-semibold border-b border-slate-100">
+                  <th className="pb-2.5 font-semibold">Order #</th>
+                  <th className="pb-2.5 font-semibold">Buyer</th>
+                  <th className="pb-2.5 font-semibold">Amount</th>
+                  <th className="pb-2.5 font-semibold text-right">Order Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {shopOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400">
+                    <td colSpan={4} className="py-8 text-center text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-1.5">
                         <ShoppingBag className="w-6 h-6 text-slate-300" />
                         <span className="font-medium text-xs text-slate-500">No commercial orders logged yet</span>
-                        <span className="text-[11px] text-slate-400">Record wholesale or retail bulk orders by clicking 'Create Order' below</span>
+                        <span className="text-xs text-slate-500">Record wholesale or retail bulk orders by clicking 'Create Order' below</span>
                       </div>
                     </td>
                   </tr>
@@ -405,14 +406,14 @@ export default function DashboardPage() {
                       <td className="py-3 font-semibold text-emerald-700">{ord.orderNumber}</td>
                       <td className="py-3 font-semibold text-slate-800">
                         <div>{ord.shopName}</div>
-                        <div className="text-[10px] text-slate-400 font-normal">{ord.contactPerson}</div>
+                        <div className="text-xs text-slate-500 font-normal">{ord.contactPerson}</div>
                       </td>
                       <td className="py-3 font-extrabold text-slate-900 tabular-nums">
                         ₹{ord.totalAmount.toLocaleString()}
                       </td>
                       <td className="py-3 text-right">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                             ord.status === 'Delivered'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : ord.status === 'Dispatched'
@@ -467,7 +468,7 @@ export default function DashboardPage() {
         {/* Quick Action 3: Generate Bill */}
         <button
           onClick={() => openModal('generateBill')}
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-[#EA580C] hover:bg-[#C2410C] text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xs transition group text-left cursor-pointer"
           type="button"
         >
           <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -482,7 +483,7 @@ export default function DashboardPage() {
         {/* Quick Action 4: Assign Deliveries */}
         <a
           href="/delivery"
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition group text-left cursor-pointer"
         >
           <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
             <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />

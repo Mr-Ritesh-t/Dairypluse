@@ -101,3 +101,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# AI Agent & Tooling Directories
+.agent/
+.agents/
+.archify/
+.claude/
+.codex/
+.gemini/
+.opencode/

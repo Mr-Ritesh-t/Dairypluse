@@ -145,7 +145,7 @@ export function DriverRatingModal({
         {/* Content Body */}
         {isSuccess ? (
           <div className="p-8 text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto animate-bounce">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-xs transition-transform duration-300 scale-105">
               <Heart className="w-8 h-8 fill-emerald-600" />
             </div>
             <h4 className="font-extrabold text-lg text-slate-900">Thank You for Rating!</h4>

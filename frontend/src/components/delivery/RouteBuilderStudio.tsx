@@ -875,7 +875,7 @@ export default function RouteBuilderStudio({
                               : sequenceNum === 2
                               ? 'bg-gradient-to-tr from-teal-600 to-cyan-500 ring-4 ring-teal-400/40'
                               : 'bg-emerald-700 ring-2 ring-emerald-500/40'
-                          } ${isInspected ? 'ring-4 ring-amber-400 animate-bounce' : ''}`}
+                          } ${isInspected ? 'ring-4 ring-amber-400 scale-110 transition-transform' : ''}`}
                         >
                           #{sequenceNum}
                         </div>

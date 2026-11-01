@@ -1,18 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ENV } from '@/config/env';
 
-const DEFAULT_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZncGZsYXl5b2NzcHNyYWt1dnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMjE3MDEsImV4cCI6MjEwODg5NzcwMX0.PK5a0B2dLvTfPcMQq3jZUqGrQAPYnAz8v6Q8H4OJqiw';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vgpflayyocspsrakuvvs.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
-
-export const isSupabaseConfigured = Boolean(
-  SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'your-supabase-anon-key-here' && SUPABASE_ANON_KEY.length > 20
-);
+export const isSupabaseConfigured = ENV.IS_SUPABASE_CONFIGURED;
 
 export const supabase: SupabaseClient = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
+  ENV.SUPABASE_URL,
+  ENV.SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: true,

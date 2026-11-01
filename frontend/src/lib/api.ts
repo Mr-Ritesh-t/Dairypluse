@@ -1,22 +1,29 @@
 import { DairyInfo, RouteInfo, RouteBuildPayload } from '@/types';
+import { ENV } from '@/config/env';
 
-// Robust normalization for Vercel -> Render deployments & local development
-function resolveApiBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    const isLocalhost =
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1';
-    const envUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    if (isLocalhost && (envUrl.includes('dairypulse-backend.onrender.com') || !envUrl)) {
-      return 'http://localhost:8000/api/v1';
+const API_BASE_URL = ENV.API_BASE_URL;
+const BACKEND_ROOT_URL = ENV.BACKEND_ROOT_URL;
+
+/**
+ * Safely parses structured error responses from FastAPI
+ */
+export async function parseApiError(res: Response, fallbackMessage: string = 'Network request failed'): Promise<string> {
+  try {
+    const errorBody = await res.json();
+    if (typeof errorBody?.detail === 'string') {
+      return errorBody.detail;
     }
+    if (Array.isArray(errorBody?.detail)) {
+      return errorBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+    }
+    if (errorBody?.message) {
+      return errorBody.message;
+    }
+    return fallbackMessage;
+  } catch {
+    return `${fallbackMessage} (Status ${res.status})`;
   }
-  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
 }
-
-const API_BASE_URL = resolveApiBaseUrl();
-const BACKEND_ROOT_URL = API_BASE_URL.replace(/\/api\/v1$/, '');
 
 // Health check
 export async function checkBackendHealth(): Promise<{ online: boolean; message?: string }> {

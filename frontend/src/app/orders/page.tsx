@@ -183,16 +183,16 @@ export default function ShopOrdersPage() {
 
         <div
           onClick={() => setActiveTab(activeTab === 'clients' ? 'orders' : 'clients')}
-          className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-purple-300 transition cursor-pointer group"
+          className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition cursor-pointer group"
           title="Click to toggle Commercial Clients Directory"
         >
           <div className="flex items-center justify-between">
             <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">B2B Clients</p>
-            <span className="text-[9px] sm:text-[10px] font-bold text-purple-600 group-hover:underline">
+            <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 group-hover:underline">
               {activeTab === 'clients' ? 'Orders' : 'Clients'}
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-purple-600">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
             {totalCommercialClients} {totalCommercialClients === 1 ? 'Shop' : 'Shops'}
           </h3>
           <p className="text-[11px] text-slate-400 mt-1">

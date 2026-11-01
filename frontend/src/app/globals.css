@@ -19,11 +19,11 @@
   --color-pulse-badge-blue-text: #2563EB;
   --color-pulse-badge-orange-bg: #FFF7ED;
   --color-pulse-badge-orange-text: #EA580C;
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   background-color: #F8FAFC;
   color: #1E293B;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";

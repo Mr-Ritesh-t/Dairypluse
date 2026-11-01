@@ -37,10 +37,14 @@ import {
   Sun,
   Box,
   Check,
+  Home,
+  FileText,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { useOfflineDeliverySync } from '@/lib/offlineSync';
+import { calculateRouteProgress } from '@/lib/calculations/delivery';
+import { Badge } from '@/components/ui/Badge';
 
 export default function DeliveryPartnerMobileApp() {
   const {
@@ -226,9 +230,9 @@ export default function DeliveryPartnerMobileApp() {
   const completedStops = myDeliveries.filter((d) => d.status === 'Delivered');
   const failedStops = myDeliveries.filter((d) => d.status === 'Failed');
 
-  const totalStopsCount = myDeliveries.length;
-  const progressPercent =
-    totalStopsCount > 0 ? Math.round((completedStops.length / totalStopsCount) * 100) : 0;
+  const routeProgress = calculateRouteProgress(completedStops.length, myDeliveries.length);
+  const totalStopsCount = routeProgress.total;
+  const progressPercent = routeProgress.percentage;
 
   // Liters calculations
   const totalLitersAssigned = myDeliveries.reduce((sum, d) => sum + (d.quantityLiters || 0), 0);
@@ -404,7 +408,7 @@ export default function DeliveryPartnerMobileApp() {
           {/* DAIRY AFFILIATION BANNER */}
           <div
             onClick={() => setNavTab('PROFILE')}
-            className="cursor-pointer bg-emerald-900/70 hover:bg-emerald-900/90 transition-all rounded-xl p-2.5 mb-2.5 flex items-center justify-between border border-emerald-700/60 shadow-xs"
+            className="cursor-pointer bg-emerald-900/70 hover:bg-emerald-900/90 transition-colors rounded-xl p-2.5 mb-2.5 flex items-center justify-between border border-emerald-700/60 shadow-xs"
           >
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-7 h-7 rounded-lg bg-emerald-700 flex items-center justify-center shrink-0 text-emerald-100">
@@ -558,14 +562,14 @@ export default function DeliveryPartnerMobileApp() {
               </div>
             ) : !riderShiftStatus?.pickupConfirmed ? (
               // STEP 2: DAIRY HUB MILK PICKUP CONFIRMATION CARD
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-4 shadow-sm space-y-3">
+              <div className="bg-blue-50/80 border-2 border-blue-300 rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
                       <Milk className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 bg-blue-200/70 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full">
                         Step 2: Milk Loadout
                       </span>
                       <h3 className="font-extrabold text-sm text-slate-900 mt-0.5">
@@ -702,7 +706,7 @@ export default function DeliveryPartnerMobileApp() {
 
             {/* Network & Offline Status Banner */}
             <div
-              className={`p-2.5 rounded-2xl flex items-center justify-between transition-all border ${
+              className={`p-2.5 rounded-2xl flex items-center justify-between transition-colors border ${
                 !isOnline
                   ? 'bg-amber-500/10 border-amber-400/40 text-amber-900'
                   : 'bg-emerald-50 border-emerald-200/80 text-emerald-900'
@@ -768,7 +772,7 @@ export default function DeliveryPartnerMobileApp() {
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
                 <div
-                  className="bg-emerald-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-emerald-600 h-2.5 rounded-full transition-[width] duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -818,7 +822,7 @@ export default function DeliveryPartnerMobileApp() {
                     return (
                       <div
                         key={stop.id}
-                        className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 transition-all hover:border-emerald-300"
+                        className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 transition-colors hover:border-emerald-300"
                       >
                         <div className="flex items-start justify-between">
                           <div>
@@ -826,7 +830,7 @@ export default function DeliveryPartnerMobileApp() {
                               <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
                                 Stop #{stop.sequenceOrder || index + 1}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                              <span className="text-[10px] font-bold text-slate-500 tracking-wider">
                                 ETA: {estTimeString} • {stop.slot}
                               </span>
                               {isStopQueued && (
@@ -846,17 +850,17 @@ export default function DeliveryPartnerMobileApp() {
                           <div className="flex flex-wrap items-center gap-1.5">
                             {stop.flatOrUnit && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold">
-                                🚪 Door: {stop.flatOrUnit}
+                                <Home className="w-3 h-3 text-blue-600" /> Door: {stop.flatOrUnit}
                               </span>
                             )}
                             {stop.societyOrLandmark && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-md text-[10px] font-bold">
-                                🏢 Society: {stop.societyOrLandmark}
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[10px] font-bold">
+                                <Building2 className="w-3 h-3 text-slate-600" /> Society: {stop.societyOrLandmark}
                               </span>
                             )}
                             {stop.isExtraOrder && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold">
-                                ✨ Extra Order
+                                <Sparkles className="w-3 h-3 text-amber-600" /> Extra Order
                               </span>
                             )}
                           </div>
@@ -866,7 +870,7 @@ export default function DeliveryPartnerMobileApp() {
                               <span>{stop.address}</span>
                               {stop.landmark && (
                                 <span className="block text-[11px] text-slate-500 font-medium mt-0.5">
-                                  📍 Landmark: {stop.landmark}
+                                  <MapPin className="inline w-3 h-3 text-emerald-600 mr-0.5" />Landmark: {stop.landmark}
                                 </span>
                               )}
                             </div>
@@ -874,8 +878,8 @@ export default function DeliveryPartnerMobileApp() {
                         </div>
 
                         {stop.notes && (
-                          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium">
-                            📝 Note: {stop.notes}
+                          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium flex items-center gap-1">
+                            <FileText className="w-3 h-3 text-amber-600 shrink-0" /> Note: {stop.notes}
                           </p>
                         )}
 
@@ -1149,19 +1153,19 @@ export default function DeliveryPartnerMobileApp() {
                   </span>
                 </div>
 
-                <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3">
-                  <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider block">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
                     Partner Rating
                   </span>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-2xl font-black text-purple-950">{riderRating}</span>
+                    <span className="text-2xl font-black text-slate-900">{riderRating}</span>
                     <div className="flex text-amber-400">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
                   </div>
-                  <span className="text-[10px] text-purple-800 mt-1.5 block">
+                  <span className="text-[10px] text-slate-500 mt-1.5 block">
                     {driverReviews.length > 0 ? `${driverReviews.length} customer ratings` : '5-star certified'}
                   </span>
                 </div>

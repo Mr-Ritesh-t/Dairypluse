@@ -93,35 +93,49 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ```
 dairypluse/
-├── frontend/                     # Next.js 15 App Router Frontend
+├── frontend/                     # Next.js 16 (React 19, TypeScript, Tailwind CSS)
 │   ├── src/
-│   │   ├── app/
+│   │   ├── app/                  # Next.js App Router Pages
 │   │   │   ├── page.tsx          # Main Admin Dashboard
-│   │   │   ├── login/page.tsx    # Sign In & Customer Self-Registration
-│   │   │   ├── inventory/        # Milk Silo Stock Ledger & Quality Log
-│   │   │   ├── household/        # Doorstep Household Subscriptions
+│   │   │   ├── login/page.tsx    # Sign In, OAuth & Customer Registration
+│   │   │   ├── inventory/        # Milk Stock Ledger & Quality Logs
+│   │   │   ├── household/        # Household Doorstep Subscriptions
 │   │   │   ├── orders/           # B2B Bulk Commercial Orders
-│   │   │   ├── delivery/         # Dispatch & Route Planning
-│   │   │   ├── customers/        # Complete Customer Directory
-│   │   │   ├── billing/          # Invoices, Payments, Receipts
-│   │   │   ├── staff/            # Rider & Staff Creation (Admin feature)
-│   │   │   ├── expenses/         # Dairy Farm Operational Expenses
-│   │   │   ├── reports/          # Financial P&L and Sales Analytics
+│   │   │   ├── delivery/         # Live Route & Dispatch Studio
+│   │   │   ├── customers/        # Customer Directory & GPS Pin Locators
+│   │   │   ├── billing/          # Monthly Billing, Invoices & Payments
+│   │   │   ├── staff/            # Rider Management & Staff Payroll
+│   │   │   ├── expenses/         # Farm Operational Expenses
+│   │   │   ├── reports/          # Financial P&L & Predictive Analytics
 │   │   │   └── mobile/
-│   │   │       ├── delivery/     # Rider Mobile Dispatch App
+│   │   │       ├── delivery/     # Rider Mobile Dispatch App (Offline-Sync Ready)
 │   │   │       └── customer/     # Customer Self-Service Portal
-│   │   ├── components/           # Reusable UI components & layouts
+│   │   ├── components/           # UI Components
+│   │   │   ├── ui/               # Reusable Atomic UI (Badge, StatCard, EmptyState, Card)
+│   │   │   ├── delivery/         # RouteBuilderStudio & Dispatch Controls
+│   │   │   ├── layout/           # Sidebar, Header & Navigation
+│   │   │   ├── modals/           # DriverRatingModal, PaymentDialog, etc.
+│   │   │   └── subscriptions/    # Subscription cards & forms
+│   │   ├── config/               # Centralized Environment & Feature Flags (env.ts)
 │   │   ├── context/              # DairyPulseContext & AuthContext
-│   │   └── types/                # TypeScript data interfaces
-├── backend/                      # Python FastAPI Backend
+│   │   ├── lib/                  # Utilities & Business Logic
+│   │   │   ├── calculations/     # Pure calculations (delivery.ts, salary.ts)
+│   │   │   ├── api.ts            # Typed REST API Client with error parsing
+│   │   │   ├── offlineSync.ts    # IndexedDB offline sync queue
+│   │   │   └── supabaseClient.ts # Supabase Auth integration
+│   │   └── types/                # Strict TypeScript data models
+├── backend/                      # Python FastAPI Enterprise Backend
 │   ├── app/
-│   │   ├── models/models.py      # SQLAlchemy Relational Models (SQLite/Postgres)
-│   │   ├── schemas/schemas.py    # Pydantic Request & Response Schemas
-│   │   ├── routers/api_v1.py     # Clean REST Endpoints for all operations
-│   │   ├── database.py           # Database connection & session factory
-│   │   ├── seed.py               # Optional seed data for Indian dairy operations
-│   │   └── main.py               # FastAPI application setup & CORS configuration
-│   └── tests/test_api.py         # Pytest test suite (29/29 passing)
+│   │   ├── models/models.py      # SQLAlchemy Relational Models (SQLite/PostgreSQL)
+│   │   ├── schemas/schemas.py    # Pydantic Schemas for validation
+│   │   ├── routers/api_v1.py     # REST API Routing (v1)
+│   │   ├── utils/                # Utilities (phone normalization, helpers)
+│   │   │   └── phone.py          # Unified Indian phone search pattern generator
+│   │   ├── database.py           # Database engine & session maker
+│   │   ├── seed.py               # Seed data for dairy operations
+│   │   ├── config.py             # Settings & environment configuration
+│   │   └── main.py               # FastAPI App, CORS & Global Exception Handlers
+│   └── tests/test_api.py         # Pytest test suite (31/31 passed)
 └── start.bat                     # 1-click startup script for both services
 ```
 
@@ -129,13 +143,20 @@ dairypluse/
 
 ## 🧪 Automated Testing
 
-The backend includes a comprehensive automated test suite verifying all 29 critical paths (inventory receipts, delivery assignment & real-time tracking, milk variety lifecycle, price editing & removal, multi-dairy registration, customer 3-step onboarding, rider creation, driver rating lifecycle, order processing, and authentication):
+The backend includes a comprehensive automated test suite verifying all 31 critical paths:
+- Inventory receipts, wastage logging, and stock deductions
+- Delivery assignments, live route sequencing, and batch sync
+- Milk variety lifecycle (creation, pricing, removal)
+- Multi-dairy registration, authentication, and Supabase OAuth sync
+- Customer 3-step onboarding and GPS coordinates
+- Staff daily attendance, milk collection pickup, and payout calculations
+- Predictive demand forecasting and wastage analytics
 
 ```bash
 cd backend
 .\.venv\Scripts\pytest tests -v
 ```
-*(Result: **29 passed in ~1 second**)*
+*(Result: **31 passed in <1 second**)*
 
 ---
 
