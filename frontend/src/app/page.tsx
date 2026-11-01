@@ -104,9 +104,6 @@ export default function DashboardPage() {
               {firstName}!
             </span>
           </h2>
-          <p className="text-slate-600 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
-            Morning route dispatch is actively underway. Cold-chain storage silos are operating at optimal holding temperature with zero disruption alerts.
-          </p>
 
           {/* Quick Action Shortcuts inside Banner */}
           <div className="flex flex-wrap items-center gap-2.5 mt-4">
