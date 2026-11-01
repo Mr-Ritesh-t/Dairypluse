@@ -26,7 +26,6 @@ export default function DashboardPage() {
   const { products, deliveries, subscriptions, shopOrders, invoices, openModal } = useDairyPulse();
   const { user } = useAuth();
 
-  // Dynamic greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
   const firstName = user?.name ? user.name.split(' ')[0] : 'Ritesh';
@@ -38,7 +37,6 @@ export default function DashboardPage() {
     year: 'numeric',
   });
 
-  // Compute live metrics
   const totalStockLitres = products.reduce((acc, p) => acc + p.availableStock, 0);
   const deliveredCount = deliveries.filter((d) => d.status === 'Delivered').length;
   const totalDeliveries = deliveries.length;
@@ -47,7 +45,6 @@ export default function DashboardPage() {
     .filter((inv) => inv.status !== 'Paid')
     .reduce((acc, inv) => acc + (inv.totalAmount - inv.paidAmount), 0);
 
-  // Dynamic sales calculation
   const totalShopSales = shopOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
   const totalSubscriptionSales = subscriptions
     .filter((s) => s.status === 'Active')
@@ -56,17 +53,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Hero Welcome Banner (Premium Pastoral Operations Hub) */}
       <section
         className="pastoral-banner rounded-3xl border border-emerald-100/90 shadow-xs relative px-4 sm:px-8 py-5 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between min-h-[175px] overflow-hidden gap-5 sm:gap-6"
         data-purpose="hero-banner"
       >
-        {/* Decorative Scenic Rolling Hills & Soft Morning Light */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Subtle warm morning sun glow */}
           <div className="absolute -top-16 -right-16 w-80 h-80 bg-gradient-to-br from-amber-200/50 via-emerald-100/40 to-transparent rounded-full blur-3xl" />
 
-          {/* Layered pastoral landscape hills with smooth gradients */}
           <svg className="w-full h-full absolute inset-0" preserveAspectRatio="none" viewBox="0 0 1200 240">
             <defs>
               <linearGradient id="hillDistant" x1="0" y1="0" x2="0" y2="1">
@@ -88,9 +81,7 @@ export default function DashboardPage() {
           </svg>
         </div>
 
-        {/* Left Side: Dynamic Greeting & Quick Shortcuts */}
         <div className="relative z-10 max-w-3xl">
-          {/* Farm telemetry pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/90 text-emerald-900 text-xs font-bold border border-emerald-200/90 shadow-2xs mb-2.5">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
             <span>{dairyName}</span>
@@ -105,7 +96,6 @@ export default function DashboardPage() {
             </span>
           </h2>
 
-          {/* Quick Action Shortcuts inside Banner */}
           <div className="flex flex-wrap items-center gap-2.5 mt-4">
             <button
               onClick={() => openModal('addStock')}
@@ -125,9 +115,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Key Metric Cards */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" data-purpose="metrics-row">
-        {/* Today's Sales */}
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -152,7 +140,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Milk in Stock */}
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -175,7 +162,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Deliveries */}
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -203,7 +189,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Pending Payments */}
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -227,8 +212,6 @@ export default function DashboardPage() {
         </div>
       </section>
 
-
-      {/* Milk Inventory Section */}
       <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs" data-purpose="inventory-status">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
           <div>
@@ -290,9 +273,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Deliveries & Recent Orders Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-purpose="deliveries-and-orders-tables">
-        {/* Today's Deliveries Table */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
@@ -365,7 +346,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Shop Orders Table */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
@@ -430,9 +410,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Bottom Quick Action Tiles (Stitch Exact UI) */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 pt-2" data-purpose="quick-actions">
-        {/* Quick Action 1: Add Milk Stock */}
         <button
           onClick={() => openModal('addStock')}
           className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition group text-left cursor-pointer"
@@ -447,7 +425,6 @@ export default function DashboardPage() {
           </div>
         </button>
 
-        {/* Quick Action 2: Add Customer */}
         <button
           onClick={() => openModal('addCustomer')}
           className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition group text-left cursor-pointer"
@@ -462,7 +439,6 @@ export default function DashboardPage() {
           </div>
         </button>
 
-        {/* Quick Action 3: Generate Bill */}
         <button
           onClick={() => openModal('generateBill')}
           className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xs transition group text-left cursor-pointer"
@@ -477,7 +453,6 @@ export default function DashboardPage() {
           </div>
         </button>
 
-        {/* Quick Action 4: Assign Deliveries */}
         <a
           href="/delivery"
           className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition group text-left cursor-pointer"
