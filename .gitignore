@@ -110,3 +110,5 @@ yarn-error.log*
 .codex/
 .gemini/
 .opencode/
+AGENTS.md
+*/AGENTS.md

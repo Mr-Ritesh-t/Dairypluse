@@ -451,3 +451,4 @@ flowchart TD
     BulkUpdate --> ClearQueue["Remove synced items from IndexedDB"]
     ClearQueue --> ToastSynced["Notify: 'Synchronized N offline stops!'"]
 ```
+
