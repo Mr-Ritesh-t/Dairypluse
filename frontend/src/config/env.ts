@@ -22,14 +22,17 @@ function resolveApiBaseUrl(): string {
   return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
 }
 
-const apiBase = resolveApiBaseUrl();
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 export const ENV = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
-  API_BASE_URL: apiBase,
-  BACKEND_ROOT_URL: apiBase.replace(/\/api\/v1$/, ''),
+  get API_BASE_URL(): string {
+    return resolveApiBaseUrl();
+  },
+  get BACKEND_ROOT_URL(): string {
+    return resolveApiBaseUrl().replace(/\/api\/v1$/, '');
+  },
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL,
   SUPABASE_ANON_KEY: supabaseKey,
   IS_SUPABASE_CONFIGURED: Boolean(
@@ -37,7 +40,7 @@ export const ENV = {
     supabaseKey !== 'your-supabase-anon-key-here' &&
     supabaseKey.length > 20
   ),
-} as const;
+};
 
 export default ENV;
 
