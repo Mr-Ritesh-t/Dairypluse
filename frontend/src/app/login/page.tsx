@@ -707,30 +707,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Quick Hint for Delivery Rider */}
-                {selectedRole === 'DELIVERY' && (
-                  <div className="bg-blue-50/80 border border-blue-200/70 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between text-xs animate-in fade-in duration-200">
-                    <div className="flex items-center gap-2 min-w-0 pr-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
-                      <span className="text-blue-900 font-medium truncate text-[11px] sm:text-xs">
-                        Demo Rider: <strong className="font-mono text-blue-700">9876543210</strong> (pwd: <strong className="font-mono text-blue-700">rider123</strong>)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLoginId('9876543210');
-                        setPassword('rider123');
-                        setErrorMessage(null);
-                        setNotFoundPrompt(false);
-                      }}
-                      className="text-[11px] sm:text-xs font-bold text-blue-700 hover:text-blue-900 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs hover:bg-blue-100/50 transition cursor-pointer shrink-0"
-                    >
-                      Fill
-                    </button>
-                  </div>
-                )}
-
                 {/* Authentication Method Toggle */}
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
