@@ -1596,7 +1596,7 @@ export default function DeliveryPartnerMobileApp() {
                     <span>Assigned Route & Area</span>
                   </span>
                   <span className="font-bold text-slate-800">
-                    {user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route - Sector 4 & 5'}
+                    {user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Morning Express Route'}
                   </span>
                 </div>
 

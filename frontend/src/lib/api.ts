@@ -1655,7 +1655,7 @@ export async function getNotificationsApi() {
         {
           id: 'notif_3',
           title: 'Morning Run 86% Complete',
-          message: 'Rahul Deshmukh completed 24 of 28 stops in Baner Sector 3.',
+          message: 'Rahul Deshmukh completed 24 of 28 stops on the morning route.',
           category: 'DELIVERY',
           severity: 'SUCCESS',
           timestamp: new Date(Date.now() - 68 * 60 * 1000).toISOString(),

@@ -136,7 +136,7 @@ export default function CustomerSelfServiceApp() {
       name: activeOrTodayDelivery?.assignedRider || 'Rahul Deshmukh',
       role: 'Delivery Rider' as const,
       phone: '+91 98220 11984',
-      assignedArea: currentCustomer.area || 'Baner Sector 4',
+      assignedArea: currentCustomer.area || 'Morning Delivery Route',
       status: 'On Duty' as const,
       deliveriesToday: 18,
       rating: 4.9,

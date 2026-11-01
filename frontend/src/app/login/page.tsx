@@ -87,7 +87,7 @@ export default function LoginPage() {
   }, [dairies, selectedDairyName]);
 
   const [custAddress, setCustAddress] = useState('');
-  const [custArea, setCustArea] = useState('Baner');
+  const [custArea, setCustArea] = useState('');
   const [custLat, setCustLat] = useState<number>(18.5593);
   const [custLng, setCustLng] = useState<number>(73.7788);
   const [custVariant, setCustVariant] = useState<MilkVariant>('Cow Milk');
@@ -1429,20 +1429,16 @@ export default function LoginPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Delivery Area / Zone
+                              Delivery Area / Locality
                             </label>
-                            <select
+                            <input
+                              type="text"
+                              required
                               value={custArea}
                               onChange={(e) => setCustArea(e.target.value)}
+                              placeholder="e.g. Sector 14, Civil Lines, or Colony Name"
                               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                            >
-                              <option value="Baner">Baner</option>
-                              <option value="Aundh">Aundh</option>
-                              <option value="Kothrud">Kothrud</option>
-                              <option value="Wakad">Wakad</option>
-                              <option value="Viman Nagar">Viman Nagar</option>
-                              <option value="Hadapsar">Hadapsar</option>
-                            </select>
+                            />
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">

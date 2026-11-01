@@ -23,6 +23,7 @@ export function ModalContainer() {
     updateDairy,
     products,
     addProduct,
+    routes,
   } = useDairyPulse();
   const { user, updateUser } = useAuth();
 
@@ -621,12 +622,13 @@ export function ModalContainer() {
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Area / Sector</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Area / Locality</label>
                   <input
                     type="text"
                     required
                     value={custArea}
                     onChange={(e) => setCustArea(e.target.value)}
+                    placeholder="e.g. Sector 14, Civil Lines, or Colony Name"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -637,10 +639,18 @@ export function ModalContainer() {
                     onChange={(e) => setCustRoute(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Route 1 - Morning Baner">Route 1 - Morning Baner</option>
-                    <option value="Route 2 - Camp & Wanowrie">Route 2 - Camp & Wanowrie</option>
-                    <option value="Route 3 - South Hub">Route 3 - South Hub</option>
-                    <option value="Route A - Commercial">Route A - Commercial</option>
+                    {routes && routes.length > 0 ? (
+                      routes.map((r) => (
+                        <option key={r.id} value={r.name || r.routeCode}>
+                          {r.name || r.routeCode} {r.area ? `(${r.area})` : ''}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Main Morning Route">Main Morning Route</option>
+                        <option value="Central Commercial Route">Central Commercial Route</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

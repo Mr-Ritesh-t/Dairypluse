@@ -146,10 +146,10 @@ export default function RouteBuilderStudio({
   const hasInitializedStops = useRef(false);
   useEffect(() => {
     if (customers.length > 0 && (!hasInitializedStops.current || selectedStops.length === 0)) {
-      const banerCusts = customers.filter((c) => c.area === 'Baner').slice(0, 2);
-      if (banerCusts.length > 0) {
+      const initialCusts = customers.slice(0, Math.min(3, customers.length));
+      if (initialCusts.length > 0) {
         setSelectedStops(
-          banerCusts.map((c) => ({
+          initialCusts.map((c) => ({
             customerId: c.id,
             customerName: c.name,
             customSlot: c.preferredTime || '6:00 AM - 7:30 AM',
@@ -167,12 +167,38 @@ export default function RouteBuilderStudio({
   // -------------------------------------------------------------
   // REAL MAP ENGINE STATE (Pan, Zoom, Tiles)
   // -------------------------------------------------------------
-  const [centerLat, setCenterLat] = useState(18.5593); // Default Baner, Pune
+  const [centerLat, setCenterLat] = useState(18.5593);
   const [centerLng, setCenterLng] = useState(73.7788);
   const [zoom, setZoom] = useState(14);
   const [tileLayer, setTileLayer] = useState<TileLayerType>('streets');
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const [viewportDimensions, setViewportDimensions] = useState({ width: 680, height: 480 });
+
+  // Dynamically extract all available delivery areas from active customers and routes
+  const availableAreas = useMemo(() => {
+    const areas = new Set<string>();
+    customers.forEach((c) => {
+      if (c.area && c.area.trim()) areas.add(c.area.trim());
+    });
+    routes.forEach((r) => {
+      if (r.area && r.area.trim()) areas.add(r.area.trim());
+    });
+    return Array.from(areas);
+  }, [customers, routes]);
+
+  // Center map on active dairy location or first valid customer pin (universal for any city/country)
+  useEffect(() => {
+    if (activeDairy?.latitude && activeDairy?.longitude) {
+      setCenterLat(activeDairy.latitude);
+      setCenterLng(activeDairy.longitude);
+    } else {
+      const valid = customers.find((c) => c.latitude && c.longitude);
+      if (valid && valid.latitude && valid.longitude) {
+        setCenterLat(valid.latitude);
+        setCenterLng(valid.longitude);
+      }
+    }
+  }, [activeDairy, customers]);
 
   // Dragging state for real map panning
   const isDraggingRef = useRef(false);
@@ -226,21 +252,25 @@ export default function RouteBuilderStudio({
     return list;
   }, [customers, selectedArea, searchQuery]);
 
-  // Automatically center real map on selected area
+  // Automatically center real map dynamically on selected area or fit all pins
   const centerOnArea = (area: string) => {
     setSelectedArea(area);
-    const areaCoords: Record<string, { lat: number; lng: number }> = {
-      Baner: { lat: 18.5593, lng: 73.7788 },
-      Aundh: { lat: 18.5602, lng: 73.8031 },
-      Wakad: { lat: 18.5987, lng: 73.7667 },
-      Kothrud: { lat: 18.5074, lng: 73.8077 },
-      Wanowrie: { lat: 18.4851, lng: 73.8992 },
-      ALL: { lat: 18.5450, lng: 73.8100 },
-    };
-    const target = areaCoords[area] || areaCoords.Baner;
-    setCenterLat(target.lat);
-    setCenterLng(target.lng);
-    setZoom(area === 'ALL' ? 12 : 14);
+    if (area === 'ALL' || !area) {
+      fitAllPins();
+      return;
+    }
+    const matchingCusts = customers.filter(
+      (c) => c.area?.toLowerCase() === area.toLowerCase() && c.latitude && c.longitude
+    );
+    if (matchingCusts.length > 0) {
+      const avgLat = matchingCusts.reduce((sum, c) => sum + c.latitude!, 0) / matchingCusts.length;
+      const avgLng = matchingCusts.reduce((sum, c) => sum + c.longitude!, 0) / matchingCusts.length;
+      setCenterLat(avgLat);
+      setCenterLng(avgLng);
+      setZoom(14);
+    } else {
+      fitAllPins();
+    }
   };
 
   // Center on specific customer's doorstep
@@ -615,18 +645,18 @@ export default function RouteBuilderStudio({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Area Sector</label>
+            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Delivery Area / Route</label>
             <select
               value={selectedArea}
               onChange={(e) => centerOnArea(e.target.value)}
               className="w-full px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-bold text-slate-800 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
             >
-              <option value="Baner">Baner (Pune)</option>
-              <option value="Aundh">Aundh (Pune)</option>
-              <option value="Wakad">Wakad (Pune)</option>
-              <option value="Kothrud">Kothrud (Pune)</option>
-              <option value="Wanowrie">Wanowrie (Pune)</option>
-              <option value="ALL">All Areas (Pune Metro)</option>
+              <option value="ALL">All Delivery Areas</option>
+              {availableAreas.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -686,7 +716,7 @@ export default function RouteBuilderStudio({
               <div className="flex items-center gap-2 pointer-events-auto bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-white shadow-lg text-xs">
                 <span className="font-bold flex items-center gap-1.5 text-emerald-400">
                   <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>{selectedArea} Sector</span>
+                  <span>{selectedArea === 'ALL' || !selectedArea ? 'All Delivery Locations' : selectedArea}</span>
                 </span>
                 <span className="text-slate-600">|</span>
                 {/* Tile Layer Selector */}

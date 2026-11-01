@@ -870,7 +870,7 @@ export default function StaffManagementPage() {
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">Assigned Route & Logistics</h4>
-                      <p className="text-[10px] text-slate-500">Live operational sector for this partner</p>
+                      <p className="text-[10px] text-slate-500">Live operational route for this partner</p>
                     </div>
                   </div>
                   {metrics.matchingRoute && (
@@ -1383,12 +1383,12 @@ export default function StaffManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Route / Operating Sector</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Route / Delivery Area</label>
                   <input
                     type="text"
                     value={assignedArea}
                     onChange={(e) => setAssignedArea(e.target.value)}
-                    placeholder="e.g. Baner Morning Route R-04"
+                    placeholder="e.g. North Zone Express or Morning Route 1"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>

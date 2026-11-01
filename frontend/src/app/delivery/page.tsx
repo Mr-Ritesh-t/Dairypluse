@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Truck,
   MapPin,
@@ -53,6 +53,14 @@ export default function DeliveryManagementPage() {
     dairies,
     products,
   } = useDairyPulse();
+
+  // Dynamic extraction of distinct delivery areas from routes and deliveries (supports any city/location)
+  const dynamicAreas = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    routes.forEach((r) => { if (r.area && r.area.trim()) set.add(r.area.trim()); });
+    deliveries.forEach((d) => { if (d.area && d.area.trim()) set.add(d.area.trim()); });
+    return Array.from(set);
+  }, [routes, deliveries]);
 
   // Filters
   const [selectedRoute, setSelectedRoute] = useState<string>('ALL');
@@ -364,7 +372,7 @@ export default function DeliveryManagementPage() {
               </h3>
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Fixed sector routes cluster customer doorsteps by housing society and street for rapid consecutive deliveries.
+              Delivery routes cluster customer doorsteps by housing society and street for rapid consecutive deliveries.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -377,7 +385,7 @@ export default function DeliveryManagementPage() {
             </button>
             <button
               onClick={async () => {
-                const targetArea = selectedRoute === 'ALL' ? 'Baner' : selectedRoute;
+                const targetArea = selectedRoute === 'ALL' ? (dynamicAreas[0] || 'Default Route') : selectedRoute;
                 await autoSequenceRoute(targetArea);
                 setActionNotice(`Stops in ${targetArea} auto-clustered by building & apartment sequence!`);
                 setTimeout(() => setActionNotice(null), 4000);
@@ -391,11 +399,11 @@ export default function DeliveryManagementPage() {
           </div>
         </div>
 
-        {/* 5 Route Sector Cards */}
+        {/* Route Cards */}
         {routes.length === 0 ? (
           <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
-            <p className="text-xs font-semibold text-slate-600">No route sectors configured yet</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Click &apos;+ Add Route Sector&apos; or use &apos;🗺️ Real Map Route Studio&apos; to dispatch runs.</p>
+            <p className="text-xs font-semibold text-slate-600">No delivery routes configured yet</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Click &apos;+ Add Route&apos; or use &apos;🗺️ Real Map Route Studio&apos; to dispatch runs.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -672,7 +680,7 @@ export default function DeliveryManagementPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={async () => {
-                  const targetArea = selectedRoute === 'ALL' ? 'Baner' : selectedRoute;
+                  const targetArea = selectedRoute === 'ALL' ? (dynamicAreas[0] || 'Default Route') : selectedRoute;
                   await autoSequenceRoute(targetArea);
                   setActionNotice(`Stops re-ordered! All flats in same society clustered consecutively.`);
                   setTimeout(() => setActionNotice(null), 4000);
@@ -709,11 +717,11 @@ export default function DeliveryManagementPage() {
                 className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
                 <option value="ALL">All Routes</option>
-                <option value="Baner">Baner</option>
-                <option value="Aundh">Aundh</option>
-                <option value="Kothrud">Kothrud</option>
-                <option value="Wanowrie">Wanowrie</option>
-                <option value="Wakad">Wakad</option>
+                {dynamicAreas.map((area: string) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -1343,7 +1351,7 @@ export default function DeliveryManagementPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Create New Route</h3>
-                <p className="text-[11px] text-slate-400">Define a new sector, cluster societies, and configure vehicle load limit</p>
+                <p className="text-[11px] text-slate-400">Define a new route, cluster societies, and configure vehicle load limit</p>
               </div>
               <button
                 onClick={() => setIsCreateRouteOpen(false)}
@@ -1370,14 +1378,14 @@ export default function DeliveryManagementPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Area / Sector *
+                    Delivery Area / Route *
                   </label>
                   <input
                     type="text"
                     required
                     value={newRouteArea}
                     onChange={(e) => setNewRouteArea(e.target.value)}
-                    placeholder="e.g. Hinjawadi"
+                    placeholder="e.g. North Zone, Civil Lines, or Locality Name"
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -1558,20 +1566,15 @@ export default function DeliveryManagementPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Area / Route Sector
+                    Delivery Area / Route
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={editArea}
                     onChange={(e) => setEditArea(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Baner">Baner</option>
-                    <option value="Aundh">Aundh</option>
-                    <option value="Kothrud">Kothrud</option>
-                    <option value="Wanowrie">Wanowrie</option>
-                    <option value="Wakad">Wakad</option>
-                    <option value="Hinjawadi">Hinjawadi</option>
-                  </select>
+                    placeholder="e.g. Sector 12, Civil Lines, or Locality Name"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
               </div>
 
