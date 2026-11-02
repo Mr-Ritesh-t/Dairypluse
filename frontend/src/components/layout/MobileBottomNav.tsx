@@ -32,7 +32,7 @@ export function MobileBottomNav({
   onToggleSidebar?: () => void;
 }) {
   const pathname = usePathname();
-  const { openModal, activeDairy, dairies, setActiveDairy } = useDairyPulse();
+  const { openModal, activeDairy } = useDairyPulse();
   const { user, logout } = useAuth();
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showQuickSheet, setShowQuickSheet] = useState(false);
@@ -302,22 +302,6 @@ export function MobileBottomNav({
                   </span>
                 </div>
               </div>
-              {dairies && dairies.length > 1 && (
-                <select
-                  value={activeDairy?.name || ''}
-                  onChange={(e) => {
-                    const found = dairies.find((d) => d.name === e.target.value);
-                    if (found) setActiveDairy(found);
-                  }}
-                  className="px-2 py-1.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-emerald-900 focus:outline-none"
-                >
-                  {dairies.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              )}
             </div>
 
             {/* All Management Modules */}

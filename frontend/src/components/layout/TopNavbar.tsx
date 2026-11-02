@@ -26,7 +26,7 @@ import { useAuth } from '@/context/AuthContext';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
-  const { openModal, activeDairy, dairies, setActiveDairy } = useDairyPulse();
+  const { openModal, activeDairy } = useDairyPulse();
   const { user, logout } = useAuth();
   const [quickActionOpen, setQuickActionOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -147,29 +147,13 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
           )}
         </div>
 
-        {/* Active Dairy Selector / Switcher */}
-        {dairies && dairies.length > 0 && (
-          <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-[11px] sm:text-xs font-semibold text-emerald-900 shadow-2xs">
+        {/* Owner's Dairy Farm Badge */}
+        {activeDairy && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:py-1.5 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-[11px] sm:text-xs font-semibold text-emerald-900 shadow-2xs">
             <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-            {dairies.length > 1 ? (
-              <select
-                value={activeDairy?.name || ''}
-                onChange={(e) => {
-                  const found = dairies.find((d) => d.name === e.target.value);
-                  if (found) setActiveDairy(found);
-                }}
-                className="bg-transparent text-[11px] sm:text-xs font-bold text-emerald-950 border-none focus:outline-none cursor-pointer max-w-[90px] sm:max-w-[140px] truncate"
-                title="Switch Active Dairy Farm"
-              >
-                {dairies.map((d) => (
-                  <option key={d.id} value={d.name} className="text-slate-800 bg-white font-medium">
-                    {d.name} {d.city ? `(${d.city})` : ''}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="truncate max-w-[85px] sm:max-w-[140px] text-[11px] sm:text-xs">{activeDairy?.name || 'DairyPulse HQ'}</span>
-            )}
+            <span className="truncate max-w-[120px] sm:max-w-[180px] font-bold text-emerald-950">
+              {activeDairy.name}
+            </span>
           </div>
         )}
 

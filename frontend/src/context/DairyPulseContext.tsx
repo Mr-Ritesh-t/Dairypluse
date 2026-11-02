@@ -240,15 +240,25 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   });
   const [selectedActiveDairy, setSelectedActiveDairy] = useState<DairyInfo | null>(null);
 
-  // Active Dairy: prioritized by explicit user selection, or user's assigned dairyName, or first registered dairy
+  // Active Dairy: For an owner / user, their own dairy strictly takes top precedence and cannot be changed to another dairy
   const activeDairy = useMemo(() => {
-    if (selectedActiveDairy) return selectedActiveDairy;
     if (user?.dairyName) {
       const match = dairies.find((d) => d.name.trim().toLowerCase() === user.dairyName?.trim().toLowerCase());
       if (match) return match;
+      return {
+        id: `dairy_${user.dairyName}`,
+        name: user.dairyName,
+        ownerName: user.name,
+        email: user.email || '',
+        phone: user.phone || '',
+        city: 'Pune',
+        address: 'Dairy Operations Center',
+        rating: 4.9,
+      };
     }
+    if (selectedActiveDairy) return selectedActiveDairy;
     return dairies.length > 0 ? dairies[0] : null;
-  }, [selectedActiveDairy, user, dairies]);
+  }, [user, dairies, selectedActiveDairy]);
 
   const setActiveDairy = (dairy: DairyInfo) => setSelectedActiveDairy(dairy);
 

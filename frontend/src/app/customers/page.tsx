@@ -30,7 +30,7 @@ import { AddMilkModal } from '@/components/customers/AddMilkModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
 
 export default function CustomersPage() {
-  const { customers, subscriptions, deliveries, openModal, activeDairy, dairies, setActiveDairy } = useDairyPulse();
+  const { customers, subscriptions, deliveries, openModal, activeDairy } = useDairyPulse();
   const [filterType, setFilterType] = useState<'ALL' | 'HOUSEHOLD' | 'SHOP' | 'RESTAURANT'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
@@ -141,25 +141,6 @@ export default function CustomersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {dairies.length > 1 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs shadow-2xs">
-              <Building2 className="w-4 h-4 text-slate-500" />
-              <select
-                value={activeDairy?.name || ''}
-                onChange={(e) => {
-                  const d = dairies.find((dairy) => dairy.name === e.target.value);
-                  if (d) setActiveDairy(d);
-                }}
-                className="bg-transparent text-xs font-bold text-slate-700 border-none focus:outline-none cursor-pointer"
-              >
-                {dairies.map((d) => (
-                  <option key={d.id} value={d.name}>
-                    {d.name} {d.city ? `(${d.city})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <button
             onClick={() => openModal('addCustomer')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
