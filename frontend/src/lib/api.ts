@@ -307,6 +307,7 @@ export async function patchCustomerApi(
     latitude?: number;
     longitude?: number;
     preferredTime?: string;
+    balance?: number;
   }
 ) {
   try {
@@ -321,6 +322,7 @@ export async function patchCustomerApi(
     if (data.latitude !== undefined) payload.latitude = data.latitude;
     if (data.longitude !== undefined) payload.longitude = data.longitude;
     if (data.preferredTime !== undefined) payload.preferred_time = data.preferredTime;
+    if (data.balance !== undefined) payload.balance = data.balance;
 
     const res = await fetch(`${API_BASE_URL}/customers/${customerId}`, {
       method: 'PATCH',
@@ -715,6 +717,9 @@ export async function postDeliveryTaskApi(data: {
   slot?: string;
   assignedRider: string;
   notes?: string;
+  status?: string;
+  deliveryDate?: string;
+  isExtraOrder?: boolean;
 }) {
   try {
     const res = await fetch(`${API_BASE_URL}/deliveries`, {
@@ -730,6 +735,9 @@ export async function postDeliveryTaskApi(data: {
         slot: data.slot || 'Morning',
         assigned_rider: data.assignedRider,
         notes: data.notes,
+        status: data.status || 'Pending',
+        delivery_date: data.deliveryDate,
+        is_extra_order: data.isExtraOrder,
       }),
     });
     if (!res.ok) throw new Error('Failed to create delivery');

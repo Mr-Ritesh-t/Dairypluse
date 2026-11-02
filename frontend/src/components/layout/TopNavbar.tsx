@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
-import { checkBackendHealth } from '@/lib/api';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
@@ -33,11 +32,6 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkBackendHealth().then((res) => setBackendOnline(res.online));
-  }, []);
 
   return (
     <header
@@ -185,17 +179,6 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
           <span>Today, 23 Oct 2026</span>
         </div>
 
-        {/* Backend API status badge */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
-            }`}
-          />
-          <span className="text-slate-600">
-            {backendOnline ? 'FastAPI v1 Live' : 'Local Mock Engine'}
-          </span>
-        </div>
 
         {/* Notifications Bell & Dynamic Center */}
         <div className="relative">

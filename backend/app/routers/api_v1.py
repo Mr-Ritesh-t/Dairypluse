@@ -268,6 +268,8 @@ def update_customer(customer_id: str, cust_data: CustomerUpdate, db: Session = D
         customer.longitude = cust_data.longitude
     if cust_data.preferred_time is not None:
         customer.preferred_time = cust_data.preferred_time
+    if cust_data.balance is not None:
+        customer.balance = cust_data.balance
     if cust_data.dairy_name is not None:
         customer.dairy_name = cust_data.dairy_name
         # Cascade supplying dairy change to active subscriptions
@@ -548,7 +550,8 @@ def create_delivery(deliv_data: DeliveryTaskCreate, db: Session = Depends(get_db
         is_extra_order=deliv_data.is_extra_order or False,
         latitude=deliv_data.latitude,
         longitude=deliv_data.longitude,
-        status="Pending",
+        status=deliv_data.status or "Pending",
+        delivered_at=datetime.utcnow().strftime("%I:%M %p") if deliv_data.status == "Delivered" else None,
         notes=deliv_data.notes,
     )
     db.add(new_task)

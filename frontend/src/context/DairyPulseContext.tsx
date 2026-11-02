@@ -138,7 +138,7 @@ interface DairyPulseContextType {
   deleteProduct: (productId: string) => Promise<boolean>;
   assignDelivery: (deliveryId: string, assignedRider: string, slot?: string, area?: string) => Promise<boolean>;
   assignRouteToRider: (area: string, assignedRider: string, slot?: string) => Promise<boolean>;
-  addDeliveryTask: (task: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'>) => Promise<DeliveryTask | null>;
+  addDeliveryTask: (task: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'> & { status?: DeliveryTask['status'] }) => Promise<DeliveryTask | null>;
   reorderDeliveries: (stops: { id: string; sequenceOrder: number }[]) => Promise<boolean>;
   moveDeliveryStop: (id: string, direction: 'UP' | 'DOWN') => Promise<void>;
   autoSequenceRoute: (area: string) => Promise<void>;
@@ -552,6 +552,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       latitude: updateData.latitude,
       longitude: updateData.longitude,
       preferredTime: updateData.preferredTime,
+      balance: updateData.balance,
     });
     return !!res;
   };
@@ -969,7 +970,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return !!res;
   };
 
-  const addDeliveryTask = async (taskData: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'>): Promise<DeliveryTask | null> => {
+  const addDeliveryTask = async (taskData: Omit<DeliveryTask, 'id' | 'deliveryNumber' | 'status'> & { status?: DeliveryTask['status'] }): Promise<DeliveryTask | null> => {
     const count = deliveries.length + 1;
     const newTask: DeliveryTask = {
       ...taskData,
@@ -977,10 +978,23 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       deliveryNumber: `DEL-2026-${String(count).padStart(3, '0')}`,
       sequenceOrder: count,
       societyOrLandmark: taskData.societyOrLandmark || (taskData.address ? taskData.address.split(',')[1]?.trim() || taskData.address.split(' ')[0] : 'Locality'),
-      status: 'Pending',
+      status: taskData.status || 'Pending',
     };
     setDeliveries((prev) => [...prev, newTask]);
-    const res = await postDeliveryTaskApi(taskData);
+    const res = await postDeliveryTaskApi({
+      customerName: taskData.customerName,
+      customerPhone: taskData.customerPhone,
+      address: taskData.address,
+      area: taskData.area,
+      productVariant: taskData.productVariant,
+      quantityLiters: taskData.quantityLiters,
+      slot: taskData.slot,
+      assignedRider: taskData.assignedRider,
+      notes: taskData.notes,
+      status: taskData.status || 'Pending',
+      deliveryDate: taskData.deliveryDate,
+      isExtraOrder: taskData.isExtraOrder,
+    });
     if (res && res.id) {
       newTask.id = res.id;
       return res as DeliveryTask;

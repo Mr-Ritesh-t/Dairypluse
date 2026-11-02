@@ -79,6 +79,7 @@ class CustomerUpdate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     preferred_time: Optional[str] = None
+    balance: Optional[float] = None
 
 class SubscriptionCreate(BaseModel):
     customer_id: str
@@ -146,6 +147,7 @@ class DeliveryTaskCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     notes: Optional[str] = None
+    status: Optional[str] = "Pending"
 
 class DeliveryAddressUpdate(BaseModel):
     address: Optional[str] = None
