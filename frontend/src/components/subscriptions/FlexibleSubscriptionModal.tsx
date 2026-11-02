@@ -45,6 +45,9 @@ export function FlexibleSubscriptionModal({
   onSuccess,
 }: FlexibleSubscriptionModalProps) {
   const { products } = useDairyPulse();
+  const availableProducts = products.filter(
+    (p) => p.status !== 'Out of Stock' && (p.availableStock === undefined || p.availableStock > 0)
+  );
   const [activeTab, setActiveTab] = useState<'SKIP' | 'QUANTITY' | 'EXTRA'>(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -362,19 +365,14 @@ export function FlexibleSubscriptionModal({
                   onChange={(e) => setExtraVariant(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
                 >
-                  {products && products.length > 0 ? (
-                    products.map((p) => (
+                  {availableProducts.length > 0 ? (
+                    availableProducts.map((p) => (
                       <option key={p.id || p.variant} value={p.variant}>
-                        {p.name} ({p.variant})
+                        {p.name} ({p.variant}) — ₹{p.sellingPrice}/L
                       </option>
                     ))
                   ) : (
-                    <>
-                      <option value="Cow Milk">Cow Milk</option>
-                      <option value="Buffalo Milk">Buffalo Milk</option>
-                      <option value="Toned Milk">Toned Milk</option>
-                      <option value="A2 Desi Cow Milk">A2 Desi Cow</option>
-                    </>
+                    <option value={productVariant}>{productVariant} (Current)</option>
                   )}
                 </select>
               </div>

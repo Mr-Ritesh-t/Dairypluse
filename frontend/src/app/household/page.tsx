@@ -34,38 +34,9 @@ export default function HouseholdSubscriptionsPage() {
 
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'PAUSED'>('ALL');
   const [search, setSearch] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Quick Inline Subscription Form state
-  const householdCustomers = customers.filter((c) => c.type === 'HOUSEHOLD');
-  const candidateCustomers = householdCustomers.length > 0 ? householdCustomers : customers;
-
-  const [subCustomer, setSubCustomer] = useState(candidateCustomers[0]?.id || '');
-  const [subVariant, setSubVariant] = useState<MilkVariant>(products[0]?.variant || 'Cow Milk');
-  const [subQty, setSubQty] = useState('1.0');
-  const [subSlot, setSubSlot] = useState<
-    'Morning (6:00 AM - 7:30 AM)' | 'Evening (5:30 PM - 7:00 PM)' | 'Both'
-  >('Morning (6:00 AM - 7:30 AM)');
-  const [isSubmittingQuick, setIsSubmittingQuick] = useState(false);
-
-  // Sync subCustomer when candidate customers load
-  useEffect(() => {
-    if (candidateCustomers.length > 0) {
-      if (!subCustomer || !candidateCustomers.some((c) => c.id === subCustomer)) {
-        setSubCustomer(candidateCustomers[0].id);
-      }
-    }
-  }, [customers]);
-
-  // Sync subVariant when products load
-  useEffect(() => {
-    if (products && products.length > 0 && !products.some((p) => p.variant === subVariant)) {
-      setSubVariant(products[0].variant);
-    }
-  }, [products]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -84,48 +55,6 @@ export default function HouseholdSubscriptionsPage() {
     if (search && !s.customerName.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
-
-  const handleQuickSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!subCustomer) {
-      alert('Please select a customer.');
-      return;
-    }
-    const cust = customers.find((c) => c.id === subCustomer) || candidateCustomers[0];
-    if (!cust) {
-      alert('Customer not found.');
-      return;
-    }
-    const qty = parseFloat(subQty) || 1.0;
-    const matchedProd = products.find((p) => p.variant === subVariant);
-    const unitPrice =
-      matchedProd?.sellingPrice ||
-      (subVariant === 'Buffalo Milk' ? 78 : subVariant === 'A2 Desi Cow Milk' ? 95 : subVariant === 'Toned Milk' ? 54 : 62);
-    const targetDairy = cust.dairyName || activeDairy?.name || 'DairyPulse Farm HQ';
-
-    setIsSubmittingQuick(true);
-    try {
-      const res = await addSubscription({
-        customerId: cust.id,
-        customerName: cust.name,
-        productVariant: subVariant,
-        quantityLiters: qty,
-        timeSlot: subSlot,
-        frequency: 'Daily',
-        unitPrice: unitPrice,
-        startDate: new Date().toISOString().split('T')[0],
-        status: 'Active',
-        dairyName: targetDairy,
-      });
-
-      if (res) {
-        showToast(`Subscription created for ${cust.name} (${qty}L / day)`);
-        setShowAddForm(false);
-      }
-    } finally {
-      setIsSubmittingQuick(false);
-    }
-  };
 
   const handleDeleteSubscription = async (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to cancel and remove the subscription for ${name}?`)) {

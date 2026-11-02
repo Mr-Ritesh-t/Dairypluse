@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Milk,
@@ -34,11 +34,20 @@ export function AddSubscriptionModal({
   const householdCustomers = customers.filter((c) => c.type === 'HOUSEHOLD');
   const candidateCustomers = householdCustomers.length > 0 ? householdCustomers : customers;
 
+  // Filter products: ONLY show milk varieties that are available (not Out of Stock and stock > 0)
+  const availableProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (p.status === 'Out of Stock') return false;
+      if (typeof p.availableStock === 'number' && p.availableStock <= 0) return false;
+      return true;
+    });
+  }, [products]);
+
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(
     preselectedCustomer?.id || candidateCustomers[0]?.id || ''
   );
   const [selectedVariant, setSelectedVariant] = useState<MilkVariant>(
-    products[0]?.variant || 'Cow Milk'
+    (availableProducts[0]?.variant as MilkVariant) || 'Cow Milk'
   );
   const [quantityLiters, setQuantityLiters] = useState<number>(1.0);
   const [timeSlot, setTimeSlot] = useState<
@@ -62,12 +71,14 @@ export function AddSubscriptionModal({
     }
   }, [preselectedCustomer, customers]);
 
-  // Sync products variant
+  // Keep selectedVariant in sync with availableProducts
   useEffect(() => {
-    if (products && products.length > 0 && !products.some((p) => p.variant === selectedVariant)) {
-      setSelectedVariant(products[0].variant);
+    if (availableProducts.length > 0) {
+      if (!selectedVariant || !availableProducts.some((p) => p.variant === selectedVariant)) {
+        setSelectedVariant(availableProducts[0].variant);
+      }
     }
-  }, [products]);
+  }, [availableProducts, selectedVariant]);
 
   if (!isOpen) return null;
 
@@ -76,7 +87,10 @@ export function AddSubscriptionModal({
     customers.find((c) => c.id === selectedCustomerId) ||
     candidateCustomers[0];
 
-  const matchedProduct = products.find((p) => p.variant === selectedVariant);
+  const matchedProduct =
+    availableProducts.find((p) => p.variant === selectedVariant) ||
+    availableProducts[0];
+
   const unitPrice =
     matchedProduct?.sellingPrice ||
     (selectedVariant === 'Buffalo Milk' ? 78 : selectedVariant === 'A2 Desi Cow Milk' ? 95 : selectedVariant === 'Toned Milk' ? 54 : 62);
@@ -92,6 +106,10 @@ export function AddSubscriptionModal({
     e.preventDefault();
     if (!currentCustomer) {
       setErrorMessage('Please select a customer.');
+      return;
+    }
+    if (availableProducts.length === 0) {
+      setErrorMessage('No available milk varieties in stock to subscribe to.');
       return;
     }
     if (quantityLiters <= 0) {
@@ -215,35 +233,89 @@ export function AddSubscriptionModal({
             )}
           </div>
 
-          {/* Milk Variant & Price */}
+          {/* Available Milk Varieties Only */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Milk Variety <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {['Cow Milk', 'Buffalo Milk', 'A2 Desi Cow Milk', 'Toned Milk'].map((vName) => {
-                const prod = products.find((p) => p.variant === vName);
-                const price =
-                  prod?.sellingPrice ||
-                  (vName === 'Buffalo Milk' ? 78 : vName === 'A2 Desi Cow Milk' ? 95 : vName === 'Toned Milk' ? 54 : 62);
-                const isSelected = selectedVariant === vName;
-                return (
-                  <button
-                    key={vName}
-                    type="button"
-                    onClick={() => setSelectedVariant(vName as MilkVariant)}
-                    className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-500'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    <span className="text-xs font-bold text-slate-800">{vName}</span>
-                    <span className="text-[11px] font-semibold text-emerald-700 mt-1">₹{price}/Liter</span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-700">
+                Available Milk Variety <span className="text-rose-500">*</span>
+              </label>
+              {availableProducts.length > 0 && (
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  {availableProducts.length} Variety Available In Stock
+                </span>
+              )}
             </div>
+
+            {availableProducts.length === 0 ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-2">
+                <AlertCircle className="w-5 h-5 text-amber-600 mx-auto" />
+                <p className="text-xs text-amber-800 font-semibold">
+                  No milk varieties are currently available in stock.
+                </p>
+                <p className="text-[11px] text-amber-700">
+                  Please add stock or create varieties in the Inventory section first.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    openModal('addStock');
+                  }}
+                  className="mt-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+                >
+                  + Restock Milk in Inventory
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {availableProducts.map((prod) => {
+                  const isSelected = selectedVariant === prod.variant;
+                  return (
+                    <button
+                      key={prod.id || prod.variant}
+                      type="button"
+                      onClick={() => setSelectedVariant(prod.variant)}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block leading-tight">
+                            {prod.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {prod.variant}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${
+                            prod.status === 'In Stock'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {prod.availableStock !== undefined ? `${prod.availableStock}L` : 'Available'}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-emerald-700">
+                          ₹{prod.sellingPrice}/Liter
+                        </span>
+                        {(prod.fatContent > 0 || prod.snfContent > 0) && (
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            FAT {prod.fatContent}% • SNF {prod.snfContent}%
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Quantity Selector */}
@@ -366,7 +438,7 @@ export function AddSubscriptionModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !currentCustomer}
+              disabled={isSubmitting || !currentCustomer || availableProducts.length === 0}
               className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
