@@ -347,6 +347,7 @@ export async function getSubscriptions() {
       id: s.id,
       customerId: s.customer_id,
       customerName: s.customer_name,
+      dairyName: s.dairy_name || 'DairyPulse Farm HQ',
       productVariant: s.product_variant,
       quantityLiters: s.quantity_liters,
       timeSlot: s.time_slot,
@@ -380,7 +381,7 @@ export async function postSubscription(data: {
       body: JSON.stringify({
         customer_id: data.customerId,
         customer_name: data.customerName,
-        dairy_name: data.dairyName || 'Amrut Dairy Farm',
+        dairy_name: data.dairyName || 'DairyPulse Farm HQ',
         product_variant: data.productVariant,
         quantity_liters: data.quantityLiters,
         time_slot: data.timeSlot || 'Morning (6:00 AM - 7:30 AM)',
@@ -408,6 +409,19 @@ export async function toggleSubscriptionPauseApi(subId: string) {
     return await res.json();
   } catch (err) {
     console.warn('API error:', err);
+    return null;
+  }
+}
+
+export async function deleteSubscriptionApi(subId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/subscriptions/${subId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete subscription');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error deleting subscription:', err);
     return null;
   }
 }

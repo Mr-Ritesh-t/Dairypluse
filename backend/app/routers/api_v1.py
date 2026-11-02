@@ -308,7 +308,25 @@ def get_subscriptions(dairy_name: Optional[str] = None, db: Session = Depends(ge
 
 @api_router.post("/subscriptions", response_model=SubscriptionResponse)
 def create_subscription(sub: SubscriptionCreate, db: Session = Depends(get_db)):
-    new_sub = Subscription(**sub.dict())
+    # Validate customer existence and resolve ID/Name
+    customer = None
+    if sub.customer_id:
+        customer = db.query(Customer).filter(Customer.id == sub.customer_id.strip()).first()
+
+    if not customer and sub.customer_name:
+        customer = db.query(Customer).filter(Customer.name.ilike(sub.customer_name.strip())).first()
+
+    sub_dict = sub.dict()
+    if customer:
+        sub_dict["customer_id"] = customer.id
+        sub_dict["customer_name"] = customer.name
+        if not sub_dict.get("dairy_name") or sub_dict.get("dairy_name") == "DairyPulse Farm HQ":
+            sub_dict["dairy_name"] = customer.dairy_name or "DairyPulse Farm HQ"
+    else:
+        if not sub.customer_id or not sub.customer_id.strip():
+            raise HTTPException(status_code=400, detail="A valid customer must be selected for subscription")
+
+    new_sub = Subscription(**sub_dict)
     db.add(new_sub)
     db.commit()
     db.refresh(new_sub)
@@ -322,6 +340,15 @@ def toggle_subscription_pause(sub_id: str, db: Session = Depends(get_db)):
     sub.status = "Paused" if sub.status == "Active" else "Active"
     db.commit()
     return {"status": sub.status}
+
+@api_router.delete("/subscriptions/{sub_id}")
+def delete_subscription(sub_id: str, db: Session = Depends(get_db)):
+    sub = db.query(Subscription).filter(Subscription.id == sub_id).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    db.delete(sub)
+    db.commit()
+    return {"status": "success", "message": "Subscription deleted successfully"}
 
 # ----------------- ORDERS -----------------
 @api_router.get("/orders", response_model=List[OrderResponse])

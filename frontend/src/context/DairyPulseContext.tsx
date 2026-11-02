@@ -31,6 +31,7 @@ import {
   getSubscriptions,
   postSubscription,
   toggleSubscriptionPauseApi,
+  deleteSubscriptionApi,
   getShopOrders,
   postShopOrder,
   getDeliveriesToday,
@@ -114,7 +115,8 @@ interface DairyPulseContextType {
   addStaff: (member: Omit<StaffMember, 'id' | 'joiningDate'>) => Promise<StaffMember>;
   updateStaff: (id: string, updateData: Partial<StaffMember>) => Promise<boolean>;
   deleteStaff: (id: string) => Promise<boolean>;
-  addSubscription: (sub: Omit<Subscription, 'id'>) => void;
+  addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<Subscription | null>;
+  deleteSubscription: (id: string) => Promise<boolean>;
   toggleSubscriptionPause: (id: string) => void;
   addShopOrder: (order: Omit<ShopOrder, 'id' | 'orderNumber'>) => void;
   updateDeliveryStatus: (id: string, status: DeliveryTask['status'], failureReason?: string) => void;
@@ -498,9 +500,10 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   };
 
   const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'>): Promise<Customer> => {
+    const tempId = `c_${Date.now()}`;
     const newCustomer: Customer = {
       ...customerData,
-      id: `c_${Date.now()}`,
+      id: tempId,
       joinedDate: new Date().toISOString().split('T')[0],
     };
     setCustomers((prev) => [newCustomer, ...prev]);
@@ -509,6 +512,9 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     const res = await postCustomer(customerData);
     if (res && res.id) {
       newCustomer.id = res.id;
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === tempId ? { ...c, id: res.id } : c))
+      );
     }
     return newCustomer;
   };
@@ -640,15 +646,53 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return success;
   };
 
-  const addSubscription = (subData: Omit<Subscription, 'id'>) => {
+  const addSubscription = async (subData: Omit<Subscription, 'id'>): Promise<Subscription | null> => {
+    const tempId = `sub_${Date.now()}`;
+    const dairyName = subData.dairyName || activeDairy?.name || 'DairyPulse Farm HQ';
     const newSub: Subscription = {
       ...subData,
-      id: `sub_${Date.now()}`,
+      id: tempId,
+      dairyName,
     };
     setSubscriptions((prev) => [newSub, ...prev]);
 
+    // Update customer active subscription count if matching
+    setCustomers((prev) =>
+      prev.map((c) =>
+        c.id === subData.customerId
+          ? { ...c, activeSubscriptionsCount: (c.activeSubscriptionsCount || 0) + 1 }
+          : c
+      )
+    );
+
     // Backend sync
-    postSubscription(subData);
+    const res = await postSubscription({
+      customerId: subData.customerId,
+      customerName: subData.customerName,
+      dairyName,
+      productVariant: subData.productVariant,
+      quantityLiters: subData.quantityLiters,
+      timeSlot: subData.timeSlot,
+      frequency: subData.frequency,
+      unitPrice: subData.unitPrice,
+      startDate: subData.startDate,
+      status: subData.status,
+    });
+
+    if (res && res.id) {
+      newSub.id = res.id;
+      setSubscriptions((prev) =>
+        prev.map((s) => (s.id === tempId ? { ...s, id: res.id, customerId: res.customer_id || s.customerId } : s))
+      );
+      return { ...newSub, id: res.id };
+    }
+    return newSub;
+  };
+
+  const deleteSubscription = async (id: string): Promise<boolean> => {
+    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    const res = await deleteSubscriptionApi(id);
+    return !!res;
   };
 
   const toggleSubscriptionPause = (id: string) => {
@@ -1554,6 +1598,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         updateStaff,
         deleteStaff,
         addSubscription,
+        deleteSubscription,
         toggleSubscriptionPause,
         addShopOrder,
         updateDeliveryStatus,

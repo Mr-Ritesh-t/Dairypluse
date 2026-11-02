@@ -25,6 +25,7 @@ import {
 import { Customer, Subscription, DeliveryTask } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
+import { AddSubscriptionModal } from '@/components/subscriptions/AddSubscriptionModal';
 import { AddMilkModal } from '@/components/customers/AddMilkModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
 
@@ -38,6 +39,7 @@ export default function CustomersPage() {
   // Modal states for Add Milk & Collect Payment
   const [isAddMilkOpen, setIsAddMilkOpen] = useState(false);
   const [isCollectPaymentOpen, setIsCollectPaymentOpen] = useState(false);
+  const [isAddSubOpen, setIsAddSubOpen] = useState(false);
   const [modalCustomer, setModalCustomer] = useState<Customer | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -557,27 +559,23 @@ export default function CustomersPage() {
               {/* Additional Action Buttons */}
               <div className="pt-1 flex flex-col gap-2">
                 {selectedCust.type === 'HOUSEHOLD' && (
-                  <button
-                    onClick={() => {
-                      const sub: Subscription = customerSub || {
-                        id: `sub-${selectedCust.id}`,
-                        customerId: selectedCust.id,
-                        customerName: selectedCust.name,
-                        productVariant: 'Cow Milk',
-                        quantityLiters: 1.5,
-                        frequency: 'Daily',
-                        timeSlot: 'Morning (6:00 AM - 7:30 AM)',
-                        unitPrice: 62.0,
-                        status: 'Active',
-                        startDate: '2026-09-01',
-                      };
-                      setSelectedSubForManage(sub);
-                    }}
-                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Settings2 className="w-3.5 h-3.5" />
-                    <span>Manage Daily Milk (Skip / Vacation / Qty)</span>
-                  </button>
+                  customerSub ? (
+                    <button
+                      onClick={() => setSelectedSubForManage(customerSub)}
+                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      <span>Manage Daily Milk (Skip / Vacation / Qty)</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsAddSubOpen(true)}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Add Household Subscription</span>
+                    </button>
+                  )
                 )}
                 <button
                   onClick={() => openModal('generateBill')}
@@ -618,6 +616,16 @@ export default function CustomersPage() {
             setModalCustomer(null);
           }}
           customer={modalCustomer}
+          onSuccess={(msg) => setToastMessage(msg)}
+        />
+      )}
+
+      {/* Add Subscription Modal */}
+      {selectedCust && (
+        <AddSubscriptionModal
+          isOpen={isAddSubOpen}
+          onClose={() => setIsAddSubOpen(false)}
+          preselectedCustomer={selectedCust}
           onSuccess={(msg) => setToastMessage(msg)}
         />
       )}
