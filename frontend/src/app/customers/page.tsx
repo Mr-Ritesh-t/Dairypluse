@@ -537,6 +537,31 @@ export default function CustomersPage() {
                 </div>
               </div>
 
+              {/* Customer Portal Login Credentials Box for Owner */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-purple-50/60 border border-indigo-200/80 text-xs text-indigo-950 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider text-indigo-900">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Customer Portal Login Info</span>
+                  </div>
+                </div>
+               
+                <div className="p-2.5 rounded-xl bg-white/90 border border-indigo-100 space-y-1 font-mono text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-sans">Login ID:</span>
+                    <strong className="text-slate-900">{selectedCust.phone}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-sans">Default Password:</span>
+                    <strong className="text-indigo-700">cust123</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-sans">Alternative:</span>
+                    <span className="text-emerald-700 font-sans font-bold">SMS OTP Login</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Additional Action Buttons */}
               <div className="pt-1 flex flex-col gap-2">
                 {selectedCust.type === 'HOUSEHOLD' && (
