@@ -278,7 +278,7 @@ export async function postCustomer(data: {
         address: data.address,
         area: data.area,
         route: data.route,
-        dairy_name: data.dairyName || 'DairyPulse Farm HQ',
+        dairy_name: data.dairyName || 'Amrut Dairy Farm',
         latitude: data.latitude,
         longitude: data.longitude,
         preferred_time: data.preferredTime || '6:00 AM - 7:30 AM',

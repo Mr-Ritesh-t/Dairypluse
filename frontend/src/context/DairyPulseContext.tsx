@@ -270,7 +270,15 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       if (!c.dairyName) {
         return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
       }
-      return c.dairyName.trim().toLowerCase() === activeName;
+      const cDairy = c.dairyName.trim().toLowerCase();
+      if (cDairy === activeName) return true;
+      if (
+        (activeName === 'amrut dairy farm' && cDairy === 'dairypulse farm hq') ||
+        (activeName === 'dairypulse farm hq' && cDairy === 'amrut dairy farm')
+      ) {
+        return true;
+      }
+      return false;
     });
   }, [rawCustomers, activeDairy]);
 
@@ -511,19 +519,24 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
 
   const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'>): Promise<Customer> => {
     const tempId = `c_${Date.now()}`;
+    const targetDairy = customerData.dairyName || activeDairy?.name || user?.dairyName || 'Amrut Dairy Farm';
     const newCustomer: Customer = {
       ...customerData,
+      dairyName: targetDairy,
       id: tempId,
       joinedDate: new Date().toISOString().split('T')[0],
     };
     setCustomers((prev) => [newCustomer, ...prev]);
 
     // Backend sync
-    const res = await postCustomer(customerData);
+    const res = await postCustomer({
+      ...customerData,
+      dairyName: targetDairy,
+    });
     if (res && res.id) {
       newCustomer.id = res.id;
       setCustomers((prev) =>
-        prev.map((c) => (c.id === tempId ? { ...c, id: res.id } : c))
+        prev.map((c) => (c.id === tempId ? { ...c, id: res.id, dairyName: res.dairy_name || targetDairy } : c))
       );
     }
     return newCustomer;

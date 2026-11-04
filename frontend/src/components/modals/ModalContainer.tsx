@@ -527,6 +527,7 @@ export function ModalContainer() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                const assignedDairy = activeDairy?.name || user?.dairyName || (dairies[0]?.name || 'Amrut Dairy Farm');
                 addCustomer({
                   name: custName,
                   type: custType,
@@ -534,7 +535,7 @@ export function ModalContainer() {
                   address: custAddress,
                   area: custArea,
                   route: custRoute,
-                  dairyName: custDairyName || (dairies[0]?.name || 'DairyPulse Farm HQ'),
+                  dairyName: assignedDairy,
                   latitude: custLat,
                   longitude: custLng,
                   balance: 0,
@@ -542,6 +543,9 @@ export function ModalContainer() {
                   status: 'Active',
                 });
                 closeModal();
+                setCustName('');
+                setCustPhone('');
+                setCustAddress('');
               }}
               className="space-y-4"
             >

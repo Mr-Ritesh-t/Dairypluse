@@ -53,7 +53,7 @@ class CustomerBase(BaseModel):
     address: str
     area: str
     route: str
-    dairy_name: Optional[str] = "DairyPulse Farm HQ"
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     preferred_time: Optional[str] = "6:00 AM - 7:30 AM"

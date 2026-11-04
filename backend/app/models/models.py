@@ -40,7 +40,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     role = Column(String, default="OWNER")  # OWNER, STAFF, CUSTOMER
-    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
+    dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
