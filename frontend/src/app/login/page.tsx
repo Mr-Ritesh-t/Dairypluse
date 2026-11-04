@@ -192,7 +192,7 @@ export default function LoginPage() {
 
       if (res.success) {
         const targetRole: UserRole = selectedRole === 'DELIVERY' ? 'DELIVERY' : (res.user?.role || selectedRole);
-        setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting to delivery portal...`);
+        setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting to your portal...`);
         redirectToRole(targetRole);
       } else {
         if (res.notFound) {
@@ -777,9 +777,16 @@ export default function LoginPage() {
                 {/* Password Input */}
                 {authMode === 'password' && (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Password
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Password
+                      </label>
+                      {selectedRole === 'CUSTOMER' && (
+                        <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          Default: cust123
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <Lock className="w-4 h-4" />
