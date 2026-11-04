@@ -181,6 +181,7 @@ export async function postStockReceipt(data: {
   quantity: number;
   rate: number;
   notes?: string;
+  expiryDate?: string;
 }) {
   try {
     const res = await fetch(`${API_BASE_URL}/inventory/receipts`, {
@@ -192,6 +193,7 @@ export async function postStockReceipt(data: {
         quantity: data.quantity,
         unit_cost: data.rate,
         notes: data.notes,
+        expiry_date: data.expiryDate,
       }),
     });
     if (!res.ok) throw new Error('Failed to post stock receipt');
@@ -199,6 +201,45 @@ export async function postStockReceipt(data: {
   } catch (err) {
     console.warn('API error:', err);
     return null;
+  }
+}
+
+export async function getMovementsApi(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/inventory/movements`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data)
+      ? data.map((d: any) => ({
+          id: d.id,
+          date: d.date,
+          timestamp: d.timestamp,
+          type: d.transaction_type,
+          productVariant: d.product_variant,
+          quantity: d.quantity,
+          supplierOrBatch: d.supplier_or_batch,
+          ratePerLiter: d.rate_per_liter,
+          notes: d.notes,
+          expiryDate: d.expiry_date,
+        }))
+      : [];
+  } catch (err) {
+    console.warn('API error fetching movements:', err);
+    return [];
+  }
+}
+
+export async function updateMovementExpiryApi(movementId: string, expiryDate: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/inventory/movements/${movementId}/expiry`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiry_date: expiryDate }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('API error updating movement expiry:', err);
+    return false;
   }
 }
 

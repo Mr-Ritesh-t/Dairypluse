@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus } from 'lucide-react';
+import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { MilkVariant } from '@/types';
@@ -28,12 +28,27 @@ export function ModalContainer() {
   } = useDairyPulse();
   const { user, updateUser } = useAuth();
 
+  // Expiry date helper: default to +5 days from today
+  const getDaysFromNow = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  };
+
   // Add Stock Form State
   const [stockVariant, setStockVariant] = useState<MilkVariant>(products[0]?.variant || '');
   const [stockQty, setStockQty] = useState('100');
   const [supplier, setSupplier] = useState('');
   const [rate, setRate] = useState(products[0]?.costPrice ? products[0].costPrice.toString() : '48');
   const [stockNotes, setStockNotes] = useState('FAT 4.2%, SNF 8.6% tested ok');
+  const [stockExpiryDate, setStockExpiryDate] = useState(() => getDaysFromNow(5));
+
+  // Reset default +5 days expiry whenever addStock modal opens
+  useEffect(() => {
+    if (activeModal === 'addStock') {
+      setStockExpiryDate(getDaysFromNow(5));
+    }
+  }, [activeModal]);
 
   // Add Variety Form State
   const [newVarName, setNewVarName] = useState('');
@@ -278,7 +293,7 @@ export function ModalContainer() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  addStockReceipt(stockVariant, parseFloat(stockQty) || 0, supplier, parseFloat(rate) || 0, stockNotes);
+                  addStockReceipt(stockVariant, parseFloat(stockQty) || 0, supplier, parseFloat(rate) || 0, stockNotes, stockExpiryDate);
                   closeModal();
                 }}
                 className="space-y-4"
@@ -361,6 +376,55 @@ export function ModalContainer() {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
                     placeholder="FAT %, SNF %, temperature check"
                   />
+                </div>
+
+                {/* Expiry Date Section: Defaults to +5 days, user editable */}
+                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/90 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Expiry Date / Shelf Life</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-white/90 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Default: +5 Days (Editable)
+                    </span>
+                  </div>
+
+                  <input
+                    type="date"
+                    required
+                    value={stockExpiryDate}
+                    onChange={(e) => setStockExpiryDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+                  />
+
+                  {/* Quick Expiry Presets */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-slate-500 font-medium">Quick Presets:</span>
+                    {[
+                      { label: '+3 Days (Raw)', days: 3 },
+                      { label: '+5 Days (Standard)', days: 5 },
+                      { label: '+7 Days (Pasteurized)', days: 7 },
+                      { label: '+10 Days', days: 10 },
+                    ].map((preset) => {
+                      const presetDate = getDaysFromNow(preset.days);
+                      const isSelected = stockExpiryDate === presetDate;
+                      return (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => setStockExpiryDate(presetDate)}
+                          className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="pt-2 flex justify-end gap-2">
                   <button

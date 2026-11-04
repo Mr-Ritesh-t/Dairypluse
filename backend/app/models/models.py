@@ -112,6 +112,7 @@ class StockReceipt(Base):
     quantity = Column(Float, nullable=False)
     unit_cost = Column(Float, nullable=False)
     notes = Column(Text, nullable=True)
+    expiry_date = Column(String, nullable=True)  # YYYY-MM-DD
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class InventoryTransaction(Base):
@@ -126,6 +127,7 @@ class InventoryTransaction(Base):
     supplier_or_batch = Column(String, nullable=False)
     rate_per_liter = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
+    expiry_date = Column(String, nullable=True)  # YYYY-MM-DD
 
 class Subscription(Base):
     __tablename__ = "subscriptions"

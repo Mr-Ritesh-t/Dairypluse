@@ -17,12 +17,13 @@ import {
   Check,
   IndianRupee,
   Layers,
+  Calendar,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { Product, MilkVariant } from '@/types';
 
 export default function MilkInventoryPage() {
-  const { products, movements, openModal, addProduct, updateProductPrice, deleteProduct } = useDairyPulse();
+  const { products, movements, openModal, addProduct, updateProductPrice, deleteProduct, updateIntakeExpiry } = useDairyPulse();
   const [filterType, setFilterType] = useState<string>('ALL');
 
   // Modal States for Variety Management
@@ -30,6 +31,56 @@ export default function MilkInventoryPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Expiry Edit State for Intake Movements
+  const [editingMovement, setEditingMovement] = useState<any | null>(null);
+  const [newExpiryInput, setNewExpiryInput] = useState('');
+  const [isUpdatingExpiry, setIsUpdatingExpiry] = useState(false);
+
+  const handleOpenEditExpiry = (m: any) => {
+    setEditingMovement(m);
+    setNewExpiryInput(m.expiryDate || new Date().toISOString().split('T')[0]);
+  };
+
+  const handleSaveExpiry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMovement || !newExpiryInput.trim()) return;
+    setIsUpdatingExpiry(true);
+    await updateIntakeExpiry(editingMovement.id, newExpiryInput.trim());
+    setIsUpdatingExpiry(false);
+    setEditingMovement(null);
+  };
+
+  const getExpiryInfo = (expiryDate?: string) => {
+    if (!expiryDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const exp = new Date(expiryDate);
+    exp.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        label: `Expired (${Math.abs(diffDays)}d ago)`,
+        style: 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
+      };
+    } else if (diffDays === 0) {
+      return {
+        label: 'Expires Today',
+        style: 'bg-amber-100 text-amber-800 border-amber-300 font-bold',
+      };
+    } else if (diffDays <= 2) {
+      return {
+        label: `${diffDays}d left (${expiryDate})`,
+        style: 'bg-amber-50 text-amber-700 border-amber-200 font-semibold',
+      };
+    } else {
+      return {
+        label: `${diffDays}d left (${expiryDate})`,
+        style: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium',
+      };
+    }
+  };
 
   // Add Variety Form State
   const [varName, setVarName] = useState('');
@@ -387,13 +438,14 @@ export default function MilkInventoryPage() {
                 <th className="pb-2.5 font-medium">Type</th>
                 <th className="pb-2.5 font-medium text-center">Quantity</th>
                 <th className="pb-2.5 font-medium">Source / Route</th>
+                <th className="pb-2.5 font-medium">Expiry / Shelf Life</th>
                 <th className="pb-2.5 font-medium">Notes & Quality</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredMovements.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Milk className="w-8 h-8 text-slate-300" />
                       <span className="font-semibold text-sm text-slate-600">No stock movements recorded yet</span>
@@ -426,6 +478,44 @@ export default function MilkInventoryPage() {
                       {m.type === 'RECEIPT' ? '+' : '-'} {m.quantity} L
                     </td>
                     <td className="py-3 font-medium text-slate-600">{m.supplierOrBatch}</td>
+                    <td className="py-3">
+                      {m.type === 'RECEIPT' ? (
+                        m.expiryDate ? (
+                          (() => {
+                            const info = getExpiryInfo(m.expiryDate);
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] border ${info?.style}`}
+                                >
+                                  <Calendar className="w-2.5 h-2.5 mr-1 shrink-0" />
+                                  <span>{info?.label}</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditExpiry(m)}
+                                  title="Change expiry date"
+                                  className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditExpiry(m)}
+                            className="text-[10px] text-slate-400 hover:text-emerald-600 font-medium underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <Calendar className="w-2.5 h-2.5" />
+                            <span>+ Set Expiry</span>
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-slate-300 text-[11px]">—</span>
+                      )}
+                    </td>
                     <td className="py-3 text-slate-500">
                       {m.notes || (m.ratePerLiter ? `₹${m.ratePerLiter}/L purchase cost` : 'Standard handling')}
                     </td>
@@ -680,6 +770,91 @@ export default function MilkInventoryPage() {
       {/* ======================================================== */}
       {/* MODAL 3: DELETE / REMOVE VARIETY CONFIRMATION            */}
       {/* ======================================================== */}
+      {/* ======================================================== */}
+      {/* MODAL: EDIT INTAKE EXPIRY DATE                           */}
+      {/* ======================================================== */}
+      {editingMovement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Change Expiry Date</h3>
+                  <p className="text-[11px] text-slate-400">{editingMovement.productVariant} ({editingMovement.quantity} L)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingMovement(null)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveExpiry} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Expiry / Best Before Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={newExpiryInput}
+                  onChange={(e) => setNewExpiryInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+                />
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-slate-500 font-medium">Quick Presets:</span>
+                {[
+                  { label: '+3 Days', days: 3 },
+                  { label: '+5 Days', days: 5 },
+                  { label: '+7 Days', days: 7 },
+                  { label: '+10 Days', days: 10 },
+                ].map((preset) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + preset.days);
+                  const pDate = d.toISOString().split('T')[0];
+                  return (
+                    <button
+                      key={preset.days}
+                      type="button"
+                      onClick={() => setNewExpiryInput(pDate)}
+                      className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-200 transition cursor-pointer"
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingMovement(null)}
+                  className="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingExpiry}
+                  className="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isUpdatingExpiry ? 'Saving...' : 'Update Expiry'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {deletingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center">

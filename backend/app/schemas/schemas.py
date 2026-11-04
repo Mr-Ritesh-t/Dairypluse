@@ -39,6 +39,10 @@ class StockReceiptCreate(BaseModel):
     quantity: float
     unit_cost: float
     notes: Optional[str] = None
+    expiry_date: Optional[str] = None
+
+class MovementExpiryUpdate(BaseModel):
+    expiry_date: str
 
 class WastageCreate(BaseModel):
     variant: str

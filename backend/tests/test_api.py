@@ -678,3 +678,37 @@ def test_driver_rating_workflow():
 
 
 
+
+def test_stock_intake_expiry_defaults_and_custom():
+    from datetime import datetime, timedelta
+    expected_default = (datetime.utcnow() + timedelta(days=5)).strftime("%Y-%m-%d")
+
+    # 1. Default 5 days
+    res1 = client.post("/api/v1/inventory/receipts", json={
+        "supplier_name": "Default Expiry Farm",
+        "variant": "Cow Milk",
+        "quantity": 50.0,
+        "unit_cost": 48.0,
+    })
+    assert res1.status_code == 200
+    data1 = res1.json()
+    assert data1["expiry_date"] == expected_default
+    movement_id = data1["movement_id"]
+
+    # 2. Update/change expiry date
+    new_expiry = "2026-11-20"
+    res2 = client.patch(f"/api/v1/inventory/movements/{movement_id}/expiry", json={"expiry_date": new_expiry})
+    assert res2.status_code == 200
+    assert res2.json()["expiry_date"] == new_expiry
+
+    # 3. Custom expiry on intake creation
+    custom_expiry = "2026-11-25"
+    res3 = client.post("/api/v1/inventory/receipts", json={
+        "supplier_name": "Custom Expiry Farm",
+        "variant": "Cow Milk",
+        "quantity": 25.0,
+        "unit_cost": 48.0,
+        "expiry_date": custom_expiry,
+    })
+    assert res3.status_code == 200
+    assert res3.json()["expiry_date"] == custom_expiry

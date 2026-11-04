@@ -26,6 +26,7 @@ export interface InventoryMovement {
   notes?: string;
   timestamp: string;
   dairyName?: string;
+  expiryDate?: string;
 }
 
 export interface Customer {

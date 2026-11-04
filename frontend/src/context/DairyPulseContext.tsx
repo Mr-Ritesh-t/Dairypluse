@@ -24,6 +24,8 @@ import {
 import {
   getProducts,
   postStockReceipt,
+  getMovementsApi,
+  updateMovementExpiryApi,
   postWastage,
   getCustomers,
   postCustomer,
@@ -108,7 +110,8 @@ interface DairyPulseContextType {
     feedback?: string;
   }) => Promise<boolean>;
   getRatingsForDriver: (driverName: string) => DriverRating[];
-  addStockReceipt: (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string) => void;
+  addStockReceipt: (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string, expiryDate?: string) => void;
+  updateIntakeExpiry: (movementId: string, newExpiryDate: string) => Promise<boolean>;
   recordWastage: (variant: MilkVariant, quantity: number, reason: string) => void;
   addCustomer: (customer: Omit<Customer, 'id' | 'joinedDate'>) => Promise<Customer>;
   updateCustomer: (id: string, updateData: Partial<Customer>) => Promise<boolean>;
@@ -451,9 +454,21 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     getAttendanceListApi().then((data) => {
       if (data && Array.isArray(data)) setAttendanceList(data);
     });
+    getMovementsApi().then((data) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setMovements(data);
+      }
+    });
   }, []);
 
-  const addStockReceipt = (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string) => {
+  const addStockReceipt = (
+    variant: MilkVariant,
+    quantity: number,
+    supplier: string,
+    rate: number,
+    notes?: string,
+    expiryDate?: string
+  ) => {
     // 1. Update stock optimistically
     setProducts((prev) =>
       prev.map((p) => {
@@ -469,6 +484,14 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       })
     );
 
+    // Expiry date calculation: default to 5 days after intake
+    const defaultExpiry = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 5);
+      return d.toISOString().split('T')[0];
+    })();
+    const finalExpiry = expiryDate && expiryDate.trim() ? expiryDate.trim() : defaultExpiry;
+
     // 2. Record movement
     const newMovement: InventoryMovement = {
       id: `m_${Date.now()}`,
@@ -480,11 +503,19 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       ratePerLiter: rate,
       notes,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      expiryDate: finalExpiry,
     };
     setMovements((prev) => [newMovement, ...prev]);
 
     // 3. Sync with backend API
-    postStockReceipt({ variant, quantity, supplier, rate, notes });
+    postStockReceipt({ variant, quantity, supplier, rate, notes, expiryDate: finalExpiry });
+  };
+
+  const updateIntakeExpiry = async (movementId: string, newExpiryDate: string): Promise<boolean> => {
+    setMovements((prev) =>
+      prev.map((m) => (m.id === movementId ? { ...m, expiryDate: newExpiryDate } : m))
+    );
+    return await updateMovementExpiryApi(movementId, newExpiryDate);
   };
 
   const recordWastage = (variant: MilkVariant, quantity: number, reason: string) => {
@@ -1825,6 +1856,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         openModal,
         closeModal,
         addStockReceipt,
+        updateIntakeExpiry,
         recordWastage,
         addCustomer,
         updateCustomer,

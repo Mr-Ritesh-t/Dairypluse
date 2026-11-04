@@ -54,6 +54,17 @@ def ensure_db_columns():
                     conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN payout_status VARCHAR DEFAULT 'PENDING'")
                 if "payout_id" not in att_cols:
                     conn.exec_driver_sql("ALTER TABLE staff_attendance ADD COLUMN payout_id VARCHAR")
+
+            # Check stock_receipts columns
+            sr_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(stock_receipts)").fetchall()]
+            if sr_cols and "expiry_date" not in sr_cols:
+                conn.exec_driver_sql("ALTER TABLE stock_receipts ADD COLUMN expiry_date VARCHAR")
+
+            # Check inventory_transactions columns
+            it_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(inventory_transactions)").fetchall()]
+            if it_cols and "expiry_date" not in it_cols:
+                conn.exec_driver_sql("ALTER TABLE inventory_transactions ADD COLUMN expiry_date VARCHAR")
+
             conn.commit()
     except Exception as e:
         print(f"Column check migration warning: {e}")

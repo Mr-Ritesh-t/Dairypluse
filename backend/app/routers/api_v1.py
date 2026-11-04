@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.models.models import (
@@ -28,6 +28,7 @@ from app.schemas.schemas import (
     ProductUpdate,
     ProductResponse,
     StockReceiptCreate,
+    MovementExpiryUpdate,
     WastageCreate,
     CustomerCreate,
     CustomerResponse,
@@ -190,8 +191,23 @@ def add_stock_receipt(receipt_data: StockReceiptCreate, db: Session = Depends(ge
     product.available_stock += receipt_data.quantity
     product.status = "In Stock" if product.available_stock > product.low_stock_threshold else "Low Stock"
 
-    # 2. Record movement
+    # 2. Record movement with expiry date (defaults to 5 days after intake if omitted)
     now = datetime.utcnow()
+    expiry = receipt_data.expiry_date
+    if not expiry or not str(expiry).strip():
+        expiry = (now + timedelta(days=5)).strftime("%Y-%m-%d")
+
+    stock_rec = StockReceipt(
+        supplier_name=receipt_data.supplier_name,
+        receipt_date=now.strftime("%Y-%m-%d"),
+        variant=receipt_data.variant,
+        quantity=receipt_data.quantity,
+        unit_cost=receipt_data.unit_cost,
+        notes=receipt_data.notes,
+        expiry_date=expiry,
+    )
+    db.add(stock_rec)
+
     movement = InventoryTransaction(
         date=now.strftime("%Y-%m-%d"),
         timestamp=now.strftime("%H:%M"),
@@ -201,10 +217,26 @@ def add_stock_receipt(receipt_data: StockReceiptCreate, db: Session = Depends(ge
         supplier_or_batch=receipt_data.supplier_name,
         rate_per_liter=receipt_data.unit_cost,
         notes=receipt_data.notes,
+        expiry_date=expiry,
     )
     db.add(movement)
     db.commit()
-    return {"message": "Stock receipt recorded successfully", "new_stock": product.available_stock}
+    db.refresh(movement)
+    return {
+        "message": "Stock receipt recorded successfully",
+        "new_stock": product.available_stock,
+        "movement_id": movement.id,
+        "expiry_date": expiry,
+    }
+
+@api_router.patch("/inventory/movements/{movement_id}/expiry")
+def update_movement_expiry(movement_id: str, payload: MovementExpiryUpdate, db: Session = Depends(get_db)):
+    movement = db.query(InventoryTransaction).filter(InventoryTransaction.id == movement_id).first()
+    if not movement:
+        raise HTTPException(status_code=404, detail="Movement record not found")
+    movement.expiry_date = payload.expiry_date.strip()
+    db.commit()
+    return {"message": "Expiry date updated", "id": movement.id, "expiry_date": movement.expiry_date}
 
 @api_router.post("/inventory/wastage")
 def record_wastage(wastage: WastageCreate, db: Session = Depends(get_db)):
