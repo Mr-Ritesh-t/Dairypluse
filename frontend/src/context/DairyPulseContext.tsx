@@ -733,13 +733,13 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
-  const updateDeliveryStatus = (id: string, status: DeliveryTask['status'], failureReason?: string) => {
-    let affectedTask: DeliveryTask | undefined;
+  const updateDeliveryStatus = async (id: string, status: DeliveryTask['status'], failureReason?: string) => {
+    const existingTask = deliveries.find((d) => d.id === id);
+    const previousStatus = existingTask?.status;
 
     setDeliveries((prev) =>
       prev.map((d) => {
         if (d.id === id) {
-          affectedTask = d;
           return {
             ...d,
             status,
@@ -754,23 +754,67 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       })
     );
 
-    // If marked Delivered, update rider deliveriesToday and deduct product stock
-    if (status === 'Delivered') {
-      if (affectedTask?.assignedRider) {
+    if (!existingTask) return;
+
+    // Resolve matching customer
+    const cleanPhone = (existingTask.customerPhone || '').replace(/\D/g, '');
+    const matchedCustomer = rawCustomers.find(
+      (c) =>
+        (cleanPhone && (c.phone || '').replace(/\D/g, '').endsWith(cleanPhone.slice(-10))) ||
+        (existingTask.customerName && c.name.toLowerCase() === existingTask.customerName.toLowerCase())
+    );
+
+    // Resolve unit price
+    let unitPrice = 62;
+    if (matchedCustomer) {
+      const sub = subscriptions.find(
+        (s) =>
+          (s.customerId === matchedCustomer.id || s.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()) &&
+          s.productVariant === existingTask.productVariant
+      ) || subscriptions.find(
+        (s) => s.customerId === matchedCustomer.id || s.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()
+      );
+      if (sub && sub.unitPrice) {
+        unitPrice = sub.unitPrice;
+      } else {
+        const prod = products.find((p) => p.variant === existingTask.productVariant);
+        if (prod && prod.sellingPrice) {
+          unitPrice = prod.sellingPrice;
+        } else {
+          const defaults: Record<string, number> = {
+            'Cow Milk': 62,
+            'Buffalo Milk': 78,
+            'Toned Milk': 54,
+            'A2 Desi Cow Milk': 95,
+          };
+          unitPrice = defaults[existingTask.productVariant] || 62;
+        }
+      }
+    } else {
+      const prod = products.find((p) => p.variant === existingTask.productVariant);
+      unitPrice = prod?.sellingPrice || (existingTask.productVariant === 'Buffalo Milk' ? 78 : existingTask.productVariant === 'A2 Desi Cow Milk' ? 95 : existingTask.productVariant === 'Toned Milk' ? 54 : 62);
+    }
+
+    const deliveredCost = Math.round((existingTask.quantityLiters || 0) * unitPrice * 100) / 100;
+    const isPaidOnSpot = existingTask.notes && existingTask.notes.toLowerCase().includes('paid');
+
+    // Case 1: Status becomes Delivered
+    if (status === 'Delivered' && previousStatus !== 'Delivered') {
+      if (existingTask.assignedRider) {
         setStaff((prev) =>
           prev.map((s) =>
-            s.name.toLowerCase() === affectedTask!.assignedRider.toLowerCase()
+            s.name.toLowerCase() === existingTask.assignedRider.toLowerCase()
               ? { ...s, deliveriesToday: (s.deliveriesToday || 0) + 1 }
               : s
           )
         );
       }
 
-      if (affectedTask?.productVariant && affectedTask.quantityLiters > 0) {
+      if (existingTask.productVariant && existingTask.quantityLiters > 0) {
         setProducts((prev) =>
           prev.map((p) => {
-            if (p.variant === affectedTask!.productVariant) {
-              const newStock = Math.max(0, Number((p.availableStock - affectedTask!.quantityLiters).toFixed(1)));
+            if (p.variant === existingTask.productVariant) {
+              const newStock = Math.max(0, Number((p.availableStock - existingTask.quantityLiters).toFixed(1)));
               return {
                 ...p,
                 availableStock: newStock,
@@ -781,25 +825,126 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
           })
         );
 
-        // Record dispatch movement in inventory ledger
         setMovements((prev) => [
           {
             id: `m_dispatch_${Date.now()}`,
             date: new Date().toISOString().split('T')[0],
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             type: 'DISPATCH',
-            productVariant: affectedTask!.productVariant,
-            quantity: affectedTask!.quantityLiters,
-            supplierOrBatch: `Doorstep Run (${affectedTask!.customerName})`,
-            notes: `Delivered by ${affectedTask!.assignedRider || 'Rider'}`,
+            productVariant: existingTask.productVariant,
+            quantity: existingTask.quantityLiters,
+            supplierOrBatch: `Doorstep Run (${existingTask.customerName})`,
+            notes: `Delivered by ${existingTask.assignedRider || 'Rider'}`,
           },
           ...prev,
         ]);
       }
+
+      // Add to Customer Remaining Payment & Invoice Bill
+      if (matchedCustomer && deliveredCost > 0 && !isPaidOnSpot) {
+        setRawCustomers((prev) =>
+          prev.map((c) =>
+            c.id === matchedCustomer.id
+              ? { ...c, balance: Math.round(((c.balance || 0) + deliveredCost) * 100) / 100 }
+              : c
+          )
+        );
+
+        setRawInvoices((prev) => {
+          const existingInvIndex = prev.findIndex(
+            (inv) =>
+              (inv.customerId === matchedCustomer.id || inv.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()) &&
+              inv.status !== 'Paid'
+          );
+
+          if (existingInvIndex !== -1) {
+            const updated = [...prev];
+            const target = updated[existingInvIndex];
+            updated[existingInvIndex] = {
+              ...target,
+              totalAmount: Math.round((target.totalAmount + deliveredCost) * 100) / 100,
+            };
+            return updated;
+          } else {
+            const today = new Date();
+            const dueDate = new Date(today);
+            dueDate.setDate(today.getDate() + 7);
+            const monthName = today.toLocaleString('default', { month: 'long' });
+            const newInv: Invoice = {
+              id: `inv_auto_${Date.now()}`,
+              invoiceNumber: `INV-${today.getFullYear()}-${String(prev.length + 1).padStart(3, '0')}`,
+              customerId: matchedCustomer.id,
+              customerName: matchedCustomer.name,
+              customerType: (matchedCustomer.type as 'HOUSEHOLD' | 'SHOP') || 'HOUSEHOLD',
+              billingPeriod: `${monthName} ${today.getFullYear()} Daily Deliveries`,
+              issueDate: today.toISOString().split('T')[0],
+              dueDate: dueDate.toISOString().split('T')[0],
+              totalAmount: deliveredCost,
+              paidAmount: 0,
+              status: 'Unpaid',
+              dairyName: matchedCustomer.dairyName || activeDairy?.name || 'DairyPulse Farm HQ',
+            };
+            return [newInv, ...prev];
+          }
+        });
+      }
+    } else if (previousStatus === 'Delivered' && status !== 'Delivered') {
+      // Revert if previously Delivered
+      if (existingTask.assignedRider) {
+        setStaff((prev) =>
+          prev.map((s) =>
+            s.name.toLowerCase() === existingTask.assignedRider.toLowerCase()
+              ? { ...s, deliveriesToday: Math.max(0, (s.deliveriesToday || 0) - 1) }
+              : s
+          )
+        );
+      }
+
+      if (matchedCustomer && deliveredCost > 0 && !isPaidOnSpot) {
+        setRawCustomers((prev) =>
+          prev.map((c) =>
+            c.id === matchedCustomer.id
+              ? { ...c, balance: Math.max(0, Math.round(((c.balance || 0) - deliveredCost) * 100) / 100) }
+              : c
+          )
+        );
+
+        setRawInvoices((prev) => {
+          const existingInvIndex = prev.findIndex(
+            (inv) =>
+              (inv.customerId === matchedCustomer.id || inv.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()) &&
+              inv.status !== 'Paid'
+          );
+          if (existingInvIndex !== -1) {
+            const updated = [...prev];
+            const target = updated[existingInvIndex];
+            updated[existingInvIndex] = {
+              ...target,
+              totalAmount: Math.max(target.paidAmount || 0, Math.round((target.totalAmount - deliveredCost) * 100) / 100),
+            };
+            return updated;
+          }
+          return prev;
+        });
+      }
     }
 
     // Backend sync
-    patchDeliveryStatus(id, status, failureReason);
+    const res = await patchDeliveryStatus(id, status, failureReason);
+    if (res && res.customer_id && res.customer_balance !== undefined) {
+      setRawCustomers((prev) =>
+        prev.map((c) => (c.id === res.customer_id ? { ...c, balance: res.customer_balance } : c))
+      );
+    }
+    if (res && res.invoice_id && res.invoice_total !== undefined) {
+      setRawInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === res.invoice_id || (inv.id.startsWith('inv_auto_') && inv.customerId === res.customer_id)
+            ? { ...inv, id: res.invoice_id, invoiceNumber: res.invoice_number || inv.invoiceNumber, totalAmount: res.invoice_total }
+            : inv
+        )
+      );
+    }
   };
 
   const generateInvoice = (customerId: string, amount: number, period: string) => {
@@ -1035,6 +1180,72 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       status: taskData.status || 'Pending',
     };
     setDeliveries((prev) => [...prev, newTask]);
+
+    if (taskData.status === 'Delivered') {
+      const cleanPhone = (taskData.customerPhone || '').replace(/\D/g, '');
+      const matchedCustomer = rawCustomers.find(
+        (c) =>
+          (cleanPhone && (c.phone || '').replace(/\D/g, '').endsWith(cleanPhone.slice(-10))) ||
+          (taskData.customerName && c.name.toLowerCase() === taskData.customerName.toLowerCase())
+      );
+      const isPaidOnSpot = taskData.notes && taskData.notes.toLowerCase().includes('paid');
+      if (matchedCustomer && !isPaidOnSpot) {
+        const prod = products.find((p) => p.variant === taskData.productVariant);
+        const sub = subscriptions.find(
+          (s) =>
+            (s.customerId === matchedCustomer.id || s.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()) &&
+            s.productVariant === taskData.productVariant
+        );
+        const unitPrice = sub?.unitPrice || prod?.sellingPrice || (taskData.productVariant === 'Buffalo Milk' ? 78 : taskData.productVariant === 'A2 Desi Cow Milk' ? 95 : taskData.productVariant === 'Toned Milk' ? 54 : 62);
+        const cost = Math.round((taskData.quantityLiters || 0) * unitPrice * 100) / 100;
+        if (cost > 0) {
+          setRawCustomers((prev) =>
+            prev.map((c) =>
+              c.id === matchedCustomer.id
+                ? { ...c, balance: Math.round(((c.balance || 0) + cost) * 100) / 100 }
+                : c
+            )
+          );
+          setRawInvoices((prev) => {
+            const existingInvIndex = prev.findIndex(
+              (inv) =>
+                (inv.customerId === matchedCustomer.id || inv.customerName.toLowerCase() === matchedCustomer.name.toLowerCase()) &&
+                inv.status !== 'Paid'
+            );
+            if (existingInvIndex !== -1) {
+              const updated = [...prev];
+              const target = updated[existingInvIndex];
+              updated[existingInvIndex] = {
+                ...target,
+                totalAmount: Math.round((target.totalAmount + cost) * 100) / 100,
+              };
+              return updated;
+            } else {
+              const today = new Date();
+              const dueDate = new Date(today);
+              dueDate.setDate(today.getDate() + 7);
+              const monthName = today.toLocaleString('default', { month: 'long' });
+              const newInv: Invoice = {
+                id: `inv_auto_${Date.now()}`,
+                invoiceNumber: `INV-${today.getFullYear()}-${String(prev.length + 1).padStart(3, '0')}`,
+                customerId: matchedCustomer.id,
+                customerName: matchedCustomer.name,
+                customerType: (matchedCustomer.type as 'HOUSEHOLD' | 'SHOP') || 'HOUSEHOLD',
+                billingPeriod: `${monthName} ${today.getFullYear()} Daily Deliveries`,
+                issueDate: today.toISOString().split('T')[0],
+                dueDate: dueDate.toISOString().split('T')[0],
+                totalAmount: cost,
+                paidAmount: 0,
+                status: 'Unpaid',
+                dairyName: matchedCustomer.dairyName || activeDairy?.name || 'DairyPulse Farm HQ',
+              };
+              return [newInv, ...prev];
+            }
+          });
+        }
+      }
+    }
+
     const res = await postDeliveryTaskApi({
       customerName: taskData.customerName,
       customerPhone: taskData.customerPhone,

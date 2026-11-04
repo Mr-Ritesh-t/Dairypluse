@@ -271,6 +271,7 @@ class InvoiceCreate(BaseModel):
     billing_period: str
     total_amount: float
     due_date: str
+    dairy_name: Optional[str] = None
 
 class InvoiceResponse(BaseModel):
     id: str
@@ -281,6 +282,7 @@ class InvoiceResponse(BaseModel):
     billing_period: str
     issue_date: str
     due_date: str
+    dairy_name: Optional[str] = None
     total_amount: float
     paid_amount: float
     status: str

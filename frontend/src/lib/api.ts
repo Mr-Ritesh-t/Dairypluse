@@ -844,6 +844,7 @@ export async function getInvoices() {
       totalAmount: inv.total_amount,
       paidAmount: inv.paid_amount || 0,
       status: inv.status,
+      dairyName: inv.dairy_name || 'DairyPulse Farm HQ',
     }));
   } catch (err) {
     console.warn('API error, falling back to local state:', err);

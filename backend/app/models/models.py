@@ -250,6 +250,7 @@ class Invoice(Base):
     total_amount = Column(Float, nullable=False)
     paid_amount = Column(Float, default=0.0)
     status = Column(String, default="Unpaid")  # Paid, Partial, Unpaid, Overdue
+    dairy_name = Column(String, default="DairyPulse Farm HQ", nullable=True)
 
     customer = relationship("Customer", back_populates="invoices")
 

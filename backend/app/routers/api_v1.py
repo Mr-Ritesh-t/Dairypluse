@@ -554,6 +554,114 @@ def build_and_dispatch_route(req: RouteBuildRequest, db: Session = Depends(get_d
         ]
     }
 
+
+def find_customer_for_delivery_task(db: Session, customer_name: Optional[str], customer_phone: Optional[str]) -> Optional[Customer]:
+    if customer_phone:
+        patterns = get_phone_search_patterns(customer_phone)
+        cust = db.query(Customer).filter(Customer.phone.in_(patterns)).first()
+        if cust:
+            return cust
+        clean = re.sub(r'\D', '', customer_phone)
+        if len(clean) >= 10:
+            last10 = clean[-10:]
+            for c in db.query(Customer).all():
+                c_clean = re.sub(r'\D', '', c.phone or '')
+                if c_clean.endswith(last10):
+                    return c
+    if customer_name:
+        cust = db.query(Customer).filter(Customer.name.ilike(customer_name.strip())).first()
+        if cust:
+            return cust
+    return None
+
+def get_variant_unit_price(db: Session, customer_id: Optional[str], variant: str) -> float:
+    if customer_id and variant:
+        sub = db.query(Subscription).filter(
+            Subscription.customer_id == customer_id,
+            Subscription.product_variant.ilike(variant.strip())
+        ).first()
+        if sub and sub.unit_price:
+            return float(sub.unit_price)
+        sub_any = db.query(Subscription).filter(Subscription.customer_id == customer_id).first()
+        if sub_any and sub_any.unit_price:
+            return float(sub_any.unit_price)
+    if variant:
+        prod = db.query(Product).filter(Product.variant.ilike(variant.strip())).first()
+        if prod and prod.selling_price:
+            return float(prod.selling_price)
+    defaults = {
+        'Cow Milk': 62.0,
+        'Buffalo Milk': 78.0,
+        'Toned Milk': 54.0,
+        'A2 Desi Cow Milk': 95.0,
+    }
+    return defaults.get(variant, 62.0)
+
+def apply_delivery_cost_to_customer_and_bill(
+    db: Session,
+    deliv: DeliveryTask,
+    is_delivered: bool,
+    revert: bool = False
+) -> Dict[str, Any]:
+    if not deliv.quantity_liters or deliv.quantity_liters <= 0:
+        return {}
+    if deliv.notes and 'paid' in deliv.notes.lower():
+        return {}
+
+    customer = find_customer_for_delivery_task(db, deliv.customer_name, deliv.customer_phone)
+    unit_price = get_variant_unit_price(db, customer.id if customer else None, deliv.product_variant)
+    cost = round(deliv.quantity_liters * unit_price, 2)
+
+    if not customer:
+        return {'delivered_cost': cost}
+
+    inv = None
+    if is_delivered and not revert:
+        customer.balance = round((customer.balance or 0.0) + cost, 2)
+        inv = db.query(Invoice).filter(
+            Invoice.customer_id == customer.id,
+            Invoice.status.in_(['Unpaid', 'Partial', 'Overdue'])
+        ).order_by(Invoice.id.desc()).first()
+
+        if inv:
+            inv.total_amount = round((inv.total_amount or 0.0) + cost, 2)
+        else:
+            now = datetime.utcnow()
+            count = db.query(Invoice).count() + 1
+            inv_num = f'INV-{now.year}-{str(count).zfill(3)}'
+            inv = Invoice(
+                invoice_number=inv_num,
+                customer_id=customer.id,
+                customer_name=customer.name,
+                customer_type=customer.customer_type or 'HOUSEHOLD',
+                billing_period=f'{now.strftime("%B %Y")} Daily Deliveries',
+                issue_date=now.strftime('%Y-%m-%d'),
+                due_date=(now + timedelta(days=7)).strftime('%Y-%m-%d'),
+                total_amount=cost,
+                paid_amount=0.0,
+                status='Unpaid',
+                dairy_name=customer.dairy_name or getattr(deliv, 'dairy_name', None) or 'DairyPulse Farm HQ',
+            )
+            db.add(inv)
+    elif revert:
+        customer.balance = max(0.0, round((customer.balance or 0.0) - cost, 2))
+        inv = db.query(Invoice).filter(
+            Invoice.customer_id == customer.id,
+            Invoice.status.in_(['Unpaid', 'Partial', 'Overdue'])
+        ).order_by(Invoice.id.desc()).first()
+        if inv:
+            inv.total_amount = max(inv.paid_amount or 0.0, round((inv.total_amount or 0.0) - cost, 2))
+
+    return {
+        'customer_id': customer.id,
+        'customer_name': customer.name,
+        'customer_balance': customer.balance,
+        'delivered_cost': cost,
+        'invoice_id': inv.id if inv else None,
+        'invoice_number': inv.invoice_number if inv else None,
+        'invoice_total': inv.total_amount if inv else None,
+    }
+
 @api_router.post("/deliveries", response_model=DeliveryTaskResponse)
 def create_delivery(deliv_data: DeliveryTaskCreate, db: Session = Depends(get_db)):
     count = db.query(DeliveryTask).count()
@@ -582,6 +690,8 @@ def create_delivery(deliv_data: DeliveryTaskCreate, db: Session = Depends(get_db
         notes=deliv_data.notes,
     )
     db.add(new_task)
+    if new_task.status == 'Delivered':
+        apply_delivery_cost_to_customer_and_bill(db, new_task, is_delivered=True, revert=False)
     db.commit()
     db.refresh(new_task)
     return new_task
@@ -775,8 +885,11 @@ def update_delivery_status(
     deliv = db.query(DeliveryTask).filter(DeliveryTask.id == delivery_id).first()
     if not deliv:
         raise HTTPException(status_code=404, detail="Delivery task not found")
+    old_status = deliv.status
     deliv.status = status
-    if status == "Delivered":
+    cost_info = {}
+
+    if status == "Delivered" and old_status != "Delivered":
         deliv.delivered_at = datetime.utcnow().strftime("%H:%M")
         # 1. Update assigned rider's deliveries_today
         if deliv.assigned_rider:
@@ -802,10 +915,31 @@ def update_delivery_status(
                     notes=f"Delivered by {deliv.assigned_rider}"
                 )
                 db.add(tx)
+        # 3. Add delivered milk cost to customer remaining payment dues & bill (Invoice)
+        cost_info = apply_delivery_cost_to_customer_and_bill(db, deliv, is_delivered=True, revert=False)
+
+    elif old_status == "Delivered" and status != "Delivered":
+        # Revert rider delivery count
+        if deliv.assigned_rider:
+            staff_member = db.query(Staff).filter(Staff.name == deliv.assigned_rider).first()
+            if staff_member and staff_member.deliveries_today:
+                staff_member.deliveries_today = max(0, staff_member.deliveries_today - 1)
+        # Revert cost from customer remaining payment dues & bill
+        cost_info = apply_delivery_cost_to_customer_and_bill(db, deliv, is_delivered=False, revert=True)
+
+        if status == "Failed":
+            deliv.failed_reason = failure_reason or "Door locked / Customer unavailable"
     elif status == "Failed":
         deliv.failed_reason = failure_reason or "Door locked / Customer unavailable"
+
     db.commit()
-    return {"status": deliv.status, "delivered_at": deliv.delivered_at, "failed_reason": deliv.failed_reason}
+    res = {
+        "status": deliv.status,
+        "delivered_at": deliv.delivered_at,
+        "failed_reason": deliv.failed_reason
+    }
+    res.update(cost_info)
+    return res
 
 # ----------------- DRIVER RATINGS & REVIEWS -----------------
 @api_router.post("/ratings/driver", response_model=DriverRatingResponse)
