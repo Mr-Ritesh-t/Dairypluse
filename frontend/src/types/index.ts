@@ -46,6 +46,8 @@ export interface Customer {
   activeSubscriptionsCount: number;
   status: 'Active' | 'Paused' | 'Inactive';
   joinedDate: string;
+  last_reminder_sent?: string;
+  lastReminderSent?: string;
 }
 
 export interface Subscription {
@@ -516,7 +518,51 @@ export interface RiderSalarySummary {
   }>;
 }
 
+export interface WhatsAppReminderItem {
+  customer_id: string;
+  customer_name: string;
+  phone: string;
+  clean_phone: string;
+  balance: number;
+  milk_plan: string;
+  monthly_liters: number;
+  last_reminder_sent?: string;
+  message_text: string;
+  whatsapp_url: string;
+}
 
+export interface MonthlyDueRemindersResponse {
+  billing_month: string;
+  total_customers_with_dues: number;
+  total_due_amount: number;
+  dairy_name: string;
+  upi_id: string;
+  auto_reminders_enabled: boolean;
+  customers: WhatsAppReminderItem[];
+}
 
+export interface BroadcastReminderRequest {
+  billing_month?: string;
+  customer_ids?: string[];
+  custom_note?: string;
+}
 
+export interface BroadcastReminderRecipient {
+  customerId: string;
+  name: string;
+  phone: string;
+  cleanPhone: string;
+  balance: number;
+  whatsappUrl: string;
+  message: string;
+  status: string;
+}
 
+export interface BroadcastReminderResponse {
+  status: string;
+  total_reminders: number;
+  total_amount: number;
+  broadcast_timestamp: string;
+  recipients: BroadcastReminderRecipient[];
+  message: string;
+}

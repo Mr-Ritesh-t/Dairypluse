@@ -1,4 +1,4 @@
-import { DairyInfo, RouteInfo, RouteBuildPayload } from '@/types';
+import { DairyInfo, RouteInfo, RouteBuildPayload, MonthlyDueRemindersResponse, BroadcastReminderRequest, BroadcastReminderResponse } from '@/types';
 import { ENV } from '@/config/env';
 
 const API_BASE_URL = ENV.API_BASE_URL;
@@ -2180,3 +2180,70 @@ export async function getRiderSalarySummaryApi(staff_id: string): Promise<any> {
   }
 }
 
+
+// ----------------- MONTH-END WHATSAPP REMINDERS API -----------------
+
+export async function getMonthlyDueRemindersApi(month?: string): Promise<MonthlyDueRemindersResponse | null> {
+  try {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/billing/monthly-due-reminders${query}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to fetch monthly due reminders');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching monthly due reminders:', err);
+    return null;
+  }
+}
+
+export async function postCustomerWhatsAppReminderApi(customerId: string): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/billing/customers/${customerId}/whatsapp-reminder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to record customer WhatsApp reminder');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error sending single customer WhatsApp reminder:', err);
+    return null;
+  }
+}
+
+export async function postBroadcastWhatsAppRemindersApi(
+  payload: BroadcastReminderRequest
+): Promise<BroadcastReminderResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/billing/broadcast-whatsapp-reminders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to broadcast WhatsApp reminders');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error broadcasting WhatsApp reminders:', err);
+    return null;
+  }
+}
+
+export async function postUpdateReminderSettingsApi(settings: {
+  auto_reminders?: boolean;
+  upi_id?: string;
+}): Promise<{ status: string; auto_reminders: boolean; upi_id: string } | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/billing/settings/reminders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    if (!res.ok) throw new Error('Failed to update reminder settings');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error updating reminder settings:', err);
+    return null;
+  }
+}

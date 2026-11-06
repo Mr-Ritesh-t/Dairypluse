@@ -21,6 +21,12 @@ import {
   History,
   AlertCircle,
   ArrowRight,
+  MessageSquare,
+  Send,
+  Copy,
+  Check,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { Customer, Subscription, DeliveryTask } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
@@ -28,6 +34,8 @@ import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSu
 import { AddSubscriptionModal } from '@/components/subscriptions/AddSubscriptionModal';
 import { AddMilkModal } from '@/components/customers/AddMilkModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
+import { MonthEndWhatsAppModal } from '@/components/customers/MonthEndWhatsAppModal';
+import { postCustomerWhatsAppReminderApi } from '@/lib/api';
 
 export default function CustomersPage() {
   const { customers, subscriptions, deliveries, openModal, activeDairy } = useDairyPulse();
@@ -36,13 +44,15 @@ export default function CustomersPage() {
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
   const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
   
-  // Modal states for Add Milk & Collect Payment
+  // Modal states for Add Milk, Collect Payment & Month-End WhatsApp
   const [isAddMilkOpen, setIsAddMilkOpen] = useState(false);
   const [isCollectPaymentOpen, setIsCollectPaymentOpen] = useState(false);
   const [isAddSubOpen, setIsAddSubOpen] = useState(false);
+  const [isMonthEndModalOpen, setIsMonthEndModalOpen] = useState(false);
   const [modalCustomer, setModalCustomer] = useState<Customer | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [copiedSelectedId, setCopiedSelectedId] = useState<string | null>(null);
 
   // Sync selected customer when active dairy changes or customers list updates
   React.useEffect(() => {
@@ -68,6 +78,7 @@ export default function CustomersPage() {
   }, [toastMessage]);
 
   const totalDues = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
+  const customersWithDuesCount = customers.filter((c) => c.balance > 0).length;
   const householdCount = customers.filter((c) => c.type === 'HOUSEHOLD').length;
   const commercialCount = customers.filter((c) => c.type === 'SHOP' || c.type === 'RESTAURANT').length;
 
@@ -88,7 +99,6 @@ export default function CustomersPage() {
 
   const deliveredTasks = custDeliveries.filter((d) => d.status === 'Delivered');
   const totalDeliveredLiters = Math.round(deliveredTasks.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
-  const totalScheduledLiters = Math.round(custDeliveries.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
   
   const customerSub = subscriptions.find(
     (s) => s.customerId === selectedCust?.id || s.customerName.toLowerCase() === selectedCust?.name.toLowerCase()
@@ -104,6 +114,42 @@ export default function CustomersPage() {
     if (e) e.stopPropagation();
     setModalCustomer(cust);
     setIsCollectPaymentOpen(true);
+  };
+
+  const handleSendWhatsAppForSelected = async (cust: Customer) => {
+    try {
+      const res = await postCustomerWhatsAppReminderApi(cust.id);
+      if (res) {
+        if (res.whatsapp_url) {
+          window.open(res.whatsapp_url, '_blank', 'noopener,noreferrer');
+        }
+        if (selectedCust && selectedCust.id === cust.id) {
+          setSelectedCust({
+            ...selectedCust,
+            last_reminder_sent: res.last_reminder_sent,
+            lastReminderSent: res.last_reminder_sent,
+          });
+        }
+        setToastMessage(`📲 WhatsApp notice opened for ${cust.name}!`);
+      }
+    } catch (err) {
+      console.error('Failed to send WhatsApp reminder:', err);
+      setToastMessage('Error generating WhatsApp notice.');
+    }
+  };
+
+  const handleCopyWhatsAppForSelected = async (cust: Customer) => {
+    try {
+      const res = await postCustomerWhatsAppReminderApi(cust.id);
+      if (res && res.message_text) {
+        navigator.clipboard.writeText(res.message_text);
+        setCopiedSelectedId(cust.id);
+        setTimeout(() => setCopiedSelectedId(null), 2500);
+        setToastMessage(`📋 Copied WhatsApp bill text for ${cust.name}!`);
+      }
+    } catch (err) {
+      console.error('Failed to copy WhatsApp reminder:', err);
+    }
   };
 
   return (
@@ -137,19 +183,65 @@ export default function CustomersPage() {
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Track milk delivered to each customer, add extra milk, and monitor remaining payments.
+            Track milk delivered to each customer, add extra milk, and dispatch month-end payment reminders on WhatsApp.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Month-End WhatsApp Broadcast Button */}
+          <button
+            onClick={() => setIsMonthEndModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-extrabold shadow-xs transition cursor-pointer"
+            title="Send month-end WhatsApp payment reminders to all customers with dues"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Month-End WhatsApp Dues</span>
+            {customersWithDuesCount > 0 && (
+              <span className="bg-white/25 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
+                {customersWithDuesCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => openModal('addCustomer')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Add New Customer</span>
           </button>
         </div>
       </section>
+
+      {/* Month-End Payment Collection Banner */}
+      {totalDues > 0 && (
+        <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <MessageSquare className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-slate-900">Month-End WhatsApp Payment Notices Ready</span>
+                <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-rose-200">
+                  ₹{totalDues.toLocaleString()} Outstanding
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                {customersWithDuesCount} customer{customersWithDuesCount > 1 ? 's have' : ' has'} pending balances. Send 1-click WhatsApp bills with delivered liters and UPI pay link.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsMonthEndModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer w-full sm:w-auto justify-center"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Broadcast WhatsApp Dues</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -325,6 +417,21 @@ export default function CustomersPage() {
                               <Plus className="w-3 h-3" />
                               <span>Add Milk</span>
                             </button>
+
+                            {c.balance > 0 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendWhatsAppForSelected(c);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                title="Send WhatsApp bill reminder"
+                              >
+                                <MessageSquare className="w-3 h-3 text-emerald-600" />
+                                <span>WhatsApp</span>
+                              </button>
+                            )}
+
                             {c.balance > 0 && (
                               <button
                                 onClick={(e) => handleOpenCollectPayment(c, e)}
@@ -509,6 +616,50 @@ export default function CustomersPage() {
                 </div>
               </div>
 
+              {/* 3. MONTH-END WHATSAPP DUE NOTICE CARD */}
+              {selectedCust.balance > 0 && (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 text-xs space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-extrabold text-[11px] uppercase tracking-wider text-emerald-900">
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>WhatsApp Month-End Notice</span>
+                    </div>
+                    {selectedCust.last_reminder_sent && (
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Sent: {selectedCust.last_reminder_sent}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 leading-tight">
+                    Send {selectedCust.name} an itemized monthly milk bill breakdown with 1-click UPI pay link.
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      onClick={() => handleSendWhatsAppForSelected(selectedCust)}
+                      className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Send WhatsApp Bill</span>
+                      <ExternalLink className="w-2.5 h-2.5 opacity-75" />
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyWhatsAppForSelected(selectedCust)}
+                      className="py-1.5 px-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                      title="Copy WhatsApp bill text"
+                    >
+                      {copiedSelectedId === selectedCust.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Customer Contact Details */}
               <div className="space-y-2.5 text-xs p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
                 <div className="flex items-center gap-2 text-slate-600">
@@ -648,6 +799,13 @@ export default function CustomersPage() {
           unitPrice={selectedSubForManage.unitPrice}
         />
       )}
+
+      {/* Month-End WhatsApp Due Reminders Broadcast Modal */}
+      <MonthEndWhatsAppModal
+        isOpen={isMonthEndModalOpen}
+        onClose={() => setIsMonthEndModalOpen(false)}
+        onSuccess={(msg) => setToastMessage(msg)}
+      />
     </div>
   );
 }

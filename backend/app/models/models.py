@@ -29,6 +29,8 @@ class Dairy(Base):
     latitude = Column(Float, nullable=True, default=18.5520)
     longitude = Column(Float, nullable=True, default=73.7880)
     rating = Column(Float, default=4.9)
+    upi_id = Column(String, default="dairypulse@okhdfcbank", nullable=True)
+    auto_reminders = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class User(Base):
@@ -81,6 +83,7 @@ class Customer(Base):
     balance = Column(Float, default=0.0)
     status = Column(String, default="Active")  # Active, Paused, Inactive
     joined_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
+    last_reminder_sent = Column(String, nullable=True)  # YYYY-MM-DD HH:MM
 
     subscriptions = relationship("Subscription", back_populates="customer")
     orders = relationship("Order", back_populates="customer")

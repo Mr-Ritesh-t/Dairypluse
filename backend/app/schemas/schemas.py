@@ -1,4 +1,4 @@
-from typing import Optional, List, Any, Union
+from typing import Optional, List, Any, Union, Dict
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
@@ -665,3 +665,43 @@ class SalaryPaymentResponse(BaseModel):
 
 
 
+
+
+# ----------------- MONTH-END WHATSAPP REMINDER SCHEMAS -----------------
+class WhatsAppReminderItem(BaseModel):
+    customer_id: str
+    customer_name: str
+    phone: str
+    clean_phone: str
+    balance: float
+    milk_plan: str
+    monthly_liters: float
+    last_reminder_sent: Optional[str] = None
+    message_text: str
+    whatsapp_url: str
+
+class MonthlyDueRemindersResponse(BaseModel):
+    billing_month: str
+    total_customers_with_dues: int
+    total_due_amount: float
+    dairy_name: str
+    upi_id: str
+    auto_reminders_enabled: bool
+    customers: List[WhatsAppReminderItem]
+
+class BroadcastReminderRequest(BaseModel):
+    billing_month: Optional[str] = None
+    customer_ids: Optional[List[str]] = None
+    custom_note: Optional[str] = None
+
+class BroadcastReminderResponse(BaseModel):
+    status: str
+    total_reminders: int
+    total_amount: float
+    broadcast_timestamp: str
+    recipients: List[Dict[str, Any]]
+    message: str
+
+class ReminderSettingsUpdate(BaseModel):
+    auto_reminders: Optional[bool] = None
+    upi_id: Optional[str] = None

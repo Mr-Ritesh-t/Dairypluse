@@ -65,6 +65,19 @@ def ensure_db_columns():
             if it_cols and "expiry_date" not in it_cols:
                 conn.exec_driver_sql("ALTER TABLE inventory_transactions ADD COLUMN expiry_date VARCHAR")
 
+            # Check customers columns
+            cust_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(customers)").fetchall()]
+            if cust_cols and "last_reminder_sent" not in cust_cols:
+                conn.exec_driver_sql("ALTER TABLE customers ADD COLUMN last_reminder_sent VARCHAR")
+
+            # Check dairies columns
+            dairy_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(dairies)").fetchall()]
+            if dairy_cols:
+                if "upi_id" not in dairy_cols:
+                    conn.exec_driver_sql("ALTER TABLE dairies ADD COLUMN upi_id VARCHAR DEFAULT 'dairypulse@okhdfcbank'")
+                if "auto_reminders" not in dairy_cols:
+                    conn.exec_driver_sql("ALTER TABLE dairies ADD COLUMN auto_reminders BOOLEAN DEFAULT 1")
+
             conn.commit()
     except Exception as e:
         print(f"Column check migration warning: {e}")

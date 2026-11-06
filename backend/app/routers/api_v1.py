@@ -89,7 +89,13 @@ from app.schemas.schemas import (
     ShiftCompleteRequest,
     SalaryPayoutRequest,
     SalaryPaymentResponse,
+    WhatsAppReminderItem,
+    MonthlyDueRemindersResponse,
+    BroadcastReminderRequest,
+    BroadcastReminderResponse,
+    ReminderSettingsUpdate,
 )
+import urllib.parse
 import re
 from datetime import datetime, timedelta
 
@@ -2733,3 +2739,260 @@ def get_staff_salary_summary(staff_id: str, db: Session = Depends(get_db)):
 
 
 
+
+
+# =========================================================================
+# MONTH-END WHATSAPP DUE PAYMENT REMINDERS AUTOMATION
+# =========================================================================
+
+def _clean_phone_for_whatsapp(phone: Optional[str]) -> str:
+    """Normalize phone number to international WhatsApp format (e.g. 918668740625)."""
+    if not phone:
+        return ""
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 10:
+        return f"91{digits}"
+    elif len(digits) == 12 and digits.startswith("91"):
+        return digits
+    elif len(digits) > 10:
+        return digits
+    return digits
+
+
+def _generate_whatsapp_bill_text(
+    customer: Customer,
+    dairy: Optional[Dairy],
+    month_name: str,
+    subscription: Optional[Subscription] = None,
+    monthly_liters: float = 0.0,
+) -> str:
+    cust_name = customer.name or "Valued Customer"
+    d_name = dairy.name if (dairy and dairy.name) else (customer.dairy_name or "Amrut Dairy Farm")
+    d_phone = dairy.phone if (dairy and dairy.phone) else "+91 98765 43210"
+    upi_vpa = (dairy.upi_id if (dairy and dairy.upi_id) else "dairypulse@okhdfcbank").strip()
+    balance = float(customer.balance or 0.0)
+
+    if subscription:
+        plan_desc = f"{subscription.quantity_liters}L/day • {subscription.product_variant}"
+    else:
+        plan_desc = f"Household Daily Milk ({customer.route})"
+
+    if monthly_liters <= 0.0:
+        if subscription:
+            mult = 15 if subscription.frequency == "Alternate Days" else 30
+            monthly_liters = round(subscription.quantity_liters * mult, 1)
+        else:
+            monthly_liters = 30.0
+
+    encoded_pn = urllib.parse.quote(d_name)
+    upi_url = f"upi://pay?pa={upi_vpa}&pn={encoded_pn}&am={balance:.2f}&cu=INR&tn={urllib.parse.quote(f'Milk Bill {month_name}')}"
+    portal_url = "http://localhost:3000/mobile/customer"
+
+    msg = (
+        f"🥛 *Namaste {cust_name} ji!* 🙏\n\n"
+        f"This is your monthly milk bill summary from *{d_name}* for the month of *{month_name}*:\n\n"
+        f"📋 *Monthly Delivery Summary:*\n"
+        f"• Daily Plan: {plan_desc}\n"
+        f"• Total Milk Delivered: {monthly_liters:.1f} Liters\n"
+        f"• Total Due Balance: *₹{balance:,.2f}*\n\n"
+        f"📲 *Quick UPI Payment:*\n"
+        f"Pay directly via UPI: {upi_url}\n"
+        f"UPI ID: `{upi_vpa}`\n\n"
+        f"🔗 *View Digital Milk Ledger & Receipts:*\n"
+        f"{portal_url}\n\n"
+        f"Thank you for choosing *{d_name}* for fresh, pure morning milk! 🐄✨\n"
+        f"For questions or adjustments, reply to this message or call us at {d_phone}."
+    )
+    return msg
+
+
+@api_router.get("/billing/monthly-due-reminders", response_model=MonthlyDueRemindersResponse)
+def get_monthly_due_reminders(
+    month: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve all customers with an outstanding due balance (balance > 0)
+    along with their personalized WhatsApp message, clean phone number, and 1-click wa.me URL.
+    """
+    now = datetime.utcnow()
+    month_name = month or now.strftime("%B %Y")
+
+    dairy = db.query(Dairy).first()
+    dairy_name = dairy.name if dairy else "Amrut Dairy Farm"
+    upi_id = dairy.upi_id if (dairy and dairy.upi_id) else "dairypulse@okhdfcbank"
+    auto_enabled = dairy.auto_reminders if dairy else True
+
+    # Customers with pending dues
+    customers_with_dues = (
+        db.query(Customer)
+        .filter(Customer.balance > 0.0)
+        .order_by(Customer.balance.desc())
+        .all()
+    )
+
+    items: List[WhatsAppReminderItem] = []
+    total_due = 0.0
+
+    for c in customers_with_dues:
+        sub = db.query(Subscription).filter(Subscription.customer_id == c.id).first()
+        
+        # Calculate monthly liters
+        mult = 15 if (sub and sub.frequency == "Alternate Days") else 30
+        sub_liters = round((sub.quantity_liters if sub else 1.0) * mult, 1)
+
+        plan_name = f"{sub.quantity_liters}L {sub.product_variant}" if sub else "Daily Milk"
+        clean_phone = _clean_phone_for_whatsapp(c.phone)
+        msg_text = _generate_whatsapp_bill_text(c, dairy, month_name, sub, sub_liters)
+        encoded_text = urllib.parse.quote_plus(msg_text)
+        wa_url = f"https://wa.me/{clean_phone}?text={encoded_text}" if clean_phone else ""
+
+        total_due += float(c.balance or 0.0)
+        items.append(
+            WhatsAppReminderItem(
+                customer_id=c.id,
+                customer_name=c.name,
+                phone=c.phone,
+                clean_phone=clean_phone,
+                balance=round(float(c.balance or 0.0), 2),
+                milk_plan=plan_name,
+                monthly_liters=sub_liters,
+                last_reminder_sent=c.last_reminder_sent,
+                message_text=msg_text,
+                whatsapp_url=wa_url,
+            )
+        )
+
+    return MonthlyDueRemindersResponse(
+        billing_month=month_name,
+        total_customers_with_dues=len(items),
+        total_due_amount=round(total_due, 2),
+        dairy_name=dairy_name,
+        upi_id=upi_id,
+        auto_reminders_enabled=auto_enabled,
+        customers=items,
+    )
+
+
+@api_router.post("/billing/customers/{customer_id}/whatsapp-reminder")
+def send_customer_whatsapp_reminder(
+    customer_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Generate and mark a WhatsApp due payment reminder as sent for a single customer.
+    """
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    dairy = db.query(Dairy).first()
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    customer.last_reminder_sent = now_str
+    db.commit()
+
+    sub = db.query(Subscription).filter(Subscription.customer_id == customer.id).first()
+    month_name = datetime.utcnow().strftime("%B %Y")
+    mult = 15 if (sub and sub.frequency == "Alternate Days") else 30
+    monthly_liters = round((sub.quantity_liters if sub else 1.0) * mult, 1)
+
+    msg_text = _generate_whatsapp_bill_text(customer, dairy, month_name, sub, monthly_liters)
+    clean_phone = _clean_phone_for_whatsapp(customer.phone)
+    wa_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote_plus(msg_text)}" if clean_phone else ""
+
+    return {
+        "status": "success",
+        "customer_id": customer.id,
+        "customer_name": customer.name,
+        "phone": customer.phone,
+        "clean_phone": clean_phone,
+        "balance": customer.balance,
+        "last_reminder_sent": customer.last_reminder_sent,
+        "message_text": msg_text,
+        "whatsapp_url": wa_url,
+    }
+
+
+@api_router.post("/billing/broadcast-whatsapp-reminders", response_model=BroadcastReminderResponse)
+def broadcast_whatsapp_reminders(
+    payload: BroadcastReminderRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Broadcast month-end WhatsApp payment reminders to all customers with due balances (or selected IDs).
+    Updates customer reminder timestamps and returns formatted recipient links.
+    """
+    now = datetime.utcnow()
+    now_str = now.strftime("%Y-%m-%d %H:%M")
+    month_name = payload.billing_month or now.strftime("%B %Y")
+
+    dairy = db.query(Dairy).first()
+    d_name = dairy.name if dairy else "Amrut Dairy Farm"
+
+    query = db.query(Customer).filter(Customer.balance > 0.0)
+    if payload.customer_ids and len(payload.customer_ids) > 0:
+        query = query.filter(Customer.id.in_(payload.customer_ids))
+
+    recipients_list = query.all()
+    out_recipients = []
+    total_amount = 0.0
+
+    for c in recipients_list:
+        c.last_reminder_sent = now_str
+        sub = db.query(Subscription).filter(Subscription.customer_id == c.id).first()
+        mult = 15 if (sub and sub.frequency == "Alternate Days") else 30
+        monthly_liters = round((sub.quantity_liters if sub else 1.0) * mult, 1)
+        msg_text = _generate_whatsapp_bill_text(c, dairy, month_name, sub, monthly_liters)
+        if payload.custom_note and payload.custom_note.strip():
+            msg_text += f"\n\n📌 *Note:* {payload.custom_note.strip()}"
+
+        clean_phone = _clean_phone_for_whatsapp(c.phone)
+        wa_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote_plus(msg_text)}" if clean_phone else ""
+        bal = float(c.balance or 0.0)
+        total_amount += bal
+
+        out_recipients.append({
+            "customerId": c.id,
+            "name": c.name,
+            "phone": c.phone,
+            "cleanPhone": clean_phone,
+            "balance": round(bal, 2),
+            "whatsappUrl": wa_url,
+            "message": msg_text,
+            "status": "DISPATCHED",
+        })
+
+    db.commit()
+
+    return BroadcastReminderResponse(
+        status="SUCCESS",
+        total_reminders=len(out_recipients),
+        total_amount=round(total_amount, 2),
+        broadcast_timestamp=now_str,
+        recipients=out_recipients,
+        message=f"Month-end WhatsApp due reminders generated for {len(out_recipients)} customers totaling ₹{total_amount:,.2f} for {d_name}.",
+    )
+
+
+@api_router.post("/billing/settings/reminders")
+def update_reminder_settings(
+    settings: ReminderSettingsUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update automated month-end WhatsApp reminder configuration and dairy UPI ID."""
+    dairy = db.query(Dairy).first()
+    if not dairy:
+        dairy = Dairy(name="Amrut Dairy Farm", owner_name="Dairy Owner", email="owner@dairy.com", phone="+91 98765 43210")
+        db.add(dairy)
+
+    if settings.auto_reminders is not None:
+        dairy.auto_reminders = settings.auto_reminders
+    if settings.upi_id is not None:
+        dairy.upi_id = settings.upi_id.strip()
+
+    db.commit()
+    return {
+        "status": "success",
+        "auto_reminders": dairy.auto_reminders,
+        "upi_id": dairy.upi_id,
+    }
