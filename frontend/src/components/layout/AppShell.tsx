@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNavbar } from '@/components/layout/TopNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ModalContainer } from '@/components/modals/ModalContainer';
+import { NewCustomerOwnerAlert } from '@/components/notifications/NewCustomerOwnerAlert';
 import { Loader2 } from 'lucide-react';
 
 function RoleGuardedShell({ children }: { children: React.ReactNode }) {
@@ -131,6 +132,7 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
       </div>
       <MobileBottomNav onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <ModalContainer />
+      <NewCustomerOwnerAlert />
     </div>
   );
 }

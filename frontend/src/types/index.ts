@@ -566,3 +566,18 @@ export interface BroadcastReminderResponse {
   recipients: BroadcastReminderRecipient[];
   message: string;
 }
+
+export interface OwnerAlert {
+  id: string;
+  title: string;
+  message: string;
+  customerName: string;
+  customerPhone: string;
+  customerType: string;
+  area: string;
+  route: string;
+  dairyName: string;
+  ownerPhone?: string;
+  ownerWhatsAppUrl?: string;
+  timestamp: string;
+}

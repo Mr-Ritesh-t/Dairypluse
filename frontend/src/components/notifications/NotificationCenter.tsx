@@ -19,6 +19,7 @@ import {
   VolumeX,
   Play,
   RotateCw,
+  UserPlus,
 } from 'lucide-react';
 import { NotificationItem, NotificationCategory } from '@/types';
 import {
@@ -152,7 +153,10 @@ export function NotificationCenter({
 
   if (!isOpen) return null;
 
-  const getCategoryIcon = (cat: NotificationCategory) => {
+  const getCategoryIcon = (cat: NotificationCategory, title?: string) => {
+    if (title && (title.includes('New Customer') || title.includes('Customer Added'))) {
+      return <UserPlus className="w-4 h-4 text-emerald-600" />;
+    }
     switch (cat) {
       case 'INVENTORY':
         return <Milk className="w-4 h-4 text-emerald-600" />;
@@ -347,7 +351,7 @@ export function NotificationCenter({
             >
               {/* Category Icon */}
               <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center shrink-0 mt-0.5">
-                {getCategoryIcon(item.category)}
+                {getCategoryIcon(item.category, item.title)}
               </div>
 
               {/* Text content */}

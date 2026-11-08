@@ -35,7 +35,7 @@ import { AddSubscriptionModal } from '@/components/subscriptions/AddSubscription
 import { AddMilkModal } from '@/components/customers/AddMilkModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
 import { MonthEndWhatsAppModal } from '@/components/customers/MonthEndWhatsAppModal';
-import { postCustomerWhatsAppReminderApi } from '@/lib/api';
+import { postCustomerWhatsAppReminderApi, postNotifyOwnerNewCustomerApi } from '@/lib/api';
 
 export default function CustomersPage() {
   const { customers, subscriptions, deliveries, openModal, activeDairy } = useDairyPulse();
@@ -740,6 +740,23 @@ export default function CustomersPage() {
                 >
                   <CreditCard className="w-3.5 h-3.5" />
                   <span>Generate Invoice</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    const res = await postNotifyOwnerNewCustomerApi(selectedCust.id);
+                    if (res && res.owner_whatsapp_url) {
+                      window.open(res.owner_whatsapp_url, '_blank', 'noopener,noreferrer');
+                      setToastMessage(`📲 Forwarding ${selectedCust.name} alert to Owner WhatsApp!`);
+                    } else {
+                      setToastMessage(`Owner notified in Notification Center!`);
+                    }
+                  }}
+                  className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Forward new customer registration alert to Owner WhatsApp"
+                >
+                  <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Notify Owner on WhatsApp</span>
+                  <ExternalLink className="w-3 h-3 text-emerald-600" />
                 </button>
               </div>
             </>

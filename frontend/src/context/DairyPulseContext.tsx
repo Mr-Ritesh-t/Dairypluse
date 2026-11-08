@@ -20,6 +20,7 @@ import {
   AttendanceRecord,
   RiderShiftStatus,
   SalaryPaymentRecord,
+  OwnerAlert,
 } from '@/types';
 import {
   getProducts,
@@ -73,6 +74,7 @@ import {
   postSalaryPayoutApi,
   getSalaryPayoutsApi,
   getRiderSalarySummaryApi,
+  postNotifyOwnerNewCustomerApi,
 } from '@/lib/api';
 
 interface DairyPulseContextType {
@@ -113,6 +115,9 @@ interface DairyPulseContextType {
   addStockReceipt: (variant: MilkVariant, quantity: number, supplier: string, rate: number, notes?: string, expiryDate?: string) => void;
   updateIntakeExpiry: (movementId: string, newExpiryDate: string) => Promise<boolean>;
   recordWastage: (variant: MilkVariant, quantity: number, reason: string) => void;
+  ownerAlert: OwnerAlert | null;
+  dismissOwnerAlert: () => void;
+  triggerOwnerAlert: (alert: OwnerAlert) => void;
   addCustomer: (customer: Omit<Customer, 'id' | 'joinedDate'>) => Promise<Customer>;
   updateCustomer: (id: string, updateData: Partial<Customer>) => Promise<boolean>;
   addStaff: (member: Omit<StaffMember, 'id' | 'joiningDate'>) => Promise<StaffMember>;
@@ -389,6 +394,32 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const openModal = (name: string) => setActiveModal(name);
   const closeModal = () => setActiveModal(null);
 
+  const [ownerAlert, setOwnerAlert] = useState<OwnerAlert | null>(null);
+  const dismissOwnerAlert = () => setOwnerAlert(null);
+  const triggerOwnerAlert = (alert: OwnerAlert) => setOwnerAlert(alert);
+
+  const playAlertChime = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {
+      // Audio autoplay policy fallback
+    }
+  };
+
   // Sync state with FastAPI backend if online
   useEffect(() => {
     refreshDairies();
@@ -559,6 +590,30 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     };
     setCustomers((prev) => [newCustomer, ...prev]);
 
+    // Format immediate Owner Alert with WhatsApp deep-link
+    const ownerPhone = activeDairy?.phone || '+91 98765 43210';
+    const cleanDigits = ownerPhone.replace(/\D/g, '');
+    const cleanOwner = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+    const waMsg = encodeURIComponent(
+      `🥛 *DairyPulse New Customer Alert!* 🐄✨\n\nNamaste ${activeDairy?.ownerName || 'Dairy Owner'} ji,\nA new customer has registered in your dairy ledger!\n\n📋 *Customer Profile:*\n• Name: *${newCustomer.name}*\n• Phone: ${newCustomer.phone}\n• Type: ${newCustomer.type}\n• Area: ${newCustomer.area}\n• Route: ${newCustomer.route}\n• Supplying Dairy: ${targetDairy}\n\nManage in DairyPulse: http://localhost:3000/customers`
+    );
+    const alert: OwnerAlert = {
+      id: `alert_${Date.now()}`,
+      title: `🎉 New Customer: ${newCustomer.name}`,
+      message: `New ${newCustomer.type} customer ${newCustomer.name} (${newCustomer.phone}) added in ${newCustomer.area} (${newCustomer.route}). Supplying farm: ${targetDairy}.`,
+      customerName: newCustomer.name,
+      customerPhone: newCustomer.phone,
+      customerType: newCustomer.type,
+      area: newCustomer.area,
+      route: newCustomer.route,
+      dairyName: targetDairy,
+      ownerPhone: ownerPhone,
+      ownerWhatsAppUrl: cleanOwner ? `https://wa.me/${cleanOwner}?text=${waMsg}` : undefined,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setOwnerAlert(alert);
+    playAlertChime();
+
     // Backend sync
     const res = await postCustomer({
       ...customerData,
@@ -569,6 +624,24 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       setCustomers((prev) =>
         prev.map((c) => (c.id === tempId ? { ...c, id: res.id, dairyName: res.dairy_name || targetDairy } : c))
       );
+
+      // Fetch server-generated owner alert link with clean WhatsApp URL
+      try {
+        const alertRes = await postNotifyOwnerNewCustomerApi(res.id);
+        if (alertRes && alertRes.owner_whatsapp_url) {
+          setOwnerAlert((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  ownerWhatsAppUrl: alertRes.owner_whatsapp_url,
+                  ownerPhone: alertRes.owner_phone,
+                }
+              : prev
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to fetch backend owner alert link:', err);
+      }
     }
     return newCustomer;
   };
@@ -1858,6 +1931,9 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         addStockReceipt,
         updateIntakeExpiry,
         recordWastage,
+        ownerAlert,
+        dismissOwnerAlert,
+        triggerOwnerAlert,
         addCustomer,
         updateCustomer,
         addStaff,

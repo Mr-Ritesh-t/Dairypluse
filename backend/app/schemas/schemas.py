@@ -705,3 +705,21 @@ class BroadcastReminderResponse(BaseModel):
 class ReminderSettingsUpdate(BaseModel):
     auto_reminders: Optional[bool] = None
     upi_id: Optional[str] = None
+
+class OwnerCustomerAlertResponse(BaseModel):
+    notification_id: str
+    title: str
+    message: str
+    dairy_name: str
+    owner_name: str
+    owner_phone: str
+    clean_owner_phone: str
+    owner_whatsapp_url: str
+    owner_whatsapp_message: str
+    customer_id: str
+    customer_name: str
+    customer_phone: str
+    customer_type: str
+    area: str
+    route: str
+    timestamp: str

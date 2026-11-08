@@ -85,3 +85,4 @@ def test_month_end_whatsapp_reminders_flow():
     assert settings_res.status_code == 200
     assert settings_res.json()["upi_id"] == "amrutdairy@icici"
     assert settings_res.json()["auto_reminders"] is True
+

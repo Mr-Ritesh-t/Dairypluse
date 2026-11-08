@@ -94,6 +94,7 @@ from app.schemas.schemas import (
     BroadcastReminderRequest,
     BroadcastReminderResponse,
     ReminderSettingsUpdate,
+    OwnerCustomerAlertResponse,
 )
 import urllib.parse
 import re
@@ -102,6 +103,145 @@ from datetime import datetime, timedelta
 from app.utils.phone import get_phone_search_patterns
 
 api_router = APIRouter()
+
+# =========================================================================
+# NOTIFICATION SYSTEM & OWNER NOTIFICATION HELPERS
+# =========================================================================
+def _clean_phone_for_whatsapp(phone: Optional[str]) -> str:
+    """Normalize phone number to international WhatsApp format (e.g. 918668740625)."""
+    if not phone:
+        return ""
+    digits = re.sub(r"\D", "", phone)
+    if len(digits) == 10:
+        return f"91{digits}"
+    elif len(digits) == 12 and digits.startswith("91"):
+        return digits
+    elif len(digits) > 10:
+        return digits
+    return digits
+
+
+NOTIFICATIONS_DB = [
+    {
+        "id": "notif_1",
+        "title": "Low Stock Warning: A2 Desi Cow Milk",
+        "message": "Cold room inventory down to 180 Liters (threshold: 200 L). Restock recommended.",
+        "category": "INVENTORY",
+        "severity": "WARNING",
+        "timestamp": (datetime.now() - timedelta(minutes=14)).isoformat(),
+        "time_ago": "14m ago",
+        "is_read": False,
+        "action_url": "/inventory",
+        "action_label": "Restock Intake",
+    },
+    {
+        "id": "notif_2",
+        "title": "Vacation Pause: Ananya Sharma",
+        "message": "Delivery skipped for 24-28 Oct (Diwali Vacation). Daily quota -1.5L adjusted.",
+        "category": "SUBSCRIPTION",
+        "severity": "INFO",
+        "timestamp": (datetime.now() - timedelta(minutes=42)).isoformat(),
+        "time_ago": "42m ago",
+        "is_read": False,
+        "action_url": "/household",
+        "action_label": "View Subscriptions",
+    },
+    {
+        "id": "notif_3",
+        "title": "Morning Run 86% Complete",
+        "message": "Rahul Deshmukh completed 24 of 28 stops in Baner Sector 3.",
+        "category": "DELIVERY",
+        "severity": "SUCCESS",
+        "timestamp": (datetime.now() - timedelta(hours=1, minutes=8)).isoformat(),
+        "time_ago": "1h ago",
+        "is_read": False,
+        "action_url": "/delivery",
+        "action_label": "Live Route",
+    },
+    {
+        "id": "notif_4",
+        "title": "Overdue Bill Reminder Triggered",
+        "message": "Hotel Shiv Sagar has ₹7,800 pending beyond 15-day cycle. Auto-reminder sent.",
+        "category": "BILLING",
+        "severity": "URGENT",
+        "timestamp": (datetime.now() - timedelta(hours=2, minutes=15)).isoformat(),
+        "time_ago": "2h ago",
+        "is_read": True,
+        "action_url": "/customers",
+        "action_label": "View Account",
+    },
+]
+
+
+def _notify_owner_new_customer(new_cust: Customer, db: Session) -> dict:
+    """
+    Creates an in-app notification in NOTIFICATIONS_DB and generates an owner WhatsApp alert link.
+    """
+    dairy = None
+    if new_cust.dairy_name:
+        dairy = db.query(Dairy).filter(Dairy.name.ilike(new_cust.dairy_name.strip())).first()
+    if not dairy:
+        dairy = db.query(Dairy).first()
+
+    dairy_name = dairy.name if dairy else (new_cust.dairy_name or "Amrut Dairy Farm")
+    owner_name = dairy.owner_name if (dairy and dairy.owner_name) else "Dairy Owner"
+    owner_phone = dairy.phone if (dairy and dairy.phone) else "+91 98765 43210"
+    clean_owner_phone = _clean_phone_for_whatsapp(owner_phone)
+
+    notif_id = f"notif_cust_{int(datetime.now().timestamp())}_{new_cust.id[:8] if new_cust.id else 'new'}"
+    notif_item = {
+        "id": notif_id,
+        "title": f"🎉 New Customer Added: {new_cust.name}",
+        "message": f"New {new_cust.customer_type or 'Household'} client {new_cust.name} ({new_cust.phone}) registered in {new_cust.area or 'Baner'} ({new_cust.route or 'Route 1'}). Supplying farm: {dairy_name}.",
+        "category": "SUBSCRIPTION",
+        "severity": "SUCCESS",
+        "timestamp": datetime.now().isoformat(),
+        "time_ago": "Just now",
+        "is_read": False,
+        "action_url": "/customers",
+        "action_label": "View Customer",
+    }
+    NOTIFICATIONS_DB.insert(0, notif_item)
+
+    # Format 1-click WhatsApp owner notification
+    wa_msg = (
+        f"🥛 *DairyPulse New Customer Alert!* 🐄✨\n\n"
+        f"Namaste {owner_name} ji,\n"
+        f"A new customer has registered on your dairy platform!\n\n"
+        f"📋 *Customer Details:*\n"
+        f"• Name: *{new_cust.name}*\n"
+        f"• Phone: {new_cust.phone}\n"
+        f"• Type: {new_cust.customer_type or 'HOUSEHOLD'}\n"
+        f"• Area: {new_cust.area or 'Baner'}\n"
+        f"• Route: {new_cust.route or 'Route 1'}\n"
+        f"• Supplying Dairy: {dairy_name}\n"
+        f"• Address: {new_cust.address or 'Doorstep Delivery'}\n\n"
+        f"🔗 *View in Customers Ledger:*\n"
+        f"http://localhost:3000/customers\n\n"
+        f"DairyPulse Farm Notification Gateway 🚀"
+    )
+    encoded_text = urllib.parse.quote_plus(wa_msg)
+    wa_url = f"https://wa.me/{clean_owner_phone}?text={encoded_text}" if clean_owner_phone else ""
+
+    return {
+        "notification_id": notif_id,
+        "title": notif_item["title"],
+        "message": notif_item["message"],
+        "dairy_name": dairy_name,
+        "owner_name": owner_name,
+        "owner_phone": owner_phone,
+        "clean_owner_phone": clean_owner_phone,
+        "owner_whatsapp_url": wa_url,
+        "owner_whatsapp_message": wa_msg,
+        "customer_id": new_cust.id or "",
+        "customer_name": new_cust.name or "",
+        "customer_phone": new_cust.phone or "",
+        "customer_type": new_cust.customer_type or "HOUSEHOLD",
+        "area": new_cust.area or "Baner",
+        "route": new_cust.route or "Route 1",
+        "timestamp": datetime.now().isoformat(),
+    }
+
 
 # ----------------- DASHBOARD -----------------
 @api_router.get("/dashboard/summary")
@@ -280,7 +420,27 @@ def create_customer(cust: CustomerCreate, db: Session = Depends(get_db)):
     db.add(new_cust)
     db.commit()
     db.refresh(new_cust)
+
+    # Automatically notify dairy owner and create in-app notification
+    try:
+        _notify_owner_new_customer(new_cust, db)
+    except Exception as e:
+        print(f"Error issuing new customer owner notification: {e}")
+
     return new_cust
+
+@api_router.post("/customers/{customer_id}/notify-owner", response_model=OwnerCustomerAlertResponse)
+@api_router.get("/customers/{customer_id}/notify-owner", response_model=OwnerCustomerAlertResponse)
+def notify_owner_for_customer(customer_id: str, db: Session = Depends(get_db)):
+    """
+    Generate an owner alert notification and 1-click WhatsApp message link for a new customer.
+    """
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    alert_payload = _notify_owner_new_customer(customer, db)
+    return OwnerCustomerAlertResponse(**alert_payload)
 
 @api_router.patch("/customers/{customer_id}", response_model=CustomerResponse)
 def update_customer(customer_id: str, cust_data: CustomerUpdate, db: Session = Depends(get_db)):
@@ -1620,6 +1780,11 @@ def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(
                 )
                 db.add(new_cust)
                 db.commit()
+                db.refresh(new_cust)
+                try:
+                    _notify_owner_new_customer(new_cust, db)
+                except Exception:
+                    pass
 
     return AuthUserResponse(
         id=user.id,
@@ -2167,56 +2332,7 @@ def sync_offline_deliveries(req: DeliveryBatchSyncRequest, db: Session = Depends
 # =========================================================================
 # 7. IN-APP NOTIFICATION CENTER
 # =========================================================================
-NOTIFICATIONS_DB = [
-    {
-        "id": "notif_1",
-        "title": "Low Stock Warning: A2 Desi Cow Milk",
-        "message": "Cold room inventory down to 180 Liters (threshold: 200 L). Restock recommended.",
-        "category": "INVENTORY",
-        "severity": "WARNING",
-        "timestamp": (datetime.now() - timedelta(minutes=14)).isoformat(),
-        "time_ago": "14m ago",
-        "is_read": False,
-        "action_url": "/inventory",
-        "action_label": "Restock Intake",
-    },
-    {
-        "id": "notif_2",
-        "title": "Vacation Pause: Ananya Sharma",
-        "message": "Delivery skipped for 24-28 Oct (Diwali Vacation). Daily quota -1.5L adjusted.",
-        "category": "SUBSCRIPTION",
-        "severity": "INFO",
-        "timestamp": (datetime.now() - timedelta(minutes=42)).isoformat(),
-        "time_ago": "42m ago",
-        "is_read": False,
-        "action_url": "/household",
-        "action_label": "View Subscriptions",
-    },
-    {
-        "id": "notif_3",
-        "title": "Morning Run 86% Complete",
-        "message": "Rahul Deshmukh completed 24 of 28 stops in Baner Sector 3.",
-        "category": "DELIVERY",
-        "severity": "SUCCESS",
-        "timestamp": (datetime.now() - timedelta(hours=1, minutes=8)).isoformat(),
-        "time_ago": "1h ago",
-        "is_read": False,
-        "action_url": "/delivery",
-        "action_label": "Live Route",
-    },
-    {
-        "id": "notif_4",
-        "title": "Overdue Bill Reminder Triggered",
-        "message": "Hotel Shiv Sagar has ₹7,800 pending beyond 15-day cycle. Auto-reminder sent.",
-        "category": "BILLING",
-        "severity": "URGENT",
-        "timestamp": (datetime.now() - timedelta(hours=2, minutes=15)).isoformat(),
-        "time_ago": "2h ago",
-        "is_read": True,
-        "action_url": "/customers",
-        "action_label": "View Account",
-    },
-]
+# NOTIFICATIONS_DB initialized at module top
 
 @api_router.get("/notifications", response_model=NotificationListResponse)
 def get_notifications():
@@ -2745,18 +2861,7 @@ def get_staff_salary_summary(staff_id: str, db: Session = Depends(get_db)):
 # MONTH-END WHATSAPP DUE PAYMENT REMINDERS AUTOMATION
 # =========================================================================
 
-def _clean_phone_for_whatsapp(phone: Optional[str]) -> str:
-    """Normalize phone number to international WhatsApp format (e.g. 918668740625)."""
-    if not phone:
-        return ""
-    digits = re.sub(r"\D", "", phone)
-    if len(digits) == 10:
-        return f"91{digits}"
-    elif len(digits) == 12 and digits.startswith("91"):
-        return digits
-    elif len(digits) > 10:
-        return digits
-    return digits
+# _clean_phone_for_whatsapp defined at module top
 
 
 def _generate_whatsapp_bill_text(

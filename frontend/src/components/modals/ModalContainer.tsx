@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar } from 'lucide-react';
+import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar, Bell } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { MilkVariant } from '@/types';
@@ -716,7 +716,11 @@ export function ModalContainer() {
                   </select>
                 </div>
               </div>
-              <div className="pt-2 flex justify-end gap-2">
+                            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/90 text-[11px] text-emerald-800 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Upon saving, the Dairy Owner is automatically alerted via In-App Notifications and 1-click WhatsApp message.</span>
+              </div>
+<div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeModal}

@@ -2247,3 +2247,17 @@ export async function postUpdateReminderSettingsApi(settings: {
     return null;
   }
 }
+
+export async function postNotifyOwnerNewCustomerApi(customerId: string): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/customers/${customerId}/notify-owner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to notify owner for customer');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error notifying owner:', err);
+    return null;
+  }
+}
