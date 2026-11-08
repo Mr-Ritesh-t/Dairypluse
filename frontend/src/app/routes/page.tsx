@@ -38,6 +38,7 @@ export default function RoutesManagementPage() {
     assignRouteToRider,
     buildAndDispatchRoute,
     autoSequenceRoute,
+    activeDairy,
   } = useDairyPulse();
 
   const [isRouteStudioOpen, setIsRouteStudioOpen] = useState(false);
@@ -107,6 +108,7 @@ export default function RoutesManagementPage() {
       totalStops: 0,
       totalLiters: 0,
       maxCapacityLiters: parseFloat(newRouteCapacity) || 60.0,
+      dairyName: activeDairy?.name || 'Amrut Dairy Farm',
     });
 
     setIsCreateRouteOpen(false);

@@ -72,3 +72,4 @@ def test_generate_daily_deliveries_links_route():
     for d in deliveries:
         assert "route" in d
         assert "dairy_name" in d
+

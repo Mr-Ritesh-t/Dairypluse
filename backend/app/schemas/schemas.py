@@ -56,6 +56,8 @@ class CustomerBase(BaseModel):
     email: Optional[str] = None
     address: str
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     route: str
     dairy_name: Optional[str] = "Amrut Dairy Farm"
     latitude: Optional[float] = None
@@ -175,6 +177,8 @@ class DeliveryAssignRequest(BaseModel):
 class RouteAssignRequest(BaseModel):
     area: Optional[str] = None
     route_code: Optional[str] = None
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     assigned_rider: str
     slot: Optional[str] = None
 
@@ -487,6 +491,8 @@ class OptimizedStop(BaseModel):
     customer_phone: str
     address: str
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     product_variant: str
     quantity_liters: float
     slot: str
@@ -528,6 +534,8 @@ class CustomerInsightItem(BaseModel):
     name: str
     type: str  # HOUSEHOLD, SHOP, RESTAURANT
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     phone: str
     status: str
     category: str  # "TOP_BUYER", "AT_RISK", "OVERDUE", "HIGH_VOLUME_SHOP"
@@ -728,5 +736,7 @@ class OwnerCustomerAlertResponse(BaseModel):
     customer_phone: str
     customer_type: str
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     route: str
     timestamp: str

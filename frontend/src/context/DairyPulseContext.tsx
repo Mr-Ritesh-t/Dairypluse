@@ -334,8 +334,16 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     if (!activeDairy) return rawRoutes;
     const activeName = activeDairy.name.trim().toLowerCase();
     return rawRoutes.filter((r) => {
-      if (r.dairyName) return r.dairyName.trim().toLowerCase() === activeName;
-      return activeName === 'dairypulse farm hq' || activeName === 'amrut dairy farm';
+      if (!r.dairyName) return true;
+      const rDairy = r.dairyName.trim().toLowerCase();
+      if (rDairy === activeName) return true;
+      if (
+        (activeName === 'amrut dairy farm' && rDairy === 'dairypulse farm hq') ||
+        (activeName === 'dairypulse farm hq' && rDairy === 'amrut dairy farm')
+      ) {
+        return true;
+      }
+      return false;
     });
   }, [rawRoutes, activeDairy]);
 
@@ -1455,14 +1463,25 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   };
 
   const createRoute = async (routeData: Omit<RouteInfo, 'id'>): Promise<RouteInfo | null> => {
+    const targetDairyName = routeData.dairyName || activeDairy?.name || 'Amrut Dairy Farm';
     const newRoute: RouteInfo = {
       ...routeData,
+      dairyName: targetDairyName,
       id: `rt-${Date.now()}`,
       totalStops: routeData.totalStops || 0,
       totalLiters: routeData.totalLiters || 0,
       maxCapacityLiters: routeData.maxCapacityLiters || 60.0,
     };
-    setRoutes((prev) => [...prev, newRoute]);
+    setRawRoutes((prev) => {
+      const filtered = prev.filter((r) => r.routeCode !== newRoute.routeCode);
+      const next = [...filtered, newRoute];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dairypulse_routes', JSON.stringify(next));
+        } catch (e) {}
+      }
+      return next;
+    });
     const res = await createRouteApi({
       routeCode: routeData.routeCode,
       name: routeData.name,
@@ -1471,9 +1490,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       slot: routeData.slot,
       societies: typeof routeData.societies === 'string' ? routeData.societies : Array.isArray(routeData.societies) ? routeData.societies.join(', ') : undefined,
       maxCapacityLiters: routeData.maxCapacityLiters,
+      dairyName: targetDairyName,
     });
     if (res && res.id) {
-      newRoute.id = res.id;
+      setRawRoutes((prev) => {
+        const updated = prev.map((r) => (r.routeCode === res.routeCode ? { ...res, dairyName: res.dairyName || targetDairyName } : r));
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('dairypulse_routes', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
       return res;
     }
     return newRoute;

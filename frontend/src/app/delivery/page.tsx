@@ -52,6 +52,7 @@ export default function DeliveryManagementPage() {
     generateDailyDeliveries,
     dairies,
     products,
+    activeDairy,
   } = useDairyPulse();
 
   // Dynamic extraction of distinct delivery areas from routes and deliveries (supports any city/location)
@@ -259,6 +260,7 @@ export default function DeliveryManagementPage() {
       totalStops: 0,
       totalLiters: 0,
       maxCapacityLiters: parseFloat(newRouteCapacity) || 60.0,
+      dairyName: activeDairy?.name || 'Amrut Dairy Farm',
     });
     setIsSubmitting(false);
     setIsCreateRouteOpen(false);
@@ -322,16 +324,7 @@ export default function DeliveryManagementPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {/* 1. Generate Daily Runs (Deduplicated) */}
-          <button
-            onClick={handleGenerateDailyDeliveries}
-            disabled={isGeneratingDaily}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer disabled:opacity-50"
-            title="Consolidate active subscriptions + shop orders for today with zero duplicates"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${isGeneratingDaily ? 'animate-spin' : ''}`} />
-            <span>{isGeneratingDaily ? 'Generating...' : '⚡ Generate Today’s Runs'}</span>
-          </button>
+
 
           {/* 2. Interactive Route Studio */}
           <button
@@ -385,6 +378,16 @@ export default function DeliveryManagementPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setNewRouteRider(defaultRiderName);
+                setIsCreateRouteOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Add Route</span>
+            </button>
             <button
               onClick={() => setIsRouteStudioOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition cursor-pointer"

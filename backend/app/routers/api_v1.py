@@ -639,9 +639,23 @@ def get_routes(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
 
 @api_router.post("/routes", response_model=RouteResponse)
 def create_route(route_data: RouteCreate, db: Session = Depends(get_db)):
-    data = route_data.model_dump()
+    raw_data = route_data.model_dump()
+    data = {k: v for k, v in raw_data.items() if hasattr(Route, k)}
     if not data.get("dairy_name"):
         data["dairy_name"] = "Amrut Dairy Farm"
+    existing = db.query(Route).filter(Route.route_code == data["route_code"]).first()
+    if existing:
+        existing.name = data["name"]
+        existing.area = data["area"]
+        existing.assigned_rider = data["assigned_rider"]
+        existing.slot = data.get("slot") or existing.slot
+        existing.societies = data.get("societies") or existing.societies
+        existing.max_capacity_liters = data.get("max_capacity_liters") or existing.max_capacity_liters
+        existing.dairy_name = data.get("dairy_name") or existing.dairy_name
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     new_route = Route(**data)
     db.add(new_route)
     db.commit()

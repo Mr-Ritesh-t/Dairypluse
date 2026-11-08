@@ -104,7 +104,7 @@ def ensure_db_columns():
                 WHERE route IS NULL OR route = ''
             """)
             # Backfill routes dairy_name if null
-            conn.exec_driver_sql("UPDATE routes SET dairy_name = 'Amrut Dairy Farm' WHERE dairy_name IS NULL OR dairy_name = ''")
+            conn.exec_driver_sql("UPDATE routes SET dairy_name = 'Amrut Dairy Farm' WHERE dairy_name IS NULL OR dairy_name = '' OR dairy_name = 'DairyPulse Farm HQ'")
 
             conn.commit()
     except Exception as e:

@@ -649,6 +649,7 @@ export async function createRouteApi(data: {
       totalStops: r.total_stops || 0,
       totalLiters: r.total_liters || 0,
       maxCapacityLiters: r.max_capacity_liters || 60.0,
+      dairyName: r.dairy_name || data.dairyName || 'Amrut Dairy Farm',
     };
   } catch (err) {
     console.warn('API error creating route:', err);
