@@ -78,6 +78,34 @@ def ensure_db_columns():
                 if "auto_reminders" not in dairy_cols:
                     conn.exec_driver_sql("ALTER TABLE dairies ADD COLUMN auto_reminders BOOLEAN DEFAULT 1")
 
+            # Check routes columns
+            route_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(routes)").fetchall()]
+            if route_cols:
+                if "dairy_name" not in route_cols:
+                    conn.exec_driver_sql("ALTER TABLE routes ADD COLUMN dairy_name VARCHAR DEFAULT 'Amrut Dairy Farm'")
+
+            # Check delivery_tasks columns
+            dt_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(delivery_tasks)").fetchall()]
+            if dt_cols:
+                if "route" not in dt_cols:
+                    conn.exec_driver_sql("ALTER TABLE delivery_tasks ADD COLUMN route VARCHAR")
+                if "dairy_name" not in dt_cols:
+                    conn.exec_driver_sql("ALTER TABLE delivery_tasks ADD COLUMN dairy_name VARCHAR DEFAULT 'Amrut Dairy Farm'")
+
+            # Backfill delivery_tasks.route from customers if null
+            conn.exec_driver_sql("""
+                UPDATE delivery_tasks
+                SET route = (
+                    SELECT customers.route FROM customers
+                    WHERE customers.phone = delivery_tasks.customer_phone
+                       OR customers.name = delivery_tasks.customer_name
+                    LIMIT 1
+                )
+                WHERE route IS NULL OR route = ''
+            """)
+            # Backfill routes dairy_name if null
+            conn.exec_driver_sql("UPDATE routes SET dairy_name = 'Amrut Dairy Farm' WHERE dairy_name IS NULL OR dairy_name = ''")
+
             conn.commit()
     except Exception as e:
         print(f"Column check migration warning: {e}")

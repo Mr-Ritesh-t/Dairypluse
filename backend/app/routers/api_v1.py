@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
@@ -592,7 +593,12 @@ def create_order(order_data: OrderCreate, db: Session = Depends(get_db)):
 def get_deliveries(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(DeliveryTask)
     if dairy_name:
-        query = query.filter(DeliveryTask.dairy_name.ilike(dairy_name.strip()))
+        query = query.filter(
+            or_(
+                DeliveryTask.dairy_name.ilike(dairy_name.strip()),
+                DeliveryTask.dairy_name.is_(None)
+            )
+        )
     return query.order_by(DeliveryTask.sequence_order.asc(), DeliveryTask.id.asc()).all()
 
 @api_router.patch("/deliveries/reorder")
@@ -608,18 +614,35 @@ def reorder_deliveries(req: ReorderStopsRequest, db: Session = Depends(get_db)):
 def get_routes(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(Route)
     if dairy_name:
-        query = query.filter(Route.dairy_name.ilike(dairy_name.strip()))
+        query = query.filter(
+            or_(
+                Route.dairy_name.ilike(dairy_name.strip()),
+                Route.dairy_name.is_(None)
+            )
+        )
     routes = query.all()
     for r in routes:
-        tasks = db.query(DeliveryTask).filter(DeliveryTask.area == r.area).all()
+        tasks = db.query(DeliveryTask).filter(
+            or_(
+                DeliveryTask.route == r.route_code,
+                DeliveryTask.route == r.name,
+                and_(
+                    or_(DeliveryTask.route.is_(None), DeliveryTask.route == ""),
+                    DeliveryTask.area == r.area
+                )
+            )
+        ).all()
         r.total_stops = len(tasks)
-        r.total_liters = sum(t.quantity_liters for t in tasks)
+        r.total_liters = round(sum(t.quantity_liters for t in tasks), 2)
     db.commit()
     return routes
 
 @api_router.post("/routes", response_model=RouteResponse)
 def create_route(route_data: RouteCreate, db: Session = Depends(get_db)):
-    new_route = Route(**route_data.model_dump())
+    data = route_data.model_dump()
+    if not data.get("dairy_name"):
+        data["dairy_name"] = "Amrut Dairy Farm"
+    new_route = Route(**data)
     db.add(new_route)
     db.commit()
     db.refresh(new_route)
@@ -678,11 +701,14 @@ def build_and_dispatch_route(req: RouteBuildRequest, db: Session = Depends(get_d
             DeliveryTask.delivery_date == today_str
         ).first()
 
+        route_dairy = getattr(route, "dairy_name", None) or cust.dairy_name or "Amrut Dairy Farm"
         if existing_task:
             existing_task.sequence_order = stop.sequence_order
             existing_task.assigned_rider = route.assigned_rider
             existing_task.slot = slot_time
             existing_task.area = route.area
+            existing_task.route = route.route_code
+            existing_task.dairy_name = route_dairy
             existing_task.status = existing_task.status if existing_task.status == "Delivered" else "Assigned"
             existing_task.notes = f"Stop #{stop.sequence_order} on {route.route_code} • Preferred: {slot_time}"
             dispatched_tasks.append(existing_task)
@@ -705,6 +731,8 @@ def build_and_dispatch_route(req: RouteBuildRequest, db: Session = Depends(get_d
                 society_or_landmark=soc_val or route.societies or cust.area,
                 landmark=cust.area,
                 area=route.area,
+                route=route.route_code,
+                dairy_name=route_dairy,
                 product_variant=variant,
                 quantity_liters=qty,
                 slot=slot_time,
@@ -874,6 +902,8 @@ def create_delivery(deliv_data: DeliveryTaskCreate, db: Session = Depends(get_db
         society_or_landmark=deliv_data.society_or_landmark,
         landmark=deliv_data.landmark,
         area=deliv_data.area,
+        route=deliv_data.route,
+        dairy_name=deliv_data.dairy_name or "Amrut Dairy Farm",
         product_variant=deliv_data.product_variant,
         quantity_liters=deliv_data.quantity_liters,
         slot=deliv_data.slot,
@@ -970,7 +1000,25 @@ def generate_daily_deliveries(
             
         first_rider = db.query(Staff).filter(Staff.role == "Delivery Rider").first()
         default_rider_name = first_rider.name if first_rider else "Rahul Deshmukh"
-        assigned_rider = route_rider_map.get(cust_area, default_rider_name)
+        
+        # Match customer assigned route or fallback to area
+        cust_route_code = customer.route if customer and customer.route else None
+        matching_route = None
+        if cust_route_code:
+            matching_route = next((r for r in routes if r.route_code.lower() == cust_route_code.lower() or r.name.lower() == cust_route_code.lower()), None)
+        if not matching_route:
+            matching_route = next((r for r in routes if r.area.lower() == cust_area.lower()), None)
+
+        if matching_route:
+            assigned_rider = matching_route.assigned_rider or default_rider_name
+            task_route = matching_route.route_code
+            task_slot = matching_route.slot or sub.time_slot or "Morning (6:00 AM - 7:30 AM)"
+            task_dairy = getattr(matching_route, "dairy_name", None) or (customer.dairy_name if customer else None) or "Amrut Dairy Farm"
+        else:
+            assigned_rider = route_rider_map.get(cust_area, default_rider_name)
+            task_route = cust_route_code or cust_area
+            task_slot = sub.time_slot or "Morning (6:00 AM - 7:30 AM)"
+            task_dairy = (customer.dairy_name if customer else None) or "Amrut Dairy Farm"
         
         # Determine society from address
         soc = "Locality Complex"
@@ -998,9 +1046,11 @@ def generate_daily_deliveries(
             address=cust_address,
             society_or_landmark=soc,
             area=cust_area,
+            route=task_route,
+            dairy_name=task_dairy,
             product_variant=sub.product_variant,
             quantity_liters=sub.quantity_liters,
-            slot=sub.time_slot or "Morning (6:00 AM - 7:30 AM)",
+            slot=task_slot,
             assigned_rider=assigned_rider,
             status="Assigned",
             sequence_order=total_existing + created_count + 1,
@@ -1008,7 +1058,7 @@ def generate_daily_deliveries(
             is_extra_order=False,
             latitude=customer.latitude if customer else None,
             longitude=customer.longitude if customer else None,
-            notes=f"Auto-generated daily run from Subscription"
+            notes=f"Auto-generated daily run on {task_route} from Subscription"
         )
         db.add(new_task)
         existing_keys.add(key)
@@ -1016,9 +1066,9 @@ def generate_daily_deliveries(
         
     db.commit()
     
-    # Auto-sequence by society so nearby flats are consecutive
+    # Auto-sequence by route, society, address so nearby flats on route are consecutive
     all_today = db.query(DeliveryTask).filter(DeliveryTask.delivery_date == target_date).all()
-    sorted_tasks = sorted(all_today, key=lambda t: (t.area, t.society_or_landmark or "", t.address))
+    sorted_tasks = sorted(all_today, key=lambda t: (t.route or "", t.area or "", t.society_or_landmark or "", t.address or ""))
     for idx, t in enumerate(sorted_tasks):
         t.sequence_order = idx + 1
     db.commit()
@@ -1063,15 +1113,49 @@ def assign_route_to_rider(
     req: RouteAssignRequest,
     db: Session = Depends(get_db)
 ):
-    tasks = db.query(DeliveryTask).filter(DeliveryTask.area == req.area).all()
+    query = db.query(DeliveryTask)
+    if req.route_code:
+        query = query.filter(
+            or_(
+                DeliveryTask.route == req.route_code,
+                DeliveryTask.notes.ilike(f"%{req.route_code}%")
+            )
+        )
+        if req.area:
+            query = query.filter(DeliveryTask.area == req.area)
+    elif req.area:
+        query = query.filter(DeliveryTask.area == req.area)
+    
+    tasks = query.all()
     for t in tasks:
         t.assigned_rider = req.assigned_rider
         if req.slot:
             t.slot = req.slot
         if t.status == "Pending":
             t.status = "Assigned"
+            
+    # Also update Route table if matching
+    route_query = db.query(Route)
+    if req.route_code:
+        r = route_query.filter(Route.route_code == req.route_code).first()
+        if r:
+            r.assigned_rider = req.assigned_rider
+            if req.slot:
+                r.slot = req.slot
+    elif req.area:
+        for r in route_query.filter(Route.area == req.area).all():
+            r.assigned_rider = req.assigned_rider
+            if req.slot:
+                r.slot = req.slot
+
     db.commit()
-    return {"success": True, "updated_count": len(tasks), "assigned_rider": req.assigned_rider, "area": req.area}
+    return {
+        "success": True,
+        "updated_count": len(tasks),
+        "assigned_rider": req.assigned_rider,
+        "area": req.area,
+        "route_code": req.route_code
+    }
 
 @api_router.patch("/deliveries/{delivery_id}/status")
 def update_delivery_status(

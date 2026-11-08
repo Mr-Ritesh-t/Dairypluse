@@ -195,6 +195,8 @@ class DeliveryTask(Base):
     society_or_landmark = Column(String, nullable=True)
     landmark = Column(String, nullable=True)
     area = Column(String, nullable=False)
+    route = Column(String, nullable=True)
+    dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
     product_variant = Column(String, nullable=False)
     quantity_liters = Column(Float, nullable=False)
     slot = Column(String, default="Morning")
@@ -239,6 +241,7 @@ class Route(Base):
     total_stops = Column(Integer, default=0)
     total_liters = Column(Float, default=0.0)
     max_capacity_liters = Column(Float, default=60.0)
+    dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Invoice(Base):

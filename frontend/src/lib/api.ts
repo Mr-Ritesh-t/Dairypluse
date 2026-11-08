@@ -553,6 +553,8 @@ export async function getDeliveriesToday() {
       customerPhone: d.customer_phone,
       address: d.address,
       area: d.area,
+      route: d.route,
+      dairyName: d.dairy_name,
       productVariant: d.product_variant,
       quantityLiters: d.quantity_liters,
       slot: d.slot,
@@ -617,6 +619,7 @@ export async function createRouteApi(data: {
   slot?: string;
   societies?: string;
   maxCapacityLiters?: number;
+  dairyName?: string;
 }): Promise<RouteInfo | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/routes`, {
@@ -630,6 +633,7 @@ export async function createRouteApi(data: {
         slot: data.slot || 'Morning (6:00 AM - 7:30 AM)',
         societies: data.societies,
         max_capacity_liters: data.maxCapacityLiters || 60.0,
+        dairy_name: data.dairyName || 'Amrut Dairy Farm',
       }),
     });
     if (!res.ok) throw new Error('Failed to create route');
@@ -845,7 +849,8 @@ export async function patchDeliveryAssignApi(deliveryId: string, data: {
 }
 
 export async function postRouteAssignApi(data: {
-  area: string;
+  area?: string;
+  routeCode?: string;
   assignedRider: string;
   slot?: string;
 }) {
@@ -855,6 +860,7 @@ export async function postRouteAssignApi(data: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         area: data.area,
+        route_code: data.routeCode,
         assigned_rider: data.assignedRider,
         slot: data.slot,
       }),

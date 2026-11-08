@@ -148,9 +148,17 @@ export default function DeliveryManagementPage() {
   const pending = deliveries.filter((d) => d.status === 'Pending').length;
   const failed = deliveries.filter((d) => d.status === 'Failed').length;
 
-  // Filtered Deliveries
+  // Filtered Deliveries (matches exact Route Code, Route Name, or Geographic Area)
   const filteredDeliveries = deliveries.filter((d) => {
-    if (selectedRoute !== 'ALL' && d.area !== selectedRoute) return false;
+    if (selectedRoute !== 'ALL') {
+      const activeRouteObj = routes.find(
+        (r) => r.routeCode === selectedRoute || r.name === selectedRoute || r.area === selectedRoute
+      );
+      const matchesRouteCode = d.route && (d.route === selectedRoute || (activeRouteObj && d.route === activeRouteObj.routeCode));
+      const matchesArea = d.area === selectedRoute || (activeRouteObj && d.area === activeRouteObj.area);
+      const matchesNotes = d.notes && activeRouteObj && d.notes.toLowerCase().includes(activeRouteObj.routeCode.toLowerCase());
+      if (!matchesRouteCode && !matchesArea && !matchesNotes) return false;
+    }
     if (selectedRiderFilter !== 'ALL' && d.assignedRider !== selectedRiderFilter) return false;
     if (selectedSlotFilter !== 'ALL' && !d.slot?.includes(selectedSlotFilter)) return false;
     if (selectedStatusFilter !== 'ALL' && d.status !== selectedStatusFilter) return false;
@@ -159,7 +167,8 @@ export default function DeliveryManagementPage() {
       const matchName = d.customerName.toLowerCase().includes(q);
       const matchAddress = d.address.toLowerCase().includes(q);
       const matchRider = d.assignedRider.toLowerCase().includes(q);
-      if (!matchName && !matchAddress && !matchRider) return false;
+      const matchRoute = d.route?.toLowerCase().includes(q);
+      if (!matchName && !matchAddress && !matchRider && !matchRoute) return false;
     }
     return true;
   });
@@ -408,8 +417,10 @@ export default function DeliveryManagementPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {routes.map((r) => {
-            const isFilterActive = selectedRoute === r.area;
-            const areaStops = deliveries.filter((d) => d.area === r.area);
+            const isFilterActive = selectedRoute === r.routeCode || selectedRoute === r.area;
+            const areaStops = deliveries.filter(
+              (d) => d.route === r.routeCode || d.area === r.area || (d.notes && d.notes.includes(r.routeCode))
+            );
             const totalLiters = areaStops.reduce((sum, d) => sum + (d.quantityLiters || 0), 0);
             const socList: string[] = Array.isArray(r.societies)
               ? r.societies
@@ -502,7 +513,7 @@ export default function DeliveryManagementPage() {
                 {/* Actions: View stops & assign */}
                 <div className="mt-3 pt-2 border-t border-slate-200/80 flex items-center gap-1.5">
                   <button
-                    onClick={() => setSelectedRoute(isFilterActive ? 'ALL' : r.area)}
+                    onClick={() => setSelectedRoute(isFilterActive ? 'ALL' : r.routeCode)}
                     className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition text-center cursor-pointer ${
                       isFilterActive
                         ? 'bg-emerald-600 text-white'
@@ -714,14 +725,27 @@ export default function DeliveryManagementPage() {
               <select
                 value={selectedRoute}
                 onChange={(e) => setSelectedRoute(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer max-w-[210px] truncate"
               >
-                <option value="ALL">All Routes</option>
-                {dynamicAreas.map((area: string) => (
-                  <option key={area} value={area}>
-                    {area}
-                  </option>
-                ))}
+                <option value="ALL">All Routes ({deliveries.length} drops)</option>
+                {routes.length > 0 && (
+                  <optgroup label="Configured Routes">
+                    {routes.map((r) => (
+                      <option key={r.id || r.routeCode} value={r.routeCode}>
+                        {r.routeCode} - {r.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {dynamicAreas.length > 0 && (
+                  <optgroup label="Delivery Areas">
+                    {dynamicAreas.map((area: string) => (
+                      <option key={area} value={area}>
+                        {area} (All Area Drops)
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
@@ -830,6 +854,11 @@ export default function DeliveryManagementPage() {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {del.route && (
+                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[10px] font-bold shrink-0">
+                            🛣️ {del.route}
+                          </span>
+                        )}
                         {del.flatOrUnit && (
                           <span className="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[10px] font-bold shrink-0">
                             🚪 {del.flatOrUnit}

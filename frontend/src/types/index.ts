@@ -98,6 +98,7 @@ export interface DeliveryTask {
   societyOrLandmark?: string;
   landmark?: string;
   area: string;
+  route?: string;
   dairyName?: string;
   productVariant: MilkVariant;
   quantityLiters: number;

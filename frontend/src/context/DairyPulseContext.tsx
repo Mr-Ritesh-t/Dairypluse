@@ -1269,10 +1269,10 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     return !!res;
   };
 
-  const assignRouteToRider = async (area: string, assignedRider: string, slot?: string): Promise<boolean> => {
+  const assignRouteToRider = async (areaOrRoute: string, assignedRider: string, slot?: string): Promise<boolean> => {
     setDeliveries((prev) =>
       prev.map((d) => {
-        if (d.area === area) {
+        if (d.route === areaOrRoute || d.area === areaOrRoute || (d.notes && d.notes.includes(areaOrRoute))) {
           return {
             ...d,
             assignedRider,
@@ -1282,7 +1282,25 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         return d;
       })
     );
-    const res = await postRouteAssignApi({ area, assignedRider, slot });
+    setRawRoutes((prev) =>
+      prev.map((r) => {
+        if (r.routeCode === areaOrRoute || r.name === areaOrRoute || r.area === areaOrRoute) {
+          return {
+            ...r,
+            assignedRider,
+            slot: slot || r.slot,
+          };
+        }
+        return r;
+      })
+    );
+    const isRouteCode = rawRoutes.some((r) => r.routeCode === areaOrRoute);
+    const res = await postRouteAssignApi({
+      area: isRouteCode ? undefined : areaOrRoute,
+      routeCode: isRouteCode ? areaOrRoute : undefined,
+      assignedRider,
+      slot,
+    });
     return !!res;
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
@@ -93,7 +93,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
@@ -109,7 +109,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                     }`}
                   />
                   <span>{item.label}</span>
-                </a>
+                </Link>
               );
             })}
           </nav>

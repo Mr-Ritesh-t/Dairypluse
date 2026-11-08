@@ -141,6 +141,8 @@ class DeliveryTaskCreate(BaseModel):
     society_or_landmark: Optional[str] = None
     landmark: Optional[str] = None
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     product_variant: str
     quantity_liters: float
     slot: str = "Morning"
@@ -171,7 +173,8 @@ class DeliveryAssignRequest(BaseModel):
     sequence_order: Optional[int] = None
 
 class RouteAssignRequest(BaseModel):
-    area: str
+    area: Optional[str] = None
+    route_code: Optional[str] = None
     assigned_rider: str
     slot: Optional[str] = None
 
@@ -196,6 +199,7 @@ class RouteBase(BaseModel):
     total_stops: int = 0
     total_liters: float = 0.0
     max_capacity_liters: float = 60.0
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
 
 class RouteCreate(RouteBase):
     pass
@@ -213,6 +217,7 @@ class RouteBuildRequest(BaseModel):
     slot: str = "Morning (6:00 AM - 7:30 AM)"
     societies: Optional[str] = None
     max_capacity_liters: float = 60.0
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     stops: List[RouteCustomerStop] = []
 
 class RouteResponse(RouteBase):
@@ -229,6 +234,8 @@ class DeliveryTaskResponse(BaseModel):
     society_or_landmark: Optional[str] = None
     landmark: Optional[str] = None
     area: str
+    route: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
     product_variant: str
     quantity_liters: float
     slot: str
