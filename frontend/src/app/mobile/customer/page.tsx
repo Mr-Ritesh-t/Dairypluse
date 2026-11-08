@@ -30,6 +30,7 @@ import {
   Building2,
   Repeat,
   Search,
+  Settings,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -355,14 +356,12 @@ export default function CustomerSelfServiceApp() {
               </div>
             </div>
             <button
-              onClick={() => {
-                refreshDairies();
-                setIsChangeDairyOpen(true);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
+              onClick={() => setIsProfileOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition border border-white/20 shrink-0 cursor-pointer flex items-center gap-1"
+              title="Change dairy in customer profile settings"
             >
-              <Repeat className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Change</span>
+              <Settings className="w-3.5 h-3.5 text-emerald-200" />
+              <span>Profile Settings</span>
             </button>
           </div>
 
@@ -701,8 +700,8 @@ export default function CustomerSelfServiceApp() {
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-base leading-tight">Customer Profile</h3>
-                    <p className="text-xs text-emerald-100">Personal Info & Doorstep GPS Map</p>
+                    <h3 className="font-extrabold text-base leading-tight">Customer Profile & Settings</h3>
+                    <p className="text-xs text-emerald-100">Personal Info, Doorstep GPS & Supplying Dairy</p>
                   </div>
                 </div>
                 <button
@@ -830,6 +829,53 @@ export default function CustomerSelfServiceApp() {
                       setProfileLng(lng);
                     }}
                   />
+                </div>
+
+                {/* Section 4: Supplying Dairy Farm Settings */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Supplying Dairy Farm</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span>{supplyingDairy.rating || 4.9} Verified</span>
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Building2 className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-extrabold text-xs text-slate-900 truncate">
+                          {supplyingDairy.name}
+                        </h5>
+                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                          Owner: {supplyingDairy.ownerName || (supplyingDairy as any).owner_name || 'Farm Partner'} • {supplyingDairy.city || 'Pune'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        refreshDairies();
+                        setIsProfileOpen(false);
+                        setIsChangeDairyOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
+                      title="Switch to another local partner dairy farm"
+                    >
+                      <Repeat className="w-3.5 h-3.5" />
+                      <span>Change Dairy</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-snug">
+                    Want to switch to another partnered farm? Click <strong>"Change Dairy"</strong> to browse and select certified local dairies delivering in your area.
+                  </p>
                 </div>
 
                 {/* Action Buttons */}

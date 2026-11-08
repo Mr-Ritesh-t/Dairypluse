@@ -38,7 +38,8 @@ import { MonthEndWhatsAppModal } from '@/components/customers/MonthEndWhatsAppMo
 import { postCustomerWhatsAppReminderApi, postNotifyOwnerNewCustomerApi } from '@/lib/api';
 
 export default function CustomersPage() {
-  const { customers, subscriptions, deliveries, openModal, activeDairy } = useDairyPulse();
+  const { customers, subscriptions, deliveries, openModal, activeDairy, dairies, updateCustomer } = useDairyPulse();
+  const [isEditingDairy, setIsEditingDairy] = useState(false);
   const [filterType, setFilterType] = useState<'ALL' | 'HOUSEHOLD' | 'SHOP' | 'RESTAURANT'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
@@ -662,10 +663,47 @@ export default function CustomersPage() {
 
               {/* Customer Contact Details */}
               <div className="space-y-2.5 text-xs p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Dairy: <strong className="text-slate-800 font-semibold">{selectedCust.dairyName || activeDairy?.name || 'DairyPulse Farm HQ'}</strong></span>
+                <div className="flex items-center justify-between text-slate-600">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">Dairy: <strong className="text-slate-800 font-semibold">{selectedCust.dairyName || activeDairy?.name || 'DairyPulse Farm HQ'}</strong></span>
+                  </div>
+                  {dairies && dairies.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDairy(!isEditingDairy)}
+                      className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition cursor-pointer shrink-0 ml-2"
+                      title="Change customer's supplying dairy farm"
+                    >
+                      {isEditingDairy ? 'Cancel' : 'Change Dairy'}
+                    </button>
+                  )}
                 </div>
+
+                {isEditingDairy && dairies && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 animate-in fade-in">
+                    <span className="text-[10px] font-bold text-emerald-900 uppercase">Reassign Supplying Dairy:</span>
+                    <select
+                      value={selectedCust.dairyName || activeDairy?.name || ''}
+                      onChange={async (e) => {
+                        const newDairy = e.target.value;
+                        const ok = await updateCustomer(selectedCust.id, { dairyName: newDairy });
+                        if (ok) {
+                          setSelectedCust({ ...selectedCust, dairyName: newDairy });
+                          setToastMessage(`Supplying farm updated to ${newDairy}!`);
+                          setIsEditingDairy(false);
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      {dairies.map((d) => (
+                        <option key={d.name} value={d.name}>
+                          {d.name} ({d.city || 'Pune'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-slate-600">
                   <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
                   <a href={`tel:${selectedCust.phone}`} className="font-semibold text-slate-800 hover:underline">
