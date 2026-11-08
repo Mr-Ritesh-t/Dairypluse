@@ -58,8 +58,6 @@ class CustomerBase(BaseModel):
     area: str
     route: Optional[str] = None
     dairy_name: Optional[str] = "Amrut Dairy Farm"
-    route: str
-    dairy_name: Optional[str] = "Amrut Dairy Farm"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     preferred_time: Optional[str] = "6:00 AM - 7:30 AM"
@@ -206,7 +204,7 @@ class RouteBase(BaseModel):
     dairy_name: Optional[str] = "Amrut Dairy Farm"
 
 class RouteCreate(RouteBase):
-    pass
+    customer_ids: Optional[List[str]] = []
 
 class RouteCustomerStop(BaseModel):
     customer_id: str
@@ -738,5 +736,3 @@ class OwnerCustomerAlertResponse(BaseModel):
     area: str
     route: Optional[str] = None
     dairy_name: Optional[str] = "Amrut Dairy Farm"
-    route: str
-    timestamp: str

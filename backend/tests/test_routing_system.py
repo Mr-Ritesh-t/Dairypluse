@@ -73,3 +73,35 @@ def test_generate_daily_deliveries_links_route():
         assert "route" in d
         assert "dairy_name" in d
 
+
+def test_create_route_with_customers_and_rider():
+    # 1. Fetch existing customers
+    cust_res = client.get("/api/v1/customers")
+    assert cust_res.status_code == 200
+    customers = cust_res.json()
+    assert len(customers) > 0
+    selected_ids = [c["id"] for c in customers[:2]]
+
+    route_code = "R-TEST-CUST"
+    payload = {
+        "route_code": route_code,
+        "name": "Bavdhan Customer Run",
+        "area": "Bavdhan",
+        "assigned_rider": "Sachin Kamble",
+        "slot": "Morning (6:00 AM - 7:30 AM)",
+        "societies": "Crystal Springs, Windmill",
+        "max_capacity_liters": 60.0,
+        "dairy_name": "Amrut Dairy Farm",
+        "customer_ids": selected_ids
+    }
+    res = client.post("/api/v1/routes", json=payload)
+    assert res.status_code == 200
+    route = res.json()
+    assert route["route_code"] == route_code
+    assert route["assigned_rider"] == "Sachin Kamble"
+    assert route["total_stops"] >= len(selected_ids)
+
+    # Verify customers now have this route
+    for cid in selected_ids:
+        c_detail = client.get(f"/api/v1/customers/{cid}").json()
+        assert c_detail["route"] == route_code

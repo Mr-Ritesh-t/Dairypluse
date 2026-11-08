@@ -415,6 +415,13 @@ def get_customers(dairy_name: Optional[str] = None, db: Session = Depends(get_db
         query = query.filter(Customer.dairy_name.ilike(dairy_name.strip()))
     return query.all()
 
+@api_router.get("/customers/{customer_id}", response_model=CustomerResponse)
+def get_customer(customer_id: str, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return customer
+
 @api_router.post("/customers", response_model=CustomerResponse)
 def create_customer(cust: CustomerCreate, db: Session = Depends(get_db)):
     new_cust = Customer(**cust.model_dump())
@@ -640,6 +647,7 @@ def get_routes(dairy_name: Optional[str] = None, db: Session = Depends(get_db)):
 @api_router.post("/routes", response_model=RouteResponse)
 def create_route(route_data: RouteCreate, db: Session = Depends(get_db)):
     raw_data = route_data.model_dump()
+    customer_ids = raw_data.get("customer_ids") or []
     data = {k: v for k, v in raw_data.items() if hasattr(Route, k)}
     if not data.get("dairy_name"):
         data["dairy_name"] = "Amrut Dairy Farm"
@@ -652,15 +660,68 @@ def create_route(route_data: RouteCreate, db: Session = Depends(get_db)):
         existing.societies = data.get("societies") or existing.societies
         existing.max_capacity_liters = data.get("max_capacity_liters") or existing.max_capacity_liters
         existing.dairy_name = data.get("dairy_name") or existing.dairy_name
-        db.commit()
-        db.refresh(existing)
-        return existing
+        route = existing
+    else:
+        new_route = Route(**data)
+        db.add(new_route)
+        db.flush()
+        route = new_route
 
-    new_route = Route(**data)
-    db.add(new_route)
+    # Link selected customers to this route and rider
+    if customer_ids:
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        total_stops = 0
+        total_liters = 0.0
+        for idx, cid in enumerate(customer_ids):
+            cust = db.query(Customer).filter(Customer.id == cid).first()
+            if cust:
+                cust.route = route.route_code
+                total_stops += 1
+                sub = db.query(Subscription).filter(Subscription.customer_id == cust.id, Subscription.status == "Active").first()
+                qty = sub.quantity_liters if sub else 1.5
+                variant = sub.product_variant if sub else "Cow Milk"
+                slot_time = (sub.time_slot if sub else None) or cust.preferred_time or route.slot
+                total_liters += qty
+
+                task = db.query(DeliveryTask).filter(
+                    DeliveryTask.customer_phone == cust.phone,
+                    DeliveryTask.delivery_date == today_str
+                ).first()
+                if task:
+                    task.route = route.route_code
+                    task.assigned_rider = route.assigned_rider
+                    task.area = route.area
+                    task.slot = slot_time
+                    task.sequence_order = idx + 1
+                    task.dairy_name = route.dairy_name
+                else:
+                    count = db.query(DeliveryTask).count()
+                    task_num = f"DEL-2026-{str(count + 1).zfill(3)}"
+                    new_task = DeliveryTask(
+                        delivery_number=task_num,
+                        customer_name=cust.name,
+                        customer_phone=cust.phone,
+                        address=cust.address,
+                        area=route.area,
+                        route=route.route_code,
+                        dairy_name=route.dairy_name,
+                        product_variant=variant,
+                        quantity_liters=qty,
+                        slot=slot_time,
+                        assigned_rider=route.assigned_rider,
+                        sequence_order=idx + 1,
+                        delivery_date=today_str,
+                        status="Assigned",
+                        notes=f"Assigned to {route.route_code} • Rider: {route.assigned_rider}"
+                    )
+                    db.add(new_task)
+
+        route.total_stops = total_stops
+        route.total_liters = round(total_liters, 2)
+
     db.commit()
-    db.refresh(new_route)
-    return new_route
+    db.refresh(route)
+    return route
 
 @api_router.post("/routes/build")
 def build_and_dispatch_route(req: RouteBuildRequest, db: Session = Depends(get_db)):

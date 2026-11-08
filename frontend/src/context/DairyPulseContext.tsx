@@ -152,7 +152,7 @@ interface DairyPulseContextType {
   reorderDeliveries: (stops: { id: string; sequenceOrder: number }[]) => Promise<boolean>;
   moveDeliveryStop: (id: string, direction: 'UP' | 'DOWN') => Promise<void>;
   autoSequenceRoute: (area: string) => Promise<void>;
-  createRoute: (route: Omit<RouteInfo, 'id'>) => Promise<RouteInfo | null>;
+  createRoute: (route: Omit<RouteInfo, 'id'> & { customerIds?: string[] }) => Promise<RouteInfo | null>;
   buildAndDispatchRoute: (payload: RouteBuildPayload) => Promise<boolean>;
   updateDeliveryAddress: (id: string, addrData: { address?: string; flatOrUnit?: string; societyOrLandmark?: string; landmark?: string; area?: string; latitude?: number; longitude?: number; notes?: string }) => Promise<boolean>;
   generateDailyDeliveries: (deliveryDate?: string, slot?: string) => Promise<{ success: boolean; created_count: number; skipped_duplicates: number; total_stops: number } | null>;
@@ -1462,16 +1462,52 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     await reorderDeliveries(updates);
   };
 
-  const createRoute = async (routeData: Omit<RouteInfo, 'id'>): Promise<RouteInfo | null> => {
+  const createRoute = async (routeData: Omit<RouteInfo, 'id'> & { customerIds?: string[] }): Promise<RouteInfo | null> => {
     const targetDairyName = routeData.dairyName || activeDairy?.name || 'Amrut Dairy Farm';
+    const cIds = routeData.customerIds || [];
+
+    // Calculate total stops and liters from selected customers if provided
+    let calculatedStops = routeData.totalStops || cIds.length;
+    let calculatedLiters = routeData.totalLiters || 0;
+    if (cIds.length > 0 && calculatedLiters === 0) {
+      calculatedLiters = cIds.reduce((sum, cid) => {
+        const sub = rawSubscriptions.find((s) => s.customerId === cid && s.status === 'Active');
+        return sum + (sub?.quantityLiters || 1.5);
+      }, 0);
+    }
+
     const newRoute: RouteInfo = {
       ...routeData,
       dairyName: targetDairyName,
       id: `rt-${Date.now()}`,
-      totalStops: routeData.totalStops || 0,
-      totalLiters: routeData.totalLiters || 0,
+      totalStops: calculatedStops,
+      totalLiters: calculatedLiters,
       maxCapacityLiters: routeData.maxCapacityLiters || 60.0,
+      customerIds: cIds,
     };
+
+    // Optimistically link customers to this route
+    if (cIds.length > 0) {
+      const cIdSet = new Set(cIds);
+      setRawCustomers((prev) =>
+        prev.map((c) => (cIdSet.has(c.id) ? { ...c, route: newRoute.routeCode } : c))
+      );
+      setRawDeliveries((prev) =>
+        prev.map((d) => {
+          if (cIdSet.has(d.customerId || '')) {
+            return {
+              ...d,
+              route: newRoute.routeCode,
+              assignedRider: newRoute.assignedRider,
+              area: newRoute.area,
+              slot: newRoute.slot,
+            };
+          }
+          return d;
+        })
+      );
+    }
+
     setRawRoutes((prev) => {
       const filtered = prev.filter((r) => r.routeCode !== newRoute.routeCode);
       const next = [...filtered, newRoute];
@@ -1482,6 +1518,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       }
       return next;
     });
+
     const res = await createRouteApi({
       routeCode: routeData.routeCode,
       name: routeData.name,
@@ -1491,6 +1528,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       societies: typeof routeData.societies === 'string' ? routeData.societies : Array.isArray(routeData.societies) ? routeData.societies.join(', ') : undefined,
       maxCapacityLiters: routeData.maxCapacityLiters,
       dairyName: targetDairyName,
+      customerIds: cIds,
     });
     if (res && res.id) {
       setRawRoutes((prev) => {

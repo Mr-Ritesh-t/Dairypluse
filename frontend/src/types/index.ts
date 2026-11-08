@@ -143,6 +143,7 @@ export interface RouteInfo {
   totalLiters: number;
   maxCapacityLiters?: number;
   dairyName?: string;
+  customerIds?: string[];
 }
 
 export interface RouteCustomerStop {

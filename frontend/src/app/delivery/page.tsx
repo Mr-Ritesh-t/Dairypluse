@@ -106,6 +106,27 @@ export default function DeliveryManagementPage() {
   const [newRouteSlot, setNewRouteSlot] = useState('Morning (6:00 AM - 7:30 AM)');
   const [newRouteSocieties, setNewRouteSocieties] = useState('');
   const [newRouteCapacity, setNewRouteCapacity] = useState('60');
+  const [selectedRouteCustomerIds, setSelectedRouteCustomerIds] = useState<string[]>([]);
+  const [routeCustomerSearch, setRouteCustomerSearch] = useState('');
+
+  const filteredCustomersForNewRoute = useMemo(() => {
+    if (!routeCustomerSearch.trim()) return customers;
+    const q = routeCustomerSearch.toLowerCase();
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.phone.toLowerCase().includes(q) ||
+        c.address.toLowerCase().includes(q) ||
+        c.area?.toLowerCase().includes(q)
+    );
+  }, [customers, routeCustomerSearch]);
+
+  const selectedRouteCustomersTotalLiters = useMemo(() => {
+    return selectedRouteCustomerIds.reduce((sum, cid) => {
+      const sub = subscriptions.find((s) => s.customerId === cid && s.status === 'Active');
+      return sum + (sub?.quantityLiters || 1.5);
+    }, 0);
+  }, [selectedRouteCustomerIds, subscriptions]);
 
   // Form State: Edit Address
   const [editFlat, setEditFlat] = useState('');
@@ -257,17 +278,22 @@ export default function DeliveryManagementPage() {
       assignedRider: newRouteRider || defaultRiderName,
       slot: newRouteSlot,
       societies: newRouteSocieties.trim() || undefined,
-      totalStops: 0,
-      totalLiters: 0,
+      totalStops: selectedRouteCustomerIds.length,
+      totalLiters: selectedRouteCustomersTotalLiters,
       maxCapacityLiters: parseFloat(newRouteCapacity) || 60.0,
       dairyName: activeDairy?.name || 'Amrut Dairy Farm',
+      customerIds: selectedRouteCustomerIds,
     });
     setIsSubmitting(false);
     setIsCreateRouteOpen(false);
     setNewRouteCode('');
     setNewRouteName('');
     setNewRouteSocieties('');
-    setActionNotice(`Route ${newRouteCode.toUpperCase()} created & assigned to ${newRouteRider || defaultRiderName}!`);
+    setSelectedRouteCustomerIds([]);
+    setRouteCustomerSearch('');
+    setActionNotice(
+      `Route ${newRouteCode.toUpperCase()} created with ${selectedRouteCustomerIds.length} customers assigned to ${newRouteRider || defaultRiderName}!`
+    );
     setTimeout(() => setActionNotice(null), 4000);
   };
 
@@ -1013,7 +1039,7 @@ export default function DeliveryManagementPage() {
       {/* ======================================================== */}
       {isAssignRouteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Assign Route to Delivery Rider</h3>
@@ -1468,6 +1494,123 @@ export default function DeliveryManagementPage() {
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">Comma-separated building names to cluster together</p>
+              </div>
+
+              {/* Select Customers for this Route & Rider */}
+              <div className="pt-2.5 border-t border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-900">
+                      Select Customers for Route ({selectedRouteCustomerIds.length} selected)
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Assigned rider ({newRouteRider || defaultRiderName}) will deliver milk to these doorsteps
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRouteCustomerIds(filteredCustomersForNewRoute.map((c) => c.id))}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRouteCustomerIds([])}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search customers inside modal */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={routeCustomerSearch}
+                    onChange={(e) => setRouteCustomerSearch(e.target.value)}
+                    placeholder="Search customers by name, phone, or address..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Customer List */}
+                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-slate-50/50">
+                  {filteredCustomersForNewRoute.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-400 font-medium">
+                      No matching customers found
+                    </div>
+                  ) : (
+                    filteredCustomersForNewRoute.map((cust) => {
+                      const isSelected = selectedRouteCustomerIds.includes(cust.id);
+                      const sub = subscriptions.find((s) => s.customerId === cust.id && s.status === 'Active');
+                      const qty = sub?.quantityLiters || 1.5;
+                      const variant = sub?.productVariant || 'Cow Milk';
+
+                      return (
+                        <div
+                          key={cust.id}
+                          onClick={() => {
+                            setSelectedRouteCustomerIds((prev) =>
+                              isSelected ? prev.filter((id) => id !== cust.id) : [...prev, cust.id]
+                            );
+                          }}
+                          className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition ${
+                            isSelected ? 'bg-emerald-50/90' : 'hover:bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 shrink-0 cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-slate-900 truncate">{cust.name}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">({cust.phone})</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-400" />
+                                <span>{cust.address}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-emerald-800 text-[10px] font-bold shadow-2xs">
+                              🥛 {qty} L {variant}
+                            </span>
+                            {cust.route && (
+                              <div className="text-[9px] text-slate-400 font-medium mt-0.5">
+                                Current: {cust.route}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Real-time Summary Card */}
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-800">{selectedRouteCustomerIds.length} stops</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="font-extrabold text-emerald-700">
+                      {selectedRouteCustomersTotalLiters.toFixed(1)} L Total Milk
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-bold text-slate-600">
+                    Load: {Math.round((selectedRouteCustomersTotalLiters / (parseFloat(newRouteCapacity) || 60)) * 100)}% of {newRouteCapacity || 60}L
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-2.5 pt-2">

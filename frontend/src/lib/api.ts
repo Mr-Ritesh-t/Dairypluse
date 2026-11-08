@@ -620,6 +620,7 @@ export async function createRouteApi(data: {
   societies?: string;
   maxCapacityLiters?: number;
   dairyName?: string;
+  customerIds?: string[];
 }): Promise<RouteInfo | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/routes`, {
@@ -634,6 +635,7 @@ export async function createRouteApi(data: {
         societies: data.societies,
         max_capacity_liters: data.maxCapacityLiters || 60.0,
         dairy_name: data.dairyName || 'Amrut Dairy Farm',
+        customer_ids: data.customerIds || [],
       }),
     });
     if (!res.ok) throw new Error('Failed to create route');
