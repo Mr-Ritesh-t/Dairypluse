@@ -326,14 +326,7 @@ export default function DeliveryManagementPage() {
         <div className="flex flex-wrap items-center gap-2 shrink-0">
 
 
-          {/* 2. Interactive Route Studio */}
-          <button
-            onClick={() => setIsRouteStudioOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition transform active:scale-95 cursor-pointer ring-2 ring-emerald-400/30"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>🗺️ Real Map Route Studio</span>
-          </button>
+
 
           {/* 3. Assign Route */}
           <button
@@ -388,13 +381,7 @@ export default function DeliveryManagementPage() {
               <Plus className="w-3.5 h-3.5" />
               <span>+ Add Route</span>
             </button>
-            <button
-              onClick={() => setIsRouteStudioOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition cursor-pointer"
-            >
-              <Compass className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Open Real Map Route Studio</span>
-            </button>
+
             <button
               onClick={async () => {
                 const targetArea = selectedRoute === 'ALL' ? (dynamicAreas[0] || 'Default Route') : selectedRoute;
@@ -415,7 +402,7 @@ export default function DeliveryManagementPage() {
         {routes.length === 0 ? (
           <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
             <p className="text-xs font-semibold text-slate-600">No delivery routes configured yet</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Click &apos;+ Add Route&apos; or use &apos;🗺️ Real Map Route Studio&apos; to dispatch runs.</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Click &apos;+ Add Route&apos; to configure delivery runs.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -803,7 +790,7 @@ export default function DeliveryManagementPage() {
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Truck className="w-8 h-8 text-slate-300" />
                         <span className="font-semibold text-sm text-slate-600">No delivery stops found</span>
-                        <span className="text-xs text-slate-400">Click &apos;+ Generate Drops&apos; or build a custom route from Real Map Route Studio</span>
+                        <span className="text-xs text-slate-400">Create delivery stops or configure routes.</span>
                       </div>
                     </td>
                   </tr>

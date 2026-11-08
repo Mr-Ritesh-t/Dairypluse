@@ -169,13 +169,7 @@ export default function RoutesManagementPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsRouteStudioOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
-          >
-            <Compass className="w-4 h-4" />
-            <span>Open Real Map Route Studio</span>
-          </button>
+
 
           <button
             onClick={() => setIsCreateRouteOpen(true)}
