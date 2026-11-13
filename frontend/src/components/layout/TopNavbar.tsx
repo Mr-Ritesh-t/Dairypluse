@@ -18,12 +18,20 @@ import {
   LogOut,
   Building2,
   Layers,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
-export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export function TopNavbar({
+  onToggleSidebar,
+  isSidebarOpen = true,
+}: {
+  onToggleSidebar: () => void;
+  isSidebarOpen?: boolean;
+}) {
   const { openModal, activeDairy } = useDairyPulse();
   const { user, logout } = useAuth();
   const [quickActionOpen, setQuickActionOpen] = useState(false);
@@ -45,12 +53,17 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
       {/* Left side: Hamburger, Mobile Brand & Search */}
       <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-xl">
         <button
-          aria-label="Toggle Navigation"
+          aria-label={isSidebarOpen ? 'Collapse Sidebar' : 'Open Sidebar'}
           onClick={onToggleSidebar}
-          className="lg:hidden text-stone-600 hover:text-stone-900 focus:outline-hidden p-1.5 rounded-lg hover:bg-stone-100 cursor-pointer shrink-0"
+          className="text-stone-600 hover:text-stone-900 focus:outline-hidden p-2 rounded-xl hover:bg-stone-100 cursor-pointer shrink-0 transition-colors flex items-center justify-center border border-stone-200/60"
           type="button"
+          title={isSidebarOpen ? 'Collapse sidebar' : 'Open sidebar'}
         >
-          <Menu className="w-5 h-5" />
+          {isSidebarOpen ? (
+            <PanelLeftClose className="w-4 h-4 text-stone-600" />
+          ) : (
+            <PanelLeftOpen className="w-4 h-4 text-stone-700" />
+          )}
         </button>
 
         {/* Mobile brand logo */}

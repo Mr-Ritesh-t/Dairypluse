@@ -16,8 +16,30 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Sync initial sidebar state from localStorage or screen size
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dairypulse_sidebar_open');
+      if (saved !== null) {
+        setSidebarOpen(saved === 'true');
+      } else {
+        setSidebarOpen(window.innerWidth >= 1024);
+      }
+    }
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dairypulse_sidebar_open', String(next));
+      }
+      return next;
+    });
+  };
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
@@ -120,17 +142,28 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   }
 
   // 4. Owner Dashboard & Modules Layout
-  // Responsive workspace with Dark Sidebar, Clean TopNavbar, Mobile Bottom Nav, and ModalContainer
+  // Responsive workspace with collapsible Dark Sidebar, Clean TopNavbar, Mobile Bottom Nav, and ModalContainer
   return (
     <div className="min-h-screen bg-[#FEFBF6] flex text-stone-900 w-full overflow-x-clip">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200 w-full overflow-x-clip">
-        <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onToggle={handleToggleSidebar}
+      />
+      <div
+        className={`flex-1 ${
+          sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
+        } flex flex-col min-w-0 transition-all duration-300 ease-in-out w-full overflow-x-clip`}
+      >
+        <TopNavbar
+          isSidebarOpen={sidebarOpen}
+          onToggleSidebar={handleToggleSidebar}
+        />
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 sm:pb-8">
           {children}
         </main>
       </div>
-      <MobileBottomNav onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <MobileBottomNav onToggleSidebar={handleToggleSidebar} />
       <ModalContainer />
       <NewCustomerOwnerAlert />
     </div>

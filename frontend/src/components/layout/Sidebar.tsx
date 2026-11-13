@@ -19,6 +19,7 @@ import {
   MapPin,
   Sparkles,
   Building2,
+  PanelLeftClose,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 
@@ -36,7 +37,15 @@ const navItems = [
   { label: 'Reports & Analytics', href: '/reports', icon: BarChart3 },
 ];
 
-export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export function Sidebar({
+  isOpen = true,
+  onClose,
+  onToggle,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onToggle?: () => void;
+}) {
   const pathname = usePathname();
   const { activeDairy } = useDairyPulse();
 
@@ -52,8 +61,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
       )}
 
       <aside
-        className={`w-64 bg-[#151413] text-stone-300 border-r border-[#262320] flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`w-64 bg-[#151413] text-stone-300 border-r border-[#262320] flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         data-purpose="main-sidebar"
         aria-label="Main Sidebar"
@@ -90,14 +99,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               </div>
             </Link>
 
-            {/* Mobile close button */}
+            {/* Close / Collapse button */}
             <button
               type="button"
-              onClick={onClose}
-              aria-label="Close Navigation"
-              className="lg:hidden p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
+              onClick={onToggle || onClose}
+              aria-label={isOpen ? 'Collapse Sidebar' : 'Open Sidebar'}
+              title="Collapse sidebar"
+              className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <PanelLeftClose className="w-5 h-5 hidden lg:block" />
+              <X className="w-5 h-5 lg:hidden" />
             </button>
           </div>
 
