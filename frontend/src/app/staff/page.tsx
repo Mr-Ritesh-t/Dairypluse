@@ -587,9 +587,16 @@ export default function StaffManagementPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl font-extrabold text-stone-900 tracking-tight">{selectedStaff.name}</h3>
-                      <Badge variant={selectedStaff.status === 'On Duty' ? 'emerald' : 'neutral'} dot size="sm">
-                        {selectedStaff.status}
-                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(selectedStaff)}
+                        className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        title={`Click to switch to ${selectedStaff.status === 'On Duty' ? 'Off Duty' : 'On Duty'}`}
+                      >
+                        <Badge variant={selectedStaff.status === 'On Duty' ? 'emerald' : 'neutral'} dot size="sm">
+                          {selectedStaff.status}
+                        </Badge>
+                      </button>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-stone-500">
                       <span className="font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md flex items-center gap-1 border border-teal-200/50">

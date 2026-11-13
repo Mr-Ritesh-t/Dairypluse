@@ -35,6 +35,7 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -132,6 +133,7 @@ export default function CustomerSelfServiceApp() {
   );
 
   const activeOrTodayDelivery = customerDeliveries[0] || (deliveries.length > 0 ? deliveries[0] : null);
+  const isDeliveredToday = activeOrTodayDelivery?.status === 'Delivered';
 
   const assignedDriver =
     staff.find(
@@ -600,7 +602,36 @@ export default function CustomerSelfServiceApp() {
               </a>
             </div>
 
-            {currentDriverRating ? (
+            {!isDeliveredToday ? (
+              <div className="p-3.5 bg-stone-50 rounded-xl border border-stone-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-stone-800">
+                        Delivery In Progress
+                      </span>
+                      <p className="text-[10px] text-stone-500">
+                        {activeOrTodayDelivery?.status === 'Out for Delivery' || activeOrTodayDelivery?.status === 'In Progress'
+                          ? 'Rider is on the way to your doorstep'
+                          : 'Morning doorstep slot scheduled'}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="amber" size="xs">
+                    {activeOrTodayDelivery?.status || 'Scheduled'}
+                  </Badge>
+                </div>
+                <div className="p-2.5 bg-white rounded-lg border border-stone-200/70 text-[11px] text-stone-600 flex items-start gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    <strong>Rider Review Locked:</strong> You will be able to review and rate {assignedDriver.name}&apos;s service once today&apos;s fresh milk is marked delivered to your doorstep.
+                  </p>
+                </div>
+              </div>
+            ) : currentDriverRating ? (
               <div className="p-3 bg-teal-50/70 rounded-xl border border-teal-200/80 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-amber-500">
@@ -621,7 +652,7 @@ export default function CustomerSelfServiceApp() {
                   <button
                     type="button"
                     onClick={() => setIsRateModalOpen(true)}
-                    className="text-[11px] font-bold text-teal-800 hover:text-teal-900 underline focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden rounded"
+                    className="text-[11px] font-bold text-teal-800 hover:text-teal-900 underline focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden rounded cursor-pointer"
                   >
                     Edit Review
                   </button>
@@ -640,18 +671,26 @@ export default function CustomerSelfServiceApp() {
             ) : (
               <div className="p-3 bg-[#F6F2EA] rounded-xl border border-stone-200/60 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-stone-800">
-                    Rate {assignedDriver.name}&apos;s Service
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-xs font-bold text-stone-800">
+                      Rate {assignedDriver.name}&apos;s Service
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Delivered Today ✓
                   </span>
-                  <span className="text-[10px] text-stone-500">Tap star to rate</span>
                 </div>
+                <p className="text-[11px] text-stone-500">
+                  How was your doorstep delivery today? Tap to rate:
+                </p>
                 <div className="flex items-center justify-center gap-2 py-1">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setIsRateModalOpen(true)}
-                      className="p-1 hover:scale-115 transition-transform text-stone-300 hover:text-amber-400 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden rounded-lg min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      className="p-1 hover:scale-115 transition-transform text-stone-300 hover:text-amber-400 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden rounded-lg min-w-[36px] min-h-[36px] flex items-center justify-center cursor-pointer"
                       title={`Rate ${s} stars`}
                     >
                       <Star className="w-6 h-6 text-amber-400 fill-amber-100 hover:fill-amber-400" />
@@ -661,7 +700,7 @@ export default function CustomerSelfServiceApp() {
                 <button
                   type="button"
                   onClick={() => setIsRateModalOpen(true)}
-                  className="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs min-h-[40px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
+                  className="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs min-h-[40px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden cursor-pointer"
                 >
                   <Star className="w-3.5 h-3.5 fill-white" />
                   <span>Submit Rider Review</span>
@@ -957,9 +996,9 @@ export default function CustomerSelfServiceApp() {
           </div>
         )}
 
-        {/* DRIVER RATING MODAL */}
+        {/* DRIVER RATING MODAL (Strictly locked until delivery is complete) */}
         <DriverRatingModal
-          isOpen={isRateModalOpen}
+          isOpen={isRateModalOpen && isDeliveredToday}
           onClose={() => setIsRateModalOpen(false)}
           driverName={assignedDriver.name}
           driverId={assignedDriver.id}

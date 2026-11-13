@@ -41,6 +41,7 @@ export default function DeliveryManagementPage() {
     deliveries,
     updateDeliveryStatus,
     staff,
+    updateStaff,
     assignDelivery,
     assignRouteToRider,
     addDeliveryTask,
@@ -116,6 +117,8 @@ export default function DeliveryManagementPage() {
   const [newRouteCapacity, setNewRouteCapacity] = useState('60');
   const [selectedRouteCustomerIds, setSelectedRouteCustomerIds] = useState<string[]>([]);
   const [routeCustomerSearch, setRouteCustomerSearch] = useState('');
+
+  const [fleetToast, setFleetToast] = useState<string | null>(null);
 
   const filteredCustomersForNewRoute = useMemo(() => {
     if (!routeCustomerSearch.trim()) return customers;
@@ -582,10 +585,23 @@ export default function DeliveryManagementPage() {
             subtitle="Progress per delivery partner"
             action={
               <Badge variant="success" size="xs">
-                {deliveryRiders.length} On Duty
+                {deliveryRiders.filter((r) => r.status === 'On Duty').length} / {deliveryRiders.length} On Duty
               </Badge>
             }
           >
+            {fleetToast && (
+              <div className="p-2 mb-3 bg-[#0F766E] text-white rounded-xl text-xs font-bold flex items-center justify-between shadow-xs animate-in fade-in">
+                <span>{fleetToast}</span>
+                <button
+                  type="button"
+                  onClick={() => setFleetToast(null)}
+                  className="text-teal-200 hover:text-white ml-2 text-xs font-black cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {selectedRiderFilter !== 'ALL' && (
               <div className="flex items-center justify-between p-2 mb-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-800">
                 <span>
@@ -632,9 +648,31 @@ export default function DeliveryManagementPage() {
                           </p>
                         </div>
                       </div>
-                      <Badge variant="amber" size="xs">
-                        ★ {rider.rating}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const nextStatus = rider.status === 'On Duty' ? 'Off Duty' : 'On Duty';
+                            await updateStaff(rider.id, { status: nextStatus });
+                            setFleetToast(`✓ ${rider.name} marked ${nextStatus}`);
+                            setTimeout(() => setFleetToast(null), 3000);
+                          }}
+                          className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                          title={`Click to set ${rider.name} ${rider.status === 'On Duty' ? 'Off Duty' : 'On Duty'}`}
+                        >
+                          <Badge
+                            variant={rider.status === 'On Duty' ? 'emerald' : 'neutral'}
+                            size="xs"
+                            dot
+                          >
+                            {rider.status === 'On Duty' ? 'On Duty' : 'Off Duty'}
+                          </Badge>
+                        </button>
+                        <Badge variant="amber" size="xs">
+                          ★ {rider.rating}
+                        </Badge>
+                      </div>
                     </div>
 
                     <div className="space-y-1">

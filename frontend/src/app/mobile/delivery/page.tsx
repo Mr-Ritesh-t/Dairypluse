@@ -111,24 +111,15 @@ export default function DeliveryPartnerMobileApp() {
     );
   }, [dairies, activeDairy, affiliatedDairyName]);
 
-  // Duty status state
-  const [isOnDuty, setIsOnDuty] = useState<boolean>(
-    matchedStaff ? matchedStaff.status === 'On Duty' : true
-  );
+  // Duty status state derived dynamically from staff record (controlled by dairy owner)
+  const [localDutyStatus, setLocalDutyStatus] = useState<string | null>(null);
+  const isOnDuty = (localDutyStatus ?? matchedStaff?.status ?? 'On Duty') === 'On Duty';
 
-  const toggleDutyStatus = async () => {
-    const nextStatus = !isOnDuty;
-    setIsOnDuty(nextStatus);
-    if (matchedStaff?.id) {
-      await updateStaff(matchedStaff.id, {
-        status: nextStatus ? 'On Duty' : 'Off Duty',
-      });
+  useEffect(() => {
+    if (matchedStaff?.status) {
+      setLocalDutyStatus(matchedStaff.status);
     }
-    setSyncToast(
-      nextStatus ? '🟢 You are now marked ON DUTY' : '⚪ You are now marked OFF DUTY'
-    );
-    setTimeout(() => setSyncToast(null), 3000);
-  };
+  }, [matchedStaff?.status]);
 
   // Offline Sync Hook
   const {
@@ -297,7 +288,7 @@ export default function DeliveryPartnerMobileApp() {
     setIsCheckingIn(true);
     const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     await markAttendance(riderName, matchedDairy.name, 'Morning Shift Check-in');
-    setIsOnDuty(true);
+    setLocalDutyStatus('On Duty');
     if (matchedStaff?.id) {
       updateStaff(matchedStaff.id, { status: 'On Duty' });
     }
@@ -518,6 +509,26 @@ export default function DeliveryPartnerMobileApp() {
         {/* 1. DELIVERIES TAB */}
         {navTab === 'DELIVERIES' && (
           <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto">
+            {/* Owner-controlled Duty Status Notice (Mode A: Visible status, deliveries remain accessible) */}
+            {!isOnDuty && (
+              <div className="bg-stone-100/95 border-2 border-stone-300 rounded-2xl p-3.5 shadow-2xs space-y-1.5 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-stone-500 shrink-0" />
+                    <span className="text-xs font-black text-stone-800 uppercase tracking-wider">
+                      ⚪ Currently Off Duty
+                    </span>
+                  </div>
+                  <Badge variant="neutral" size="xs">
+                    Set by Dairy Hub
+                  </Badge>
+                </div>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  You are currently marked <strong>Off Duty</strong> by <strong>{matchedDairy.name}</strong>. Your assigned delivery route remains accessible below.
+                </p>
+              </div>
+            )}
+
             {!riderShiftStatus?.attendanceMarked ? (
               /* ================= STEP 1: MORNING ATTENDANCE AT DAIRY ================= */
               <div className="space-y-3">
@@ -1743,25 +1754,22 @@ export default function DeliveryPartnerMobileApp() {
                 </div>
               </div>
 
-              {/* Duty Toggle Card */}
+              {/* Duty Status Card (Controlled by Dairy Owner) */}
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-extrabold text-stone-900 block">Duty Status</span>
                   <span className="text-[11px] text-stone-500">
-                    {isOnDuty ? 'Receiving deliveries & tracking live' : 'Offline / On Break'}
+                    {isOnDuty ? 'Active on delivery roster' : 'Marked off duty by dairy hub'}
                   </span>
                 </div>
-                <button
-                  onClick={toggleDutyStatus}
-                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer ${
-                    isOnDuty
-                      ? 'bg-[#0F766E] hover:bg-[#0D6560] text-white'
-                      : 'bg-stone-300 hover:bg-stone-400 text-stone-800'
-                  }`}
-                >
-                  <Power className="w-3.5 h-3.5" />
-                  <span>{isOnDuty ? 'On Duty' : 'Off Duty'}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant={isOnDuty ? 'emerald' : 'neutral'} dot size="sm">
+                    {isOnDuty ? 'On Duty' : 'Off Duty'}
+                  </Badge>
+                  <span className="text-[10px] text-stone-400 font-medium">
+                    (Owner set)
+                  </span>
+                </div>
               </div>
 
               {/* Rider Identity Breakdown */}
