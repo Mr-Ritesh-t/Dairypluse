@@ -32,3 +32,4 @@
 ## 5. Security & Multi-Tenancy
 - **BR-14:** Cryptographic authentication: Passwords must be hashed using salted Bcrypt (`passlib` / `bcrypt`). Sessions must issue signed HS256 JWT tokens.
 - **BR-15:** Multi-tenancy: Dairy owners must only view and modify data belonging to their registered dairy brand.
+

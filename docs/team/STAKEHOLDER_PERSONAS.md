@@ -55,3 +55,4 @@ Authentic personas representing our target users in the Maharashtra & Indian reg
 - **Name:** Vikram Deshmukh (Age 36)
 - **Role:** Head of Operations, DairyPulse Platform.
 - **Focus:** Onboarding multiple dairy brands, monitoring platform uptime, ensuring tenant database isolation, and preventing cross-dairy data leaks.
+

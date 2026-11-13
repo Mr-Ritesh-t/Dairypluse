@@ -31,3 +31,4 @@ graph LR
 2. **Environment Variables:** Verify `.env` has valid values for `SECRET_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `SUPABASE_URL`.
 3. **Automated Smoke Tests:** Execute all 43 backend tests and frontend static build (`npm run build`) with zero errors.
 4. **Rollback Plan:** Stored git tag `v1.9.4-stable` with database snapshot script available in `scripts/backup_db.py`.
+

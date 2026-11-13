@@ -24,3 +24,4 @@ Guided by the `web-perf` skill.
 - Image optimization using `next/image` with WebP/AVIF formats.
 - Avoid large heavy icon bundles; import atomic Lucide icons.
 - Avoid unnecessary external client-side analytics scripts on low-bandwidth rider mobile routes.
+

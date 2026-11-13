@@ -55,3 +55,4 @@
 - **As a** chilling plant supervisor,
 - **I want to** enter received milk liters with tested Fat and SNF percentages,
 - **So that** substandard milk is flagged immediately and farmer payout rates are calculated accurately from the rate chart.
+

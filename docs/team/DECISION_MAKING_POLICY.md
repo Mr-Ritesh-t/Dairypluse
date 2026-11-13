@@ -28,3 +28,4 @@ Before any feature ticket is converted into code, it must pass five gates:
 3. **Can it be solved with a simpler rule?** (e.g. Rule-based heuristic vs. training an unneeded neural network).
 4. **How does it perform offline?** Can riders and chilling centers still operate when cell reception drops?
 5. **What is the maintenance cost?** How many new dependencies, database columns, and failure modes does it introduce?
+

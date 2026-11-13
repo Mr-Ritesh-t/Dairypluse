@@ -48,3 +48,4 @@ sequenceDiagram
 2. **Level 2 (Technical Strategy):** If frontend and backend disagree on API contracts or database schema, the **Principal Software Architect** makes the binding decision.
 3. **Level 3 (Release Blocker):** If a defect or security vulnerability is flagged by the **QA Lead** or **Security Engineer**, the release is blocked until resolved. Convenience never overrules security.
 4. **Level 4 (Final Arbitration):** The **Chief Orchestrator** records the final decision, trade-offs, and rationale in `docs/management/DECISION_LOG.md`.
+

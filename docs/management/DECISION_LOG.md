@@ -31,3 +31,4 @@ Immutable log of architectural, security, and product trade-offs.
 - **Context:** Handling online payments for multiple independent dairies requires compliance with Indian banking regulations (RBI guidelines on Payment Aggregators).
 - **Decision:** Built order creation (`/api/v1/payments/create-order`) and signature verification (`/api/v1/payments/verify`) using Razorpay/Cashfree standard integration where funds route directly to the dairy owner's merchant account. DairyPulse does not hold consumer funds in transit.
 - **Consequences:** Zero regulatory exposure to PA-PG licensing while enabling immediate online UPI dues collection.
+

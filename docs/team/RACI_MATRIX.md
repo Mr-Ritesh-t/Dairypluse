@@ -28,3 +28,4 @@
 | **Technical Debt Management** | C | I | I | I | C | **R / A** (Debt) | I |
 | **Release Approval & Deployment** | **A** (CTO/CPO)| I | I | I | C | **R** (QA Lead) | **R** (Release) |
 | **User & Onboarding Documentation** | I | C | I | I | I | I | **R / A** (Docs) |
+

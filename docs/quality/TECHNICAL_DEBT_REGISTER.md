@@ -13,3 +13,4 @@ Managed in accordance with `ponytail-debt`.
 | **DEBT-03** | Frontend State | Local state in `DairyPulseContext.tsx` holds memory-cached copies alongside API sync. | Medium | Transition heavy queries to React Query / SWR for automated cache invalidation. |
 | **DEBT-04** | Route Optimization| Route optimization endpoint currently evaluates heuristics and simulated stop sequencing for Baramati and Baner. | Low | Integrate open-source OSRM or Google Distance Matrix API when fleet expands beyond 20 riders. |
 | **DEBT-05** | CORS Policy | Development mode allows wildcard `allow_origins=["*"]` when testing locally without proxy. | Medium | Enforce strict origin whitelisting (`dairypulse.farm`, `localhost:3000`) in production settings. |
+

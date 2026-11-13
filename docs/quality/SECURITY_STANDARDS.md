@@ -17,3 +17,4 @@
 - **HMAC Signature Verification:** All incoming Razorpay webhook payloads must be verified against `RAZORPAY_KEY_SECRET` using SHA256 HMAC before crediting accounts.
 - **Idempotency:** Payment verification endpoints must check existing transaction state; duplicate webhook events for an already `SUCCESS` order must not double-credit balances.
 - **Secrets Management:** Gateway keys, JWT secrets, and database credentials must be loaded via environment variables (`settings.py`), never hardcoded in source control.
+

@@ -45,3 +45,4 @@ graph LR
 3. **Tier 3: Urban Delivery Route Operators (100 – 1,000 Pouches/day)**
    - Independent route contractors managing delivery riders across gated residential complexes.
    - Core value: Replacing paper registers, eliminating customer payment defaults.
+

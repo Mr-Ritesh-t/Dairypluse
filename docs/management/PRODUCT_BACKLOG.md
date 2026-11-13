@@ -34,3 +34,4 @@ Prioritized using the RICE framework (Reach, Impact, Confidence, Effort).
 | **PB-10** | Hardware | **Bluetooth Milk Analyzer Serial Reader:** Stream Fat/SNF data directly from EkoMilk analyzers via Web Bluetooth API. | 45.0 | 7 Days | Backlog |
 | **PB-11** | ML | **Neural Network Demand Predictor:** Replace current rule-based day-of-week multiplier with Prophet time-series model. | 38.0 | 10 Days | Deferred (Critic Reject) |
 | **PB-12** | Marketplace| **Split-Payment Escrow Engine:** Multi-vendor payout distribution (Requires RBI/PA-PG aggregator approvals). | 32.0 | 14 Days | Roadmap Phase 3 |
+

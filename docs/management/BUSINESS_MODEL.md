@@ -30,3 +30,4 @@ DairyPulse operates as a pure B2B SaaS platform licensed to regional dairies, mi
 - **Current Unrecovered Losses (Manual Disputes & Late Dues):** 4% = **₹78,000 / month lost**.
 - **DairyPulse Growth Subscription Cost:** ₹3,999 / month.
 - **Net Monthly Value Created:** **+₹74,001 / month recovered** (Over 18x ROI on software spend).
+

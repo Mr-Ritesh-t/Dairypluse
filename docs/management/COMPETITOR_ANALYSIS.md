@@ -35,3 +35,4 @@ Comparative evaluation of existing software solutions and digital platforms oper
 1. **Full-Spectrum Dairy Integration:** Connects dock procurement directly to doorstep subscriber drops in one unified ledger.
 2. **Indian Market Ergonomics:** Native WhatsApp billing reminders, UPI deep links, and low-connectivity 5:00 AM rider operations.
 3. **Low Total Cost of Ownership:** Built on modern lightweight web standards without proprietary hardware lock-in.
+

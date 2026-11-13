@@ -30,3 +30,4 @@ graph TD
 2. **Boundary Conditions:** Time cutoffs (9:59 PM vs 10:01 PM), zero balance vs negative balance.
 3. **Data Integrity:** Ledger balance consistency (payments subtract from dues, deliveries add cost).
 4. **Failure Modes:** Malformed payload, invalid gateway signature, duplicate daily stops.
+

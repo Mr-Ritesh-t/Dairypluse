@@ -23,3 +23,4 @@ Standards enforced across all Pull Requests and code modifications.
 2. Eliminate unnecessary wrappers, intermediate helper classes, and premature abstractions.
 3. Every non-trivial branch or ledger mutation must be accompanied by a unit test.
 4. Any deferred edge-case must be explicitly logged as `shortcut: <limit>, <when to fix>`.
+

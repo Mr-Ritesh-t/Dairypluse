@@ -39,3 +39,4 @@ graph TD
 2. **Sub-2-Second Rider Stop Logging:** Enable delivery riders to confirm doorstep delivery in under 2 taps, even with zero network connectivity in apartment basements.
 3. **90%+ On-Time Payment Collection:** Drive customer bill settlement within 3 days of month-end via automated WhatsApp payment reminders and instant UPI gateway links.
 4. **Sub-150ms API Latency:** Ensure snappy desktop dashboard and mobile PWA loading across budget devices and 3G/4G networks.
+

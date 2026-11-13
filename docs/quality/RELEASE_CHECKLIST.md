@@ -25,3 +25,4 @@ Every release must complete this verification gate before deployment.
 - [ ] **Payment Reconciliation Check:** Verify that simulated gateway orders deduct the exact amount from customer ledger balances.
 - [ ] **Mobile PWA Touch Targets:** Verify rider and customer mobile buttons are easily clickable on a small screen (minimum 44x44px).
 - [ ] **Release Notes:** Document all changes in `docs/project-analysis/` and update user-facing release notes.
+

@@ -40,3 +40,4 @@ The organization is structured into seven specialized departments operating unde
 - **No Remote Origin Push:** Strictly local commits on working branches.
 - **Zero Test Failures:** Releases require 100% test pass rate across existing and newly authored test suites.
 - **Safe Database Mutations:** Guarded by `accidental-data-loss-prevention`.
+

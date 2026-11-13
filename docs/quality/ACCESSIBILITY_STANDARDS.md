@@ -15,3 +15,4 @@ Guided by the `impeccable` skill.
 1. **Keyboard Navigation:** Full tab-order navigation across all tables, modal dialogs, and date pickers.
 2. **Focus Indicators:** Explicit visible focus rings (`focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:outline-hidden`) on all interactive controls.
 3. **ARIA Semantic Labels:** Screen-reader friendly table headers (`scope="col"`), descriptive button titles, and `aria-live` regions for live delivery updates.
+

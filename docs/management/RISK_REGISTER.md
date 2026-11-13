@@ -14,3 +14,4 @@ Systematic tracking of business, technical, operational, and regulatory risks.
 | **RSK-04** | Operational | **Disputed 10:00 PM Pauses:** Customer claims they paused delivery via verbal phone call to delivery boy before 10:00 PM. | Medium | Medium | **HIGH** | In-app push/SMS confirmation log with immutable timestamps; customer self-service app is the source of truth. |
 | **RSK-05** | Financial | **WhatsApp Business API Messaging Costs:** Large broadcast volumes inflating messaging expenses. | Medium | Low | **MEDIUM** | Offer free browser-based `wa.me` deep links for smaller dairies; reserve Cloud API templates for Enterprise tier. |
 | **RSK-06** | Performance | **Morning 05:30 AM Peak Sync Spikes:** All riders across Pune syncing routes simultaneously causing backend slowdown. | High | Medium | **HIGH** | Redis query caching on static routes, connection pooling, and optimized lightweight JSON responses. |
+
