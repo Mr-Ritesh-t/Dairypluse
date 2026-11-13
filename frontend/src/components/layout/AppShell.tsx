@@ -8,7 +8,6 @@ import { ToastProvider } from '@/context/ToastContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNavbar } from '@/components/layout/TopNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
-import { Footer } from '@/components/layout/Footer';
 import { ModalContainer } from '@/components/modals/ModalContainer';
 import { NewCustomerOwnerAlert } from '@/components/notifications/NewCustomerOwnerAlert';
 import { Loader2 } from 'lucide-react';
@@ -131,7 +130,6 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 sm:pb-8">
           {children}
         </main>
-        <Footer />
       </div>
       <MobileBottomNav onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <ModalContainer />

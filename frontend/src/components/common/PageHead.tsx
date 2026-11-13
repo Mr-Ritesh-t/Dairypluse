@@ -30,3 +30,4 @@ export function PageHead({ title, description }: PageHeadProps) {
     </>
   );
 }
+
