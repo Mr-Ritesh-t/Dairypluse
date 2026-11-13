@@ -19,8 +19,6 @@ import {
   MapPin,
   Sparkles,
   Building2,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 
@@ -72,10 +70,8 @@ export function Sidebar({
         <div className="flex flex-col">
           {/* Brand Logo & Name Header */}
           <div
-            className={`pt-4 pb-3 border-b border-[#24211E] flex transition-all duration-300 ${
-              isOpen
-                ? 'px-5 items-center justify-between'
-                : 'px-2 flex-col items-center justify-center gap-2'
+            className={`pt-5 pb-4 border-b border-[#24211E] flex items-center transition-all duration-300 ${
+              isOpen ? 'px-5 justify-between' : 'px-2 justify-center'
             }`}
           >
             <Link
@@ -84,7 +80,7 @@ export function Sidebar({
               className={`flex items-center group cursor-pointer focus:outline-hidden ${
                 isOpen ? 'gap-3 min-w-0' : 'justify-center'
               }`}
-              title={isOpen ? 'DairyPulse Hub' : 'DairyPulse Hub (Click to open dashboard)'}
+              title="DairyPulse Hub"
             >
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1 shadow-md border border-stone-200 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-150">
                 <Image
@@ -111,27 +107,16 @@ export function Sidebar({
               )}
             </Link>
 
-            {/* Collapse toggle button */}
-            {isOpen ? (
+            {/* Mobile-only close button for overlay drawer */}
+            {isOpen && (
               <button
                 type="button"
-                onClick={onToggle || onClose}
-                aria-label="Collapse Sidebar"
-                title="Collapse sidebar"
-                className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+                onClick={onClose}
+                aria-label="Close sidebar"
+                title="Close sidebar"
+                className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer shrink-0 ml-1 lg:hidden"
               >
-                <PanelLeftClose className="w-5 h-5 hidden lg:block" />
-                <X className="w-5 h-5 lg:hidden" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onToggle}
-                aria-label="Expand Sidebar"
-                title="Expand sidebar"
-                className="hidden lg:flex p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
-              >
-                <PanelLeftOpen className="w-4 h-4 text-stone-400 hover:text-teal-300" />
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>
@@ -214,11 +199,10 @@ export function Sidebar({
             </div>
           ) : (
             <div
-              className="w-11 h-11 rounded-xl bg-[#1E1C1A] border border-[#2B2825] flex items-center justify-center text-teal-300 hover:text-white hover:border-teal-700/60 transition-colors relative cursor-pointer group shadow-xs"
-              onClick={onToggle}
-              title={`Active Plant: ${activeDairy?.name || 'DairyPulse HQ'} (Click to expand sidebar)`}
+              className="w-11 h-11 rounded-xl bg-[#1E1C1A] border border-[#2B2825] flex items-center justify-center text-teal-300 relative group shadow-xs"
+              title={`Active Plant: ${activeDairy?.name || 'DairyPulse HQ'}`}
             >
-              <Building2 className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
+              <Building2 className="w-5 h-5 text-teal-400 group-hover:scale-105 transition-transform" />
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#151413] animate-pulse" />
             </div>
           )}
