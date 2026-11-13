@@ -1394,6 +1394,8 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       customerPhone: taskData.customerPhone,
       address: taskData.address,
       area: taskData.area,
+      route: taskData.route,
+      dairyName: taskData.dairyName || activeDairy?.name,
       productVariant: taskData.productVariant,
       quantityLiters: taskData.quantityLiters,
       slot: taskData.slot,

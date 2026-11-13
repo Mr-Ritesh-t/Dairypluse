@@ -2302,6 +2302,44 @@ def schedule_extra_milk(sub_id: str, req: ExtraMilkRequest, db: Session = Depend
 
     cost = req.extra_liters * (sub.unit_price or 62.0)
 
+    # Look up customer for contact & location details
+    customer = None
+    if sub.customer_id:
+        customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+    if not customer and sub.customer_name:
+        customer = db.query(Customer).filter(Customer.name.ilike(sub.customer_name.strip())).first()
+
+    count = db.query(DeliveryTask).count()
+    task_num = f"DEL-2026-{str(count + 1).zfill(3)}"
+
+    assigned_rider = "Rahul Deshmukh"
+    if customer and customer.route:
+        route_obj = db.query(Route).filter(Route.name == customer.route).first()
+        if route_obj and route_obj.assigned_rider:
+            assigned_rider = route_obj.assigned_rider
+
+    new_task = DeliveryTask(
+        delivery_number=task_num,
+        customer_name=sub.customer_name,
+        customer_phone=customer.phone if customer else "+91 94230 77812",
+        address=customer.address if customer else "Doorstep delivery address",
+        area=customer.area if customer else "Baner",
+        route=customer.route if customer else None,
+        dairy_name=sub.dairy_name or (customer.dairy_name if customer else "DairyPulse Farm HQ"),
+        product_variant=req.variant or sub.product_variant,
+        quantity_liters=req.extra_liters,
+        slot=sub.time_slot or "Morning (6:00 AM - 7:30 AM)",
+        assigned_rider=assigned_rider,
+        sequence_order=count + 1,
+        delivery_date=req.date,
+        is_extra_order=True,
+        status="Pending",
+        notes=req.notes or f"Customer extra milk request (+{req.extra_liters}L {req.variant or sub.product_variant})",
+    )
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+
     return {
         "success": True,
         "subscription_id": sub.id,
@@ -2310,6 +2348,8 @@ def schedule_extra_milk(sub_id: str, req: ExtraMilkRequest, db: Session = Depend
         "extra_liters": req.extra_liters,
         "variant": req.variant or sub.product_variant,
         "added_cost": cost,
+        "task_id": new_task.id,
+        "task_number": new_task.delivery_number,
         "message": f"Scheduled +{req.extra_liters}L extra {req.variant or sub.product_variant} on {req.date}. Rider manifest updated.",
     }
 

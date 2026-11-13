@@ -774,6 +774,8 @@ export async function postDeliveryTaskApi(data: {
   customerPhone: string;
   address: string;
   area: string;
+  route?: string;
+  dairyName?: string;
   productVariant: string;
   quantityLiters: number;
   slot?: string;
@@ -792,6 +794,8 @@ export async function postDeliveryTaskApi(data: {
         customer_phone: data.customerPhone,
         address: data.address,
         area: data.area,
+        route: data.route,
+        dairy_name: data.dairyName,
         product_variant: data.productVariant,
         quantity_liters: data.quantityLiters,
         slot: data.slot || 'Morning',
@@ -811,6 +815,8 @@ export async function postDeliveryTaskApi(data: {
       customerPhone: d.customer_phone,
       address: d.address,
       area: d.area,
+      route: d.route,
+      dairyName: d.dairy_name,
       productVariant: d.product_variant,
       quantityLiters: d.quantity_liters,
       slot: d.slot,
@@ -818,6 +824,8 @@ export async function postDeliveryTaskApi(data: {
       status: d.status,
       failedReason: d.failed_reason,
       deliveredAt: d.delivered_at,
+      deliveryDate: d.delivery_date,
+      isExtraOrder: d.is_extra_order,
       notes: d.notes,
     };
   } catch (err) {
