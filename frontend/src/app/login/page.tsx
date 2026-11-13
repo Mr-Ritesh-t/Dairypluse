@@ -74,10 +74,20 @@ export default function LoginPage() {
   const [selectedDairyName, setSelectedDairyName] = useState(dairies[0]?.name || '');
   const [dairySearch, setDairySearch] = useState('');
 
-  // Keep selectedDairyName synchronized with available dairies list
+  // Keep selectedDairyName synchronized with available dairies list and clear stale offline data
   React.useEffect(() => {
     refreshDairies();
-  }, []);
+    if (typeof window !== 'undefined' && !user) {
+      try {
+        localStorage.removeItem('dairypulse_staff');
+        localStorage.removeItem('dairypulse_registered_dairies');
+        localStorage.removeItem('dairypulse_routes');
+        localStorage.removeItem('dairypulse_salary_payments');
+      } catch (e) {
+        console.warn('LocalStorage cleanup warning:', e);
+      }
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (dairies && dairies.length > 0) {

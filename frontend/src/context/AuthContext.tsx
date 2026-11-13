@@ -159,11 +159,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { success: true, user: authenticatedUser };
         }
       } catch (apiErr: any) {
-        // If password was specifically rejected by backend (401), fail immediately
-        if (apiErr.status === 401) {
+        // If backend explicitly rejected (401 incorrect password, 404 account not found, or 400), fail immediately
+        if (apiErr.status === 401 || apiErr.status === 404 || apiErr.status === 400) {
           throw apiErr;
         }
-        // If 404 or backend network failure, proceed to local storage fallback
+        // Only if network failed entirely (backend server offline / unreachable) proceed to local fallback
       }
 
       // 2. Local Fallback for DELIVERY / RIDER role
