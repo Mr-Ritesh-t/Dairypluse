@@ -20,6 +20,7 @@ import {
   Sparkles,
   Building2,
   PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 
@@ -61,59 +62,87 @@ export function Sidebar({
       )}
 
       <aside
-        className={`w-64 bg-[#151413] text-stone-300 border-r border-[#262320] flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`bg-[#151413] text-stone-300 border-r border-[#262320] flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${
+          isOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'
         }`}
         data-purpose="main-sidebar"
         aria-label="Main Sidebar"
       >
         {/* Top Header & Navigation */}
         <div className="flex flex-col">
-          {/* Brand Logo & Name */}
-          <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-[#24211E]">
+          {/* Brand Logo & Name Header */}
+          <div
+            className={`pt-4 pb-3 border-b border-[#24211E] flex transition-all duration-300 ${
+              isOpen
+                ? 'px-5 items-center justify-between'
+                : 'px-2 flex-col items-center justify-center gap-2'
+            }`}
+          >
             <Link
               href="/"
               onClick={onClose}
-              className="flex items-center gap-3 group cursor-pointer focus:outline-hidden"
-              title="DairyPulse Hub"
+              className={`flex items-center group cursor-pointer focus:outline-hidden ${
+                isOpen ? 'gap-3 min-w-0' : 'justify-center'
+              }`}
+              title={isOpen ? 'DairyPulse Hub' : 'DairyPulse Hub (Click to open dashboard)'}
             >
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1 shadow-md border border-stone-200 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-150">
                 <Image
                   src="/logo.png"
-                  alt="DairyPulse"
+                  alt="DairyPulse Logo"
                   width={36}
                   height={36}
                   className="w-full h-full object-contain"
                   priority
                 />
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg font-black tracking-tight text-white leading-none">
-                    Dairy<span className="text-[#2DD4BF]">Pulse</span>
+
+              {isOpen && (
+                <div className="flex flex-col min-w-0 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-black tracking-tight text-white leading-none truncate">
+                      Dairy<span className="text-[#2DD4BF]">Pulse</span>
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-stone-400 font-semibold tracking-wider uppercase mt-1 truncate">
+                    Farm Operations
                   </span>
                 </div>
-                <span className="text-[10px] text-stone-400 font-semibold tracking-wider uppercase mt-1">
-                  Farm Operations
-                </span>
-              </div>
+              )}
             </Link>
 
-            {/* Close / Collapse button */}
-            <button
-              type="button"
-              onClick={onToggle || onClose}
-              aria-label={isOpen ? 'Collapse Sidebar' : 'Open Sidebar'}
-              title="Collapse sidebar"
-              className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
-            >
-              <PanelLeftClose className="w-5 h-5 hidden lg:block" />
-              <X className="w-5 h-5 lg:hidden" />
-            </button>
+            {/* Collapse toggle button */}
+            {isOpen ? (
+              <button
+                type="button"
+                onClick={onToggle || onClose}
+                aria-label="Collapse Sidebar"
+                title="Collapse sidebar"
+                className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+              >
+                <PanelLeftClose className="w-5 h-5 hidden lg:block" />
+                <X className="w-5 h-5 lg:hidden" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-label="Expand Sidebar"
+                title="Expand sidebar"
+                className="hidden lg:flex p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
+              >
+                <PanelLeftOpen className="w-4 h-4 text-stone-400 hover:text-teal-300" />
+              </button>
+            )}
           </div>
 
-          {/* Navigation Items */}
-          <nav aria-label="Sidebar Menu" className="mt-4 px-3 space-y-1">
+          {/* Navigation Items (Icon rail when closed, full menu when open) */}
+          <nav
+            aria-label="Sidebar Menu"
+            className={`mt-4 space-y-1.5 transition-all duration-300 ${
+              isOpen ? 'px-3' : 'px-2 flex flex-col items-center'
+            }`}
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -122,20 +151,31 @@ export function Sidebar({
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-colors duration-150 relative ${
+                  title={item.label}
+                  className={`group flex items-center rounded-xl transition-all duration-150 relative cursor-pointer ${
+                    isOpen
+                      ? 'gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-medium w-full'
+                      : 'justify-center w-11 h-11'
+                  } ${
                     isActive
-                      ? 'bg-[#0F766E] text-white font-bold shadow-xs'
+                      ? 'bg-[#0F766E] text-white font-bold shadow-md ring-1 ring-teal-500/40'
                       : 'text-stone-300 hover:text-white hover:bg-[#201D1B]'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors ${
+                    className={`shrink-0 transition-transform group-hover:scale-110 ${
+                      isOpen ? 'w-4 h-4' : 'w-5 h-5'
+                    } ${
                       isActive ? 'text-white' : 'text-stone-400 group-hover:text-stone-200'
                     }`}
                   />
-                  <span className="truncate">{item.label}</span>
-                  {isActive && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-200" />
+                  {isOpen && (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      {isActive && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-200" />
+                      )}
+                    </>
                   )}
                 </Link>
               );
@@ -144,32 +184,48 @@ export function Sidebar({
         </div>
 
         {/* Bottom Farm Status Panel */}
-        <div className="p-3.5 mt-4">
-          <div className="rounded-2xl bg-[#1E1C1A] border border-[#2B2825] p-3.5 relative overflow-hidden">
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-900/60 border border-teal-700/60 flex items-center justify-center text-teal-300 shrink-0">
-                <Building2 className="w-4 h-4" />
+        <div
+          className={`mt-4 transition-all duration-300 ${
+            isOpen ? 'p-3.5' : 'p-2 flex flex-col items-center mb-2'
+          }`}
+        >
+          {isOpen ? (
+            <div className="rounded-2xl bg-[#1E1C1A] border border-[#2B2825] p-3.5 relative overflow-hidden">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-teal-900/60 border border-teal-700/60 flex items-center justify-center text-teal-300 shrink-0">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 block">
+                    Active Plant
+                  </span>
+                  <span className="text-xs font-bold text-white truncate block">
+                    {activeDairy?.name || 'DairyPulse HQ'}
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 block">
-                  Active Plant
+              <div className="flex items-center justify-between pt-2 border-t border-[#2B2825] text-[11px] text-stone-400 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Dispatch
                 </span>
-                <span className="text-xs font-bold text-white truncate block">
-                  {activeDairy?.name || 'DairyPulse HQ'}
-                </span>
+                <span className="text-stone-400 font-mono text-[10px]">v2.4</span>
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-[#2B2825] text-[11px] text-stone-400 font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live Dispatch
-              </span>
-              <span className="text-stone-400 font-mono text-[10px]">v2.4</span>
+          ) : (
+            <div
+              className="w-11 h-11 rounded-xl bg-[#1E1C1A] border border-[#2B2825] flex items-center justify-center text-teal-300 hover:text-white hover:border-teal-700/60 transition-colors relative cursor-pointer group shadow-xs"
+              onClick={onToggle}
+              title={`Active Plant: ${activeDairy?.name || 'DairyPulse HQ'} (Click to expand sidebar)`}
+            >
+              <Building2 className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#151413] animate-pulse" />
             </div>
-          </div>
+          )}
         </div>
       </aside>
     </>
   );
 }
+
 export default Sidebar;

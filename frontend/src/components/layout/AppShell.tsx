@@ -152,7 +152,7 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
       />
       <div
         className={`flex-1 ${
-          sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
+          sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
         } flex flex-col min-w-0 transition-all duration-300 ease-in-out w-full overflow-x-clip`}
       >
         <TopNavbar
