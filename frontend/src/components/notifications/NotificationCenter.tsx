@@ -17,7 +17,6 @@ import {
   ExternalLink,
   Volume2,
   VolumeX,
-  Play,
   RotateCw,
   UserPlus,
 } from 'lucide-react';
@@ -27,7 +26,6 @@ import {
   markNotificationReadApi,
   markAllNotificationsReadApi,
   clearReadNotificationsApi,
-  simulateNotificationEventApi,
 } from '@/lib/api';
 import Link from 'next/link';
 
@@ -47,7 +45,6 @@ export function NotificationCenter({
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | NotificationCategory>('ALL');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [simMenuOpen, setSimMenuOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Load notifications from API
@@ -113,37 +110,6 @@ export function NotificationCenter({
   const handleClearRead = async () => {
     setNotifications((prev) => prev.filter((n) => !n.is_read));
     await clearReadNotificationsApi();
-  };
-
-  const handleSimulateEvent = async (type: 'SKIP' | 'STOCK' | 'ROUTE' | 'ORDER') => {
-    setSimMenuOpen(false);
-    const res = await simulateNotificationEventApi(type);
-    if (res && res.created_notification) {
-      setNotifications((prev) => [res.created_notification, ...prev]);
-      const newCount = unreadCount + 1;
-      setUnreadCount(newCount);
-      if (onUnreadCountChange) onUnreadCountChange(newCount);
-
-      // Play soft web audio beep if sound enabled
-      if (soundEnabled && typeof window !== 'undefined' && 'AudioContext' in window) {
-        try {
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-          gain.gain.setValueAtTime(0.12, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.22);
-        } catch {
-          // Audio not allowed without prior user interaction
-        }
-      }
-    }
   };
 
   const filtered = notifications.filter((n) => {
@@ -233,75 +199,30 @@ export function NotificationCenter({
       </div>
 
       {/* Action Sub-Bar */}
-      <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-600">
-        <div className="flex items-center gap-2">
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              className="flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 transition text-[11px]"
-            >
-              <CheckCheck className="w-3.5 h-3.5" />
-              <span>Mark all read</span>
-            </button>
-          )}
-          {notifications.some((n) => n.is_read) && (
-            <button
-              onClick={handleClearRead}
-              className="flex items-center gap-1 font-semibold text-slate-400 hover:text-rose-600 transition text-[11px]"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Clear read</span>
-            </button>
-          )}
+      {(unreadCount > 0 || notifications.some((n) => n.is_read)) && (
+        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 transition text-[11px] cursor-pointer"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Mark all read</span>
+              </button>
+            )}
+            {notifications.some((n) => n.is_read) && (
+              <button
+                onClick={handleClearRead}
+                className="flex items-center gap-1 font-semibold text-slate-400 hover:text-rose-600 transition text-[11px] cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Clear read</span>
+              </button>
+            )}
+          </div>
         </div>
-
-        {/* Demo Simulator Trigger */}
-        <div className="relative">
-          <button
-            onClick={() => setSimMenuOpen(!simMenuOpen)}
-            className="flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg text-[10px] transition"
-          >
-            <Play className="w-3 h-3 fill-indigo-600" />
-            <span>Simulate Live Event</span>
-          </button>
-
-          {simMenuOpen && (
-            <div className="absolute right-0 mt-1 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-left text-xs animate-in fade-in duration-100">
-              <span className="block px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Trigger Real-Time Demo
-              </span>
-              <button
-                onClick={() => handleSimulateEvent('SKIP')}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-              >
-                <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                <span>Customer Skipped Tomorrow</span>
-              </button>
-              <button
-                onClick={() => handleSimulateEvent('STOCK')}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-              >
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                <span>Critical Stock Warning</span>
-              </button>
-              <button
-                onClick={() => handleSimulateEvent('ORDER')}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-              >
-                <CreditCard className="w-3.5 h-3.5 text-amber-600" />
-                <span>Commercial Bulk Order</span>
-              </button>
-              <button
-                onClick={() => handleSimulateEvent('ROUTE')}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-medium"
-              >
-                <Truck className="w-3.5 h-3.5 text-blue-600" />
-                <span>Evening Dispatch Started</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Category Filter Chips */}
       <div className="flex items-center gap-1 px-4 py-2 bg-white border-b border-slate-100 overflow-x-auto text-[11px]">
