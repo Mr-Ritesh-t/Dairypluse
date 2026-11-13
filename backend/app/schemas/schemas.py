@@ -62,6 +62,7 @@ class CustomerBase(BaseModel):
     longitude: Optional[float] = None
     preferred_time: Optional[str] = "6:00 AM - 7:30 AM"
     balance: float = 0.0
+    billing_type: Optional[str] = "POSTPAID"  # POSTPAID, PREPAID
     status: str = "Active"
 
 class CustomerCreate(CustomerBase):
@@ -84,6 +85,7 @@ class CustomerUpdate(BaseModel):
     longitude: Optional[float] = None
     preferred_time: Optional[str] = None
     balance: Optional[float] = None
+    billing_type: Optional[str] = None
 
 class SubscriptionCreate(BaseModel):
     customer_id: str
@@ -515,17 +517,20 @@ class RouteOptimizationResponse(BaseModel):
 class SkipDeliveryRequest(BaseModel):
     skip_date: str
     reason: Optional[str] = "Out of town / Personal"
+    is_admin_override: Optional[bool] = False
 
 class ModifyQuantityRequest(BaseModel):
     new_quantity_liters: float
     effective_date: str
     reason: Optional[str] = None
+    is_admin_override: Optional[bool] = False
 
 class ExtraMilkRequest(BaseModel):
     extra_liters: float
     date: str
     variant: Optional[str] = "Cow Milk"
     notes: Optional[str] = None
+    is_admin_override: Optional[bool] = False
 
 class CustomerInsightItem(BaseModel):
     id: str
@@ -736,3 +741,45 @@ class OwnerCustomerAlertResponse(BaseModel):
     area: str
     route: Optional[str] = None
     dairy_name: Optional[str] = "Amrut Dairy Farm"
+
+# ----------------- ONLINE PAYMENT GATEWAY SCHEMAS -----------------
+class PaymentOrderCreateRequest(BaseModel):
+    customer_id: str
+    amount: float
+    invoice_id: Optional[str] = None
+    dairy_name: Optional[str] = "Amrut Dairy Farm"
+    notes: Optional[str] = None
+
+class PaymentOrderResponse(BaseModel):
+    order_id: str
+    amount: float
+    currency: str = "INR"
+    key_id: str = "rzp_test_dairypulse2026"
+    customer_id: str
+    customer_name: str
+    customer_phone: str
+    dairy_name: str
+    invoice_id: Optional[str] = None
+    status: str = "PENDING"
+
+class PaymentVerifyRequest(BaseModel):
+    order_id: str
+    payment_id: str
+    signature: Optional[str] = None
+    payment_method: Optional[str] = "UPI"
+    notes: Optional[str] = None
+
+class PaymentTransactionResponse(BaseModel):
+    id: str
+    customer_id: str
+    invoice_id: Optional[str] = None
+    gateway_order_id: str
+    gateway_payment_id: Optional[str] = None
+    amount: float
+    currency: str
+    status: str
+    payment_method: Optional[str] = None
+    dairy_name: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[Any] = None
+    model_config = ConfigDict(from_attributes=True)

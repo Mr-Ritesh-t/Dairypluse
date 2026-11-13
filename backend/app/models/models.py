@@ -84,6 +84,7 @@ class Customer(Base):
     status = Column(String, default="Active")  # Active, Paused, Inactive
     joined_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
     last_reminder_sent = Column(String, nullable=True)  # YYYY-MM-DD HH:MM
+    billing_type = Column(String, default="POSTPAID", nullable=True)  # POSTPAID, PREPAID
 
     subscriptions = relationship("Subscription", back_populates="customer")
     orders = relationship("Order", back_populates="customer")
@@ -310,4 +311,21 @@ class StaffSalaryPayment(Base):
     payment_mode = Column(String, default="UPI")  # UPI, Cash, Bank Transfer
     reference_id = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class PaymentTransaction(Base):
+    __tablename__ = "payment_transactions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    customer_id = Column(String, ForeignKey("customers.id"), nullable=False)
+    invoice_id = Column(String, ForeignKey("invoices.id"), nullable=True)
+    gateway_order_id = Column(String, unique=True, nullable=False)
+    gateway_payment_id = Column(String, unique=True, nullable=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String, default="INR")
+    status = Column(String, default="PENDING")  # PENDING, SUCCESS, FAILED, REFUNDED
+    payment_method = Column(String, nullable=True)  # UPI, CARD, NETBANKING, CASH
+    gateway_signature = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

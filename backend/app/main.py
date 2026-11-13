@@ -67,8 +67,11 @@ def ensure_db_columns():
 
             # Check customers columns
             cust_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(customers)").fetchall()]
-            if cust_cols and "last_reminder_sent" not in cust_cols:
-                conn.exec_driver_sql("ALTER TABLE customers ADD COLUMN last_reminder_sent VARCHAR")
+            if cust_cols:
+                if "last_reminder_sent" not in cust_cols:
+                    conn.exec_driver_sql("ALTER TABLE customers ADD COLUMN last_reminder_sent VARCHAR")
+                if "billing_type" not in cust_cols:
+                    conn.exec_driver_sql("ALTER TABLE customers ADD COLUMN billing_type VARCHAR DEFAULT 'POSTPAID'")
 
             # Check dairies columns
             dairy_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(dairies)").fetchall()]

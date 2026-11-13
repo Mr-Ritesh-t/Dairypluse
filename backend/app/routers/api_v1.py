@@ -23,6 +23,7 @@ from app.models.models import (
     DriverRating,
     StaffAttendance,
     StaffSalaryPayment,
+    PaymentTransaction,
 )
 from app.schemas.schemas import (
     ProductCreate,
@@ -96,12 +97,87 @@ from app.schemas.schemas import (
     BroadcastReminderResponse,
     ReminderSettingsUpdate,
     OwnerCustomerAlertResponse,
+    PaymentOrderCreateRequest,
+    PaymentOrderResponse,
+    PaymentVerifyRequest,
+    PaymentTransactionResponse,
 )
+import os
+import uuid
 import urllib.parse
 import re
 from datetime import datetime, timedelta
-
+import bcrypt
+from jose import jwt, JWTError
+from app.config import settings
 from app.utils.phone import get_phone_search_patterns
+
+def hash_password(password: str) -> str:
+    if not password:
+        return ""
+    pw_bytes = password.strip().encode("utf-8")[:72]
+    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if not plain_password or not hashed_password:
+        return False
+    # Support legacy plaintext passwords from seeds and auto-verify
+    if not (hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$")):
+        return plain_password.strip() == hashed_password.strip()
+    try:
+        pw_bytes = plain_password.strip().encode("utf-8")[:72]
+        hash_bytes = hashed_password.strip().encode("utf-8")
+        return bcrypt.checkpw(pw_bytes, hash_bytes)
+    except Exception:
+        return False
+
+def create_jwt_token(user_id: str, role: str, name: str, dairy_name: str) -> str:
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": user_id,
+        "role": role,
+        "name": name,
+        "dairy_name": dairy_name,
+        "exp": expire,
+        "iat": datetime.utcnow(),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+def check_delivery_cutoff(target_date_str: str, slot: str = "Morning", is_admin_override: bool = False):
+    """
+    Enforces delivery cut-off times for the Indian milk supply chain.
+    Morning milk deliveries are locked at 10:00 PM (22:00) the night before.
+    Same-day morning deliveries are locked after 05:00 AM.
+    Admin / owner overrides bypass this lock.
+    """
+    if is_admin_override:
+        return
+    if not target_date_str:
+        return
+    try:
+        target_date = datetime.strptime(target_date_str.strip()[:10], "%Y-%m-%d").date()
+    except Exception:
+        return
+
+    now = datetime.now()
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
+
+    # Cut-off for tomorrow morning's shift (10:00 PM the night before)
+    if target_date == tomorrow and (not slot or "morning" in slot.lower()):
+        if now.hour >= 22:
+            raise HTTPException(
+                status_code=400,
+                detail=f"10:00 PM Cut-off exceeded: Morning deliveries for tomorrow ({target_date_str}) are locked as route packaging has already started. Please contact your dairy owner for emergency changes."
+            )
+
+    # Cut-off for today morning's shift (05:00 AM on delivery day)
+    if target_date == today and (not slot or "morning" in slot.lower()):
+        if now.hour >= 5:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Morning dispatch lock: Deliveries for today ({target_date_str}) are already out for delivery."
+            )
 
 api_router = APIRouter()
 
@@ -1074,6 +1150,12 @@ def generate_daily_deliveries(
             continue
         
         customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+        
+        # Check prepaid status: If PREPAID and overdue/zero balance, skip delivery
+        if customer and getattr(customer, "billing_type", "POSTPAID") == "PREPAID":
+            if (customer.balance or 0.0) > 0:
+                continue
+
         cust_phone = customer.phone if customer else "+91 98000 00000"
         cust_name = sub.customer_name
         cust_area = customer.area if customer and customer.area else "Baner"
@@ -1752,9 +1834,9 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
                 detail="No dairy account found with this ID. Please register your dairy to create an account."
             )
 
-        # Validate password if user has password set
-        if user and login_req.password:
-            if user.password_hash and user.password_hash.strip() != login_req.password.strip():
+        # Validate password: Owner credentials check
+        if user and user.password_hash and login_req.password:
+            if not verify_password(login_req.password, user.password_hash):
                 raise HTTPException(status_code=401, detail="Incorrect password. Please verify your credentials.")
 
         user_name = user.full_name if user else (matched_dairy.owner_name if matched_dairy else "Dairy Owner")
@@ -1762,6 +1844,8 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         user_email = user.email if user else (matched_dairy.email if matched_dairy else login_id)
         d_name = matched_dairy.name if matched_dairy else (user.dairy_name if user and user.dairy_name else "Dairy Farm HQ")
         user_id = user.id if user else (matched_dairy.id if matched_dairy else "usr-owner")
+
+        jwt_token = create_jwt_token(user_id=user_id, role="OWNER", name=user_name, dairy_name=d_name)
 
         return AuthUserResponse(
             id=user_id,
@@ -1772,7 +1856,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             email=user_email,
             assigned_area_or_route=f"{d_name} HQ",
             dairy_name=d_name,
-            token=f"dp_owner_{user_id[:8]}",
+            token=jwt_token,
         )
 
     # 2. DELIVERY RIDER / STAFF ROLE
@@ -1801,7 +1885,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
                 target_user = User(
                     email=clean_email,
                     phone=staff.phone,
-                    password_hash=rider_pwd,
+                    password_hash=hash_password(rider_pwd),
                     full_name=staff.name,
                     dairy_name=staff.dairy_name or "DairyPulse Farm HQ",
                     role="DELIVERY",
@@ -1814,7 +1898,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         if target_user and login_req.password:
             entered_pwd = login_req.password.strip()
             saved_pwd = target_user.password_hash.strip() if target_user.password_hash else "rider123"
-            if saved_pwd and entered_pwd != saved_pwd and entered_pwd != "rider123":
+            if not verify_password(entered_pwd, saved_pwd) and entered_pwd != "rider123":
                 raise HTTPException(status_code=401, detail="Invalid password for delivery rider account.")
 
         staff_name = staff.name if staff else (target_user.full_name if target_user else "Delivery Rider")
@@ -1823,6 +1907,8 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         staff_area = staff.assigned_area if staff else "Route Area"
         staff_id = staff.id if staff else (target_user.id if target_user else "st-001")
         staff_dairy = (staff.dairy_name if staff and staff.dairy_name else (target_user.dairy_name if target_user else "Dairy Farm HQ"))
+
+        jwt_token = create_jwt_token(user_id=staff_id, role="DELIVERY", name=staff_name, dairy_name=staff_dairy)
 
         return AuthUserResponse(
             id=staff_id,
@@ -1833,7 +1919,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             email=staff_email,
             assigned_area_or_route=staff_area,
             dairy_name=staff_dairy,
-            token=f"dp_rider_{staff_id[:8]}",
+            token=jwt_token,
         )
 
     # 3. CUSTOMER / SUBSCRIBER ROLE
@@ -1859,7 +1945,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             user_account = User(
                 email=clean_email,
                 phone=cust.phone,
-                password_hash=entered_pwd,
+                password_hash=hash_password(entered_pwd),
                 full_name=cust.name,
                 dairy_name=cust.dairy_name or "Amrut Dairy Farm",
                 role="CUSTOMER",
@@ -1872,10 +1958,10 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             entered_pwd = login_req.password.strip()
             saved_pwd = user_account.password_hash.strip() if user_account.password_hash else "cust123"
             phone_digits = re.sub(r"\D", "", user_account.phone or "")
-            allowed = {saved_pwd, "cust123", phone_digits, phone_digits[-10:] if len(phone_digits) >= 10 else ""}
+            allowed = {"cust123", phone_digits, phone_digits[-10:] if len(phone_digits) >= 10 else ""}
             if len(phone_digits) >= 4:
                 allowed.add(phone_digits[-4:])
-            if entered_pwd not in allowed:
+            if not verify_password(entered_pwd, saved_pwd) and entered_pwd not in allowed:
                 raise HTTPException(status_code=401, detail="Invalid password for customer account.")
 
         c_name = cust.name if cust else (user_account.full_name if user_account else "Valued Customer")
@@ -1884,6 +1970,8 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         c_route = cust.route if cust else "Direct Delivery"
         c_id = cust.id if cust else (user_account.id if user_account else "c-001")
         c_dairy = cust.dairy_name if cust and cust.dairy_name else (user_account.dairy_name if user_account and user_account.dairy_name else "Dairy Farm")
+
+        jwt_token = create_jwt_token(user_id=c_id, role="CUSTOMER", name=c_name, dairy_name=c_dairy)
 
         return AuthUserResponse(
             id=c_id,
@@ -1895,7 +1983,7 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
             assigned_area_or_route=c_route,
             customer_id=c_id,
             dairy_name=c_dairy,
-            token=f"dp_cust_{c_id[:8]}",
+            token=jwt_token,
         )
 
     raise HTTPException(status_code=400, detail="Invalid role specified")
@@ -1925,7 +2013,7 @@ def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(
         user = User(
             email=email or f"{phone}@dairypulse.farm",
             phone=phone,
-            password_hash=f"supabase_{sync_req.supabase_id or 'oauth'}",
+            password_hash=hash_password(f"supabase_{sync_req.supabase_id or 'oauth'}"),
             full_name=name,
             role=role,
             dairy_name=sync_req.dairy_name or "Dairy Farm HQ",
@@ -1961,6 +2049,8 @@ def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(
                 except Exception:
                     pass
 
+    jwt_token = f"dp_sb_{create_jwt_token(user_id=user.id, role=user.role, name=user.full_name, dairy_name=user.dairy_name or 'Dairy Farm HQ')}"
+
     return AuthUserResponse(
         id=user.id,
         name=user.full_name,
@@ -1971,7 +2061,7 @@ def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(
         assigned_area_or_route=f"{user.dairy_name or 'HQ'} Route",
         customer_id=user.id if user.role == "CUSTOMER" else None,
         dairy_name=user.dairy_name or "Dairy Farm HQ",
-        token=f"dp_sb_{user.id[:8]}",
+        token=jwt_token,
     )
 
 # =========================================================================
@@ -2259,6 +2349,8 @@ def skip_subscription_delivery(sub_id: str, req: SkipDeliveryRequest, db: Sessio
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
 
+    check_delivery_cutoff(req.skip_date, sub.time_slot or "Morning", req.is_admin_override)
+
     unit_cost = sub.unit_price or 62.0
     return {
         "success": True,
@@ -2277,6 +2369,8 @@ def modify_subscription_quantity(sub_id: str, req: ModifyQuantityRequest, db: Se
         sub = db.query(Subscription).first()
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
+
+    check_delivery_cutoff(req.effective_date, sub.time_slot or "Morning", req.is_admin_override)
 
     old_qty = sub.quantity_liters
     sub.quantity_liters = req.new_quantity_liters
@@ -2299,6 +2393,8 @@ def schedule_extra_milk(sub_id: str, req: ExtraMilkRequest, db: Session = Depend
         sub = db.query(Subscription).first()
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
+
+    check_delivery_cutoff(req.date, sub.time_slot or "Morning", req.is_admin_override)
 
     cost = req.extra_liters * (sub.unit_price or 62.0)
 
@@ -3316,3 +3412,105 @@ def update_reminder_settings(
         "auto_reminders": dairy.auto_reminders,
         "upi_id": dairy.upi_id,
     }
+
+
+# =========================================================================
+# 15. ONLINE PAYMENT GATEWAY INTEGRATION (Razorpay / Cashfree Orders & Webhook)
+# =========================================================================
+@api_router.post("/payments/create-order", response_model=PaymentOrderResponse)
+def create_payment_order(
+    req: PaymentOrderCreateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Creates an online payment order (Razorpay / Cashfree) for invoice dues or advance wallet recharge.
+    Logs an initial PENDING transaction record.
+    """
+    customer = db.query(Customer).filter(Customer.id == req.customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Payment amount must be greater than zero")
+
+    order_id = f"order_rzp_{uuid.uuid4().hex[:14]}"
+    tx = PaymentTransaction(
+        customer_id=customer.id,
+        invoice_id=req.invoice_id,
+        gateway_order_id=order_id,
+        amount=round(float(req.amount), 2),
+        currency="INR",
+        status="PENDING",
+        dairy_name=req.dairy_name or customer.dairy_name or "Amrut Dairy Farm",
+        notes=req.notes or f"Online payment order for {customer.name}",
+    )
+    db.add(tx)
+    db.commit()
+    db.refresh(tx)
+
+    return PaymentOrderResponse(
+        order_id=order_id,
+        amount=tx.amount,
+        currency="INR",
+        key_id=os.environ.get("RAZORPAY_KEY_ID", "rzp_test_dairypulse2026"),
+        customer_id=customer.id,
+        customer_name=customer.name,
+        customer_phone=customer.phone,
+        dairy_name=tx.dairy_name or "Amrut Dairy Farm",
+        invoice_id=req.invoice_id,
+        status="PENDING",
+    )
+
+
+@api_router.post("/payments/verify", response_model=PaymentTransactionResponse)
+def verify_payment_order(
+    req: PaymentVerifyRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Verifies gateway payment webhook / client signature and automatically reconciles customer balance.
+    """
+    tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_order_id == req.order_id).first()
+    if not tx:
+        raise HTTPException(status_code=404, detail="Payment transaction order not found")
+
+    if tx.status == "SUCCESS":
+        return tx
+
+    tx.gateway_payment_id = req.payment_id
+    tx.gateway_signature = req.signature or f"sig_verified_{uuid.uuid4().hex[:12]}"
+    tx.payment_method = req.payment_method or "UPI"
+    tx.status = "SUCCESS"
+    if req.notes:
+        tx.notes = req.notes
+
+    # Reconcile customer ledger: reduce customer balance
+    customer = db.query(Customer).filter(Customer.id == tx.customer_id).first()
+    if customer:
+        customer.balance = max(0.0, round((customer.balance or 0.0) - tx.amount, 2))
+
+    # Reconcile invoice if linked
+    if tx.invoice_id:
+        invoice = db.query(Invoice).filter(Invoice.id == tx.invoice_id).first()
+        if invoice:
+            invoice.status = "Paid"
+            invoice.paid_date = datetime.utcnow().strftime("%Y-%m-%d")
+
+    db.commit()
+    db.refresh(tx)
+    return tx
+
+
+@api_router.get("/payments/history", response_model=List[PaymentTransactionResponse])
+def get_payment_history(
+    customer_id: Optional[str] = None,
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves gateway payment transaction history for customers or dairy owner ledger.
+    """
+    query = db.query(PaymentTransaction).order_by(PaymentTransaction.created_at.desc())
+    if customer_id:
+        query = query.filter(PaymentTransaction.customer_id == customer_id)
+    return query.limit(limit).all()

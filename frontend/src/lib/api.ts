@@ -2278,3 +2278,103 @@ export async function postNotifyOwnerNewCustomerApi(customerId: string): Promise
     return null;
   }
 }
+
+// ----------------- ONLINE PAYMENT GATEWAY API -----------------
+
+export interface PaymentOrderCreatePayload {
+  customer_id: string;
+  amount: number;
+  invoice_id?: string;
+  dairy_name?: string;
+  notes?: string;
+}
+
+export interface PaymentOrderResponse {
+  order_id: string;
+  amount: number;
+  currency: string;
+  key_id: string;
+  customer_id: string;
+  customer_name: string;
+  customer_phone: string;
+  dairy_name: string;
+  invoice_id?: string;
+  status: string;
+}
+
+export interface PaymentVerifyPayload {
+  order_id: string;
+  payment_id: string;
+  signature?: string;
+  payment_method?: string;
+  notes?: string;
+}
+
+export interface PaymentTransactionRecord {
+  id: string;
+  customer_id: string;
+  invoice_id?: string;
+  gateway_order_id: string;
+  gateway_payment_id?: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method?: string;
+  dairy_name?: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export async function createPaymentOrderApi(
+  payload: PaymentOrderCreatePayload
+): Promise<PaymentOrderResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to create payment order');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error creating payment order:', err);
+    return null;
+  }
+}
+
+export async function verifyPaymentOrderApi(
+  payload: PaymentVerifyPayload
+): Promise<PaymentTransactionRecord | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to verify payment order');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error verifying payment order:', err);
+    return null;
+  }
+}
+
+export async function getPaymentHistoryApi(
+  customerId?: string,
+  limit: number = 50
+): Promise<PaymentTransactionRecord[] | null> {
+  try {
+    const params = new URLSearchParams();
+    if (customerId) params.append('customer_id', customerId);
+    if (limit) params.append('limit', limit.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/payments/history${query}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to fetch payment history');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching payment history:', err);
+    return null;
+  }
+}
