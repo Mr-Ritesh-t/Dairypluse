@@ -273,12 +273,21 @@ export default function RoutesManagementPage() {
         }
       >
         {filteredRoutes.length === 0 ? (
-          <div className="p-10 text-center bg-[#F6F2EA] border border-dashed border-stone-300 rounded-2xl">
-            <Navigation className="w-8 h-8 text-stone-400 mx-auto mb-2" />
+          <div className="p-10 text-center bg-[#F6F2EA] border border-dashed border-stone-300 rounded-2xl flex flex-col items-center justify-center gap-2">
+            <Navigation className="w-8 h-8 text-stone-400 mb-1" />
             <p className="text-xs font-bold text-stone-700">No matching routes found</p>
-            <p className="text-[11px] text-stone-500 mt-0.5 font-normal">
-              Click &apos;+ Add Route&apos; to create your first delivery zone.
+            <p className="text-[11px] text-stone-500 font-normal max-w-sm">
+              Configure your first delivery zone to assign riders and optimize daily milk drop sequences.
             </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsCreateRouteOpen(true)}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              className="mt-2"
+            >
+              + Add Route
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -491,6 +500,12 @@ export default function RoutesManagementPage() {
                       {r.name} ({r.assignedArea})
                     </option>
                   ))}
+                  {deliveryRiders.length === 0 && (
+                    <>
+                      <option value="Self / Dairy Owner">Self / Dairy Owner</option>
+                      <option value="Default Delivery Rider">Default Delivery Rider</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -576,7 +591,9 @@ export default function RoutesManagementPage() {
                 <div className="max-h-44 overflow-y-auto border border-stone-200 rounded-2xl divide-y divide-stone-100 bg-[#F6F2EA]/50">
                   {filteredCustomersForNewRoute.length === 0 ? (
                     <div className="p-4 text-center text-xs text-stone-400 font-medium">
-                      No matching customers found
+                      {customers.length === 0
+                        ? 'No customers registered yet. You can create the route now and link customers later.'
+                        : 'No matching customers found.'}
                     </div>
                   ) : (
                     filteredCustomersForNewRoute.map((cust) => {
@@ -683,6 +700,12 @@ export default function RoutesManagementPage() {
                       {r.name} ({r.assignedArea})
                     </option>
                   ))}
+                  {deliveryRiders.length === 0 && (
+                    <>
+                      <option value="Self / Dairy Owner">Self / Dairy Owner</option>
+                      <option value="Default Delivery Rider">Default Delivery Rider</option>
+                    </>
+                  )}
                 </select>
               </div>
 

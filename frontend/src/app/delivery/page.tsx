@@ -403,11 +403,23 @@ export default function DeliveryManagementPage() {
         }
       >
         {routes.length === 0 ? (
-          <div className="p-6 text-center bg-[#F6F2EA] border border-stone-200 rounded-2xl">
-            <p className="text-xs font-semibold text-stone-600">No delivery routes configured yet</p>
-            <p className="text-[11px] text-stone-400 mt-0.5 font-normal">
-              Click &apos;+ Add Route&apos; to configure delivery runs.
+          <div className="p-8 text-center bg-[#F6F2EA] border border-dashed border-stone-300 rounded-2xl flex flex-col items-center justify-center gap-2">
+            <p className="text-xs font-bold text-stone-700">No delivery routes configured yet</p>
+            <p className="text-[11px] text-stone-500 font-normal max-w-sm">
+              Click &apos;+ Add Route&apos; to configure delivery zones, assign delivery riders, and cluster doorstep drops.
             </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setNewRouteRider(defaultRiderName || 'Self / Dairy Owner');
+                setIsCreateRouteOpen(true);
+              }}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              className="mt-1"
+            >
+              + Add Route
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -1135,6 +1147,249 @@ export default function DeliveryManagementPage() {
                 </Button>
                 <Button type="submit" variant="primary" size="md" isLoading={isSubmitting}>
                   Save Coordinates
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CREATE NEW ROUTE ── */}
+      {isCreateRouteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-extrabold text-stone-900 text-sm flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#0F766E]" />
+                Configure New Delivery Route
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCreateRouteOpen(false)}
+                className="text-stone-400 hover:text-stone-600 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRouteSubmit} className="mt-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Route Code *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newRouteCode}
+                    onChange={(e) => setNewRouteCode(e.target.value)}
+                    placeholder="e.g. R-05"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs uppercase font-extrabold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Delivery Area *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newRouteArea}
+                    onChange={(e) => setNewRouteArea(e.target.value)}
+                    placeholder="e.g. Baner"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Route Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRouteName}
+                  onChange={(e) => setNewRouteName(e.target.value)}
+                  placeholder="e.g. Baner Morning Express Loop"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Assigned Rider</label>
+                <select
+                  value={newRouteRider}
+                  onChange={(e) => setNewRouteRider(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E] cursor-pointer"
+                >
+                  {deliveryRiders.map((r) => (
+                    <option key={r.id} value={r.name}>
+                      {r.name} ({r.assignedArea || 'Delivery Rider'})
+                    </option>
+                  ))}
+                  {deliveryRiders.length === 0 && (
+                    <>
+                      <option value="Self / Dairy Owner">Self / Dairy Owner</option>
+                      <option value="Default Delivery Rider">Default Delivery Rider</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Delivery Shift</label>
+                  <select
+                    value={newRouteSlot}
+                    onChange={(e) => setNewRouteSlot(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E] cursor-pointer"
+                  >
+                    <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 AM - 7:30 AM)</option>
+                    <option value="Evening (5:30 PM - 7:00 PM)">Evening (5:30 PM - 7:00 PM)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Max Capacity (L)</label>
+                  <input
+                    type="number"
+                    value={newRouteCapacity}
+                    onChange={(e) => setNewRouteCapacity(e.target.value)}
+                    min="10"
+                    max="200"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs tabular-nums focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Societies / Landmarks</label>
+                <input
+                  type="text"
+                  value={newRouteSocieties}
+                  onChange={(e) => setNewRouteSocieties(e.target.value)}
+                  placeholder="e.g. Rohan Nilay, Green Glen, Marvel Zephyr"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                />
+              </div>
+
+              {/* Customer Checklist */}
+              <div className="pt-2 border-t border-stone-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-900">
+                      Select Customers ({selectedRouteCustomerIds.length} selected)
+                    </label>
+                    <p className="text-[11px] text-stone-500">
+                      Rider will deliver to these households
+                    </p>
+                  </div>
+                  {filteredCustomersForNewRoute.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedRouteCustomerIds(filteredCustomersForNewRoute.map((c) => c.id))
+                        }
+                        className="text-[11px] font-bold text-[#0F766E] hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-stone-300">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRouteCustomerIds([])}
+                        className="text-[11px] font-bold text-stone-500 hover:underline cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {customers.length > 0 && (
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                    <input
+                      type="text"
+                      value={routeCustomerSearch}
+                      onChange={(e) => setRouteCustomerSearch(e.target.value)}
+                      placeholder="Search customers by name, phone, address..."
+                      className="w-full pl-9 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                    />
+                  </div>
+                )}
+
+                <div className="max-h-44 overflow-y-auto border border-stone-200 rounded-2xl divide-y divide-stone-100 bg-[#F6F2EA]/50">
+                  {filteredCustomersForNewRoute.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-stone-400 font-medium">
+                      {customers.length === 0
+                        ? 'No customers registered yet. You can create the route now and assign customers later.'
+                        : 'No matching customers found.'}
+                    </div>
+                  ) : (
+                    filteredCustomersForNewRoute.map((cust) => {
+                      const isSelected = selectedRouteCustomerIds.includes(cust.id);
+                      const sub = subscriptions.find(
+                        (s) => s.customerId === cust.id && s.status === 'Active'
+                      );
+                      const qty = sub?.quantityLiters || 1.5;
+                      const variant = sub?.productVariant || 'Cow Milk';
+
+                      return (
+                        <div
+                          key={cust.id}
+                          onClick={() => {
+                            setSelectedRouteCustomerIds((prev) =>
+                              isSelected ? prev.filter((id) => id !== cust.id) : [...prev, cust.id]
+                            );
+                          }}
+                          className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                            isSelected ? 'bg-teal-50/90' : 'hover:bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="w-4 h-4 rounded border-stone-300 text-[#0F766E] focus:ring-[#0F766E] shrink-0 cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-xs text-stone-900 truncate block">
+                                {cust.name}
+                              </span>
+                              <p className="text-[11px] text-stone-500 truncate flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-2.5 h-2.5 shrink-0 text-stone-400" />
+                                <span>{cust.address}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="teal" size="xs">
+                            🥛 {qty} L {variant}
+                          </Badge>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="p-2.5 bg-[#F6F2EA] rounded-xl border border-stone-200 flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-stone-900">
+                    {selectedRouteCustomerIds.length} drops ({selectedRouteCustomersTotalLiters.toFixed(1)} L)
+                  </span>
+                  <span className="font-bold text-stone-600">
+                    Capacity: {selectedRouteCustomersTotalLiters.toFixed(1)} / {newRouteCapacity || 60} L
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setIsCreateRouteOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="md" isLoading={isSubmitting}>
+                  Save Route
                 </Button>
               </div>
             </form>
