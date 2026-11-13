@@ -1,26 +1,30 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useMemo } from 'react';
 import {
   ShoppingBag,
   Plus,
   Search,
-  CheckCircle2,
-  Clock,
-  Truck,
-  Eye,
-  FileText,
   Store,
-  Building2,
   Phone,
   MapPin,
   ExternalLink,
   Users,
+  Receipt,
+  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { ShopOrder } from '@/types';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+  Tabs,
+} from '@/components/ui';
 
 export default function ShopOrdersPage() {
   const { shopOrders, customers, openModal } = useDairyPulse();
@@ -29,24 +33,30 @@ export default function ShopOrdersPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'clients'>('orders');
 
   const totalRevenue = shopOrders.reduce((acc, o) => acc + o.totalAmount, 0);
-  const totalVolume = shopOrders.reduce((acc, o) => acc + o.items.reduce((sum, item) => sum + item.quantity, 0), 0);
+  const totalVolume = shopOrders.reduce(
+    (acc, o) => acc + o.items.reduce((sum, item) => sum + item.quantity, 0),
+    0
+  );
   const pendingOrders = shopOrders.filter((o) => o.status === 'Pending').length;
 
   // Real Commercial Clients calculation
   const commercialClientsList = useMemo(() => {
-    const clientsMap = new Map<string, {
-      id?: string;
-      name: string;
-      type: string;
-      contactPerson: string;
-      phone: string;
-      area: string;
-      address: string;
-      totalVolume: number;
-      ordersCount: number;
-      totalSpent: number;
-      balance: number;
-    }>();
+    const clientsMap = new Map<
+      string,
+      {
+        id?: string;
+        name: string;
+        type: string;
+        contactPerson: string;
+        phone: string;
+        area: string;
+        address: string;
+        totalVolume: number;
+        ordersCount: number;
+        totalSpent: number;
+        balance: number;
+      }
+    >();
 
     // 1. Registered commercial customers
     customers
@@ -59,7 +69,7 @@ export default function ShopOrdersPage() {
           type: c.type === 'RESTAURANT' ? 'Restaurant / Cafe' : 'Shop / Bakery',
           contactPerson: c.name,
           phone: c.phone,
-          area: c.area || 'Pune',
+          area: c.area || 'City',
           address: c.address || '',
           totalVolume: 0,
           ordersCount: 0,
@@ -105,7 +115,11 @@ export default function ShopOrdersPage() {
   const totalCommercialClients = commercialClientsList.length;
 
   const filteredOrders = shopOrders.filter((o) => {
-    if (search && !o.shopName.toLowerCase().includes(search.toLowerCase()) && !o.orderNumber.toLowerCase().includes(search.toLowerCase())) {
+    if (
+      search &&
+      !o.shopName.toLowerCase().includes(search.toLowerCase()) &&
+      !o.orderNumber.toLowerCase().includes(search.toLowerCase())
+    ) {
       return false;
     }
     return true;
@@ -124,349 +138,333 @@ export default function ShopOrdersPage() {
     return true;
   });
 
+  const mainTabs = [
+    { id: 'orders', label: 'Commercial Orders', count: shopOrders.length, icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+    { id: 'clients', label: 'Client Directory', count: totalCommercialClients, icon: <Store className="w-3.5 h-3.5" /> },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Commercial Shop Orders" description="Manage B2B commercial dairy orders for sweets shops, bakeries, tea stalls, and wholesale distributors." />
+      <PageHead
+        title="Commercial Shop Orders"
+        description="Manage B2B commercial dairy orders for sweets shops, bakeries, tea stalls, and wholesale distributors."
+      />
 
-      {/* Page Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Shop & B2B Orders</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Bulk commercial milk orders, sweet shops, hotel contracts, and delivery dispatches.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => openModal('addCustomer')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer"
-          >
-            <Store className="w-3.5 h-3.5 text-slate-600" />
-            <span>+ Add Client</span>
-          </button>
-          <button
-            onClick={() => openModal('createOrder')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Order</span>
-          </button>
-        </div>
-      </section>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Shop & Commercial B2B Orders"
+        description="Bulk commercial milk orders, sweet shops, hotel contracts, fulfillment queues, and client accounts."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openModal('addCustomer')}
+              leftIcon={<Store className="w-3.5 h-3.5 text-stone-600" />}
+            >
+              + Add Client
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => openModal('createOrder')}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+            >
+              Create Bulk Order
+            </Button>
+          </>
+        }
+      />
 
-      {/* KPI Cards */}
+      {/* ── KPI Metrics Grid ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">B2B Volume</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{totalVolume} L</h3>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
-            {totalVolume > 0 ? 'Bulk dispatches' : 'No dispatches today'}
-          </p>
-        </div>
+        <StatCard
+          title="B2B Volume"
+          value={`${totalVolume.toLocaleString()} L`}
+          subtitle="Bulk commercial dispatches"
+          icon={<ShoppingBag className="w-5 h-5" />}
+          variant="teal"
+          trend={{ value: 'Dispatched', isPositive: true }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Revenue</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
-            ₹{totalRevenue.toLocaleString()}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
-            {totalRevenue > 0 ? 'Gross order value' : 'No revenue yet'}
-          </p>
-        </div>
+        <StatCard
+          title="Commercial Revenue"
+          value={`₹${totalRevenue.toLocaleString()}`}
+          subtitle="Gross order pipeline value"
+          icon={<Receipt className="w-5 h-5" />}
+          variant="blue"
+          trend={{ value: 'Live', isPositive: true }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Pending Orders</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
-            {pendingOrders}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
-            {pendingOrders > 0 ? 'Fulfillment queue' : 'All fulfilled'}
-          </p>
-        </div>
+        <StatCard
+          title="Fulfillment Queue"
+          value={pendingOrders}
+          subtitle="Orders awaiting dispatch"
+          icon={<Store className="w-5 h-5" />}
+          variant="amber"
+          trend={{
+            value: pendingOrders > 0 ? `${pendingOrders} Pending` : 'All Clear',
+            isPositive: pendingOrders === 0,
+          }}
+        />
 
-        <div
+        <StatCard
+          title="B2B Accounts"
+          value={totalCommercialClients}
+          subtitle="Bakeries, cafes, and halwais"
+          icon={<Users className="w-5 h-5" />}
+          variant="terracotta"
           onClick={() => setActiveTab(activeTab === 'clients' ? 'orders' : 'clients')}
-          className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-slate-300 transition cursor-pointer group"
-          title="Click to toggle Commercial Clients Directory"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">B2B Clients</p>
-            <span className="text-[9px] sm:text-[10px] font-bold text-slate-700 group-hover:underline">
-              {activeTab === 'clients' ? 'Orders' : 'Clients'}
-            </span>
-          </div>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            {totalCommercialClients} {totalCommercialClients === 1 ? 'Shop' : 'Shops'}
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {totalCommercialClients > 0 ? 'Bakeries, Halwais, Cafes' : 'No commercial shops yet'}
-          </p>
-        </div>
+        />
       </section>
 
-      {/* View Switcher Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeTab === 'orders'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Commercial Orders ({shopOrders.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('clients')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeTab === 'clients'
-              ? 'bg-purple-700 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Store className="w-3.5 h-3.5" />
-          <span>Commercial Clients Directory ({totalCommercialClients})</span>
-        </button>
+      {/* ── View Switcher Tabs ── */}
+      <div className="flex items-center justify-between border-b border-stone-200/80 pb-2">
+        <Tabs
+          tabs={mainTabs}
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as any)}
+          variant="pill"
+        />
       </div>
 
-      {/* TAB 1: COMMERCIAL ORDERS LIST */}
+      {/* ── TAB 1: COMMERCIAL ORDERS LIST & DETAIL ── */}
       {activeTab === 'orders' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Orders Table (7-8 cols) */}
-          <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Commercial Orders</h3>
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search order or shop..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <table className="w-full text-left text-xs min-w-[650px]">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="pb-2.5 font-medium">Order #</th>
-                    <th className="pb-2.5 font-medium">Shop / Client</th>
-                    <th className="pb-2.5 font-medium">Quantity</th>
-                    <th className="pb-2.5 font-medium">Total (₹)</th>
-                    <th className="pb-2.5 font-medium">Payment</th>
-                    <th className="pb-2.5 font-medium text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <ShoppingBag className="w-8 h-8 text-slate-300" />
-                          <span className="font-semibold text-sm text-slate-600">No commercial orders logged yet</span>
-                          <span className="text-xs text-slate-400">Click &apos;+ Create Shop Order&apos; above to record wholesale bulk orders</span>
-                        </div>
-                      </td>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Orders Table (8 cols) */}
+          <div className="lg:col-span-8">
+            <Card
+              title="Commercial Orders"
+              subtitle="All bulk delivery contracts and orders"
+              action={
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                  <input
+                    type="text"
+                    placeholder="Search order or shop..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                    aria-label="Search order"
+                  />
+                </div>
+              }
+            >
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-left text-xs min-w-[620px]" aria-label="Commercial Orders Table">
+                  <thead>
+                    <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                      <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Order #</th>
+                      <th scope="col" className="py-2.5 px-3 font-semibold">Shop / Buyer</th>
+                      <th scope="col" className="py-2.5 px-3 font-semibold text-center">Volume</th>
+                      <th scope="col" className="py-2.5 px-3 font-semibold">Total (₹)</th>
+                      <th scope="col" className="py-2.5 px-3 font-semibold">Payment</th>
+                      <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">Status</th>
                     </tr>
-                  ) : (
-                    filteredOrders.map((ord) => {
-                      const isSelected = selectedOrder?.id === ord.id;
-                      const totalLitres = ord.items.reduce((s, i) => s + i.quantity, 0);
-                      return (
-                        <tr
-                          key={ord.id}
-                          onClick={() => setSelectedOrder(ord)}
-                          className={`cursor-pointer transition ${
-                            isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
-                          }`}
-                        >
-                          <td className="py-3.5 font-bold text-emerald-700">{ord.orderNumber}</td>
-                          <td className="py-3.5 font-semibold text-slate-800">
-                            <div>{ord.shopName}</div>
-                            <div className="text-[10px] text-slate-400 font-normal">{ord.contactPerson}</div>
-                          </td>
-                          <td className="py-3.5 font-bold text-slate-700 tabular-nums">{totalLitres} L</td>
-                          <td className="py-3.5 font-extrabold text-slate-900 tabular-nums">
-                            ₹{ord.totalAmount.toLocaleString()}
-                          </td>
-                          <td className="py-3.5">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                ord.paymentStatus === 'Paid'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : ord.paymentStatus === 'Partial'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {ord.paymentStatus}
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-stone-400">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <ShoppingBag className="w-8 h-8 text-stone-300" />
+                            <span className="font-bold text-sm text-stone-800">No commercial orders logged yet</span>
+                            <span className="text-xs text-stone-500 font-normal">
+                              Click &apos;Create Bulk Order&apos; above to record wholesale orders
                             </span>
-                          </td>
-                          <td className="py-3.5 text-right">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                                ord.status === 'Delivered'
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : ord.status === 'Dispatched'
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrders.map((ord) => {
+                        const isSelected = selectedOrder?.id === ord.id;
+                        const totalLitres = ord.items.reduce((s, i) => s + i.quantity, 0);
+                        return (
+                          <tr
+                            key={ord.id}
+                            onClick={() => setSelectedOrder(ord)}
+                            className={`cursor-pointer transition-colors ${
+                              isSelected ? 'bg-teal-50/70' : 'hover:bg-stone-50/80'
+                            }`}
+                          >
+                            <td className="py-3 px-3 font-mono font-bold text-[#0F766E]">{ord.orderNumber}</td>
+                            <td className="py-3 px-3 font-semibold text-stone-800">
+                              <div className="font-bold text-stone-900">{ord.shopName}</div>
+                              <div className="text-[10px] text-stone-500 font-normal">{ord.contactPerson}</div>
+                            </td>
+                            <td className="py-3 px-3 text-center font-extrabold text-stone-800 tabular-nums">
+                              {totalLitres} L
+                            </td>
+                            <td className="py-3 px-3 font-extrabold text-stone-900 tabular-nums">
+                              ₹{ord.totalAmount.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-3">
+                              <Badge
+                                variant={
+                                  ord.paymentStatus === 'Paid'
+                                    ? 'success'
+                                    : ord.paymentStatus === 'Partial'
+                                    ? 'info'
+                                    : 'warning'
+                                }
+                                size="xs"
+                              >
+                                {ord.paymentStatus}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              <Badge
+                                variant={
                                   ord.status === 'Delivered'
-                                    ? 'bg-emerald-500'
+                                    ? 'success'
                                     : ord.status === 'Dispatched'
-                                    ? 'bg-blue-500'
-                                    : 'bg-amber-500'
-                                }`}
-                              ></span>
-                              {ord.status}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                                    ? 'info'
+                                    : 'warning'
+                                }
+                                dot
+                                size="xs"
+                              >
+                                {ord.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
 
-          {/* Selected Order Detail Drawer */}
-          <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-            {selectedOrder ? (
-              <>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Order Details
-                    </span>
-                    <h3 className="text-lg font-extrabold text-slate-900 mt-0.5">
-                      {selectedOrder.orderNumber}
-                    </h3>
-                  </div>
-                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full border border-emerald-200">
-                    {selectedOrder.status}
-                  </span>
-                </div>
+          {/* Selected Order Detail Receipt (4 cols) */}
+          <div className="lg:col-span-4">
+            <Card
+              title={selectedOrder ? selectedOrder.orderNumber : 'Order Receipt'}
+              subtitle={selectedOrder ? `Status: ${selectedOrder.status}` : 'Select an order to inspect'}
+            >
+              {selectedOrder ? (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#F6F2EA] rounded-xl border border-stone-200/70 space-y-2 text-xs">
+                    <div>
+                      <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+                        Buyer / Client
+                      </span>
+                      <span className="font-extrabold text-stone-900 text-sm block">
+                        {selectedOrder.shopName}
+                      </span>
+                    </div>
 
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <span className="text-slate-400 block">Buyer / Establishment:</span>
-                    <span className="font-bold text-slate-900 text-sm">{selectedOrder.shopName}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Contact Person:</span>
-                      <span className="font-semibold text-slate-800">{selectedOrder.contactPerson}</span>
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-200/50 text-stone-700">
+                      <div>
+                        <span className="text-stone-400 text-[10px] block">Contact</span>
+                        <span className="font-semibold">{selectedOrder.contactPerson}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-400 text-[10px] block">Phone</span>
+                        <a
+                          href={`tel:${selectedOrder.phone}`}
+                          className="font-semibold text-[#0F766E] hover:underline"
+                        >
+                          {selectedOrder.phone}
+                        </a>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Phone:</span>
-                      <a href={`tel:${selectedOrder.phone}`} className="font-semibold text-emerald-700 hover:underline flex items-center gap-1">{selectedOrder.phone}</a>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Order Date:</span>
-                      <span className="font-semibold text-slate-800">{selectedOrder.orderDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Delivery Slot:</span>
-                      <span className="font-semibold text-slate-800">{selectedOrder.deliveryDate}</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Order Items Breakdown */}
-                <div className="pt-2 border-t border-slate-100 space-y-2">
-                  <span className="text-xs font-bold text-slate-900 block">Order Line Items</span>
-                  <div className="bg-slate-50 p-3 rounded-xl space-y-2 text-xs">
-                    {selectedOrder.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between">
-                        <div>
-                          <span className="font-semibold text-slate-800">{item.productVariant}</span>
-                          <span className="text-slate-400 block text-[10px]">
-                            {item.quantity} L @ ₹{item.unitPrice}/L
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-200/50 text-stone-700">
+                      <div>
+                        <span className="text-stone-400 text-[10px] block">Order Date</span>
+                        <span className="font-semibold">{selectedOrder.orderDate}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-400 text-[10px] block">Delivery Slot</span>
+                        <span className="font-semibold">{selectedOrder.deliveryDate}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Line Items */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-stone-900 block">Line Items</span>
+                    <div className="bg-white rounded-xl border border-stone-200 divide-y divide-stone-100 text-xs">
+                      {selectedOrder.items.map((item, idx) => (
+                        <div key={idx} className="p-3 flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-stone-900 block">{item.productVariant}</span>
+                            <span className="text-[10px] text-stone-500">
+                              {item.quantity} L @ ₹{item.unitPrice}/L
+                            </span>
+                          </div>
+                          <span className="font-extrabold text-stone-900 tabular-nums">
+                            ₹{item.total.toLocaleString()}
                           </span>
                         </div>
-                        <span className="font-extrabold text-slate-900 tabular-nums">
-                          ₹{item.total.toLocaleString()}
+                      ))}
+                      <div className="p-3 bg-[#F6F2EA] flex justify-between font-extrabold text-stone-900 text-sm">
+                        <span>Grand Total</span>
+                        <span className="text-[#0F766E]">
+                          ₹{selectedOrder.totalAmount.toLocaleString()}
                         </span>
                       </div>
-                    ))}
-                    <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-slate-900">
-                      <span>Total Amount</span>
-                      <span className="text-emerald-700">₹{selectedOrder.totalAmount.toLocaleString()}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-2 flex gap-2">
-                  <button
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="w-full"
                     onClick={() => alert(`Invoice generated for ${selectedOrder.orderNumber}`)}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+                    leftIcon={<Receipt className="w-4 h-4" />}
                   >
                     Generate Invoice PDF
-                  </button>
+                  </Button>
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-12 text-slate-400 text-xs">
-                Select an order from the table to view line item specs
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-12 text-stone-400 text-xs">
+                  Select an order from the table to view line item specs
+                </div>
+              )}
+            </Card>
           </div>
         </div>
       )}
 
-      {/* TAB 2: COMMERCIAL CLIENTS DIRECTORY */}
+      {/* ── TAB 2: COMMERCIAL CLIENTS DIRECTORY ── */}
       {activeTab === 'clients' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Commercial Clients & Establishments</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Wholesale bulk buyers, sweet shops, bakeries, cafes, and restaurant accounts
-              </p>
-            </div>
+        <Card
+          title="Commercial Accounts & Wholesale Clients"
+          subtitle="Bakeries, sweet marts, hotels, and restaurant accounts"
+          action={
             <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
               <input
                 type="text"
                 placeholder="Search client, contact, area..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-9 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                aria-label="Search client"
               />
             </div>
-          </div>
-
+          }
+        >
           {filteredClients.length === 0 ? (
-            <div className="py-16 text-center text-slate-400">
-              <div className="flex flex-col items-center justify-center gap-2.5 max-w-sm mx-auto">
-                <Store className="w-10 h-10 text-slate-300" />
-                <h4 className="font-bold text-sm text-slate-700">No Commercial Clients Found</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
+            <div className="py-16 text-center text-stone-400">
+              <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                <Store className="w-10 h-10 text-stone-300" />
+                <h4 className="font-bold text-sm text-stone-800">No Commercial Clients Found</h4>
+                <p className="text-xs text-stone-500 font-normal leading-relaxed">
                   You haven&apos;t added any commercial accounts yet. Add local sweet shops, bakeries, or cafes to start supplying milk in bulk cans.
                 </p>
                 <div className="flex items-center gap-2 pt-2">
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => openModal('addCustomer')}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+                    leftIcon={<Plus className="w-3.5 h-3.5" />}
                   >
                     + Add Commercial Client
-                  </button>
-                  <button
-                    onClick={() => openModal('createOrder')}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer"
-                  >
-                    Create Bulk Order
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -475,19 +473,19 @@ export default function ShopOrdersPage() {
               {filteredClients.map((client, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-50/70 hover:bg-slate-50 rounded-2xl p-4 border border-slate-200/80 transition space-y-3"
+                  className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs hover:border-stone-300 transition-colors space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">
+                      <Badge variant="teal" size="xs">
                         {client.type}
-                      </span>
-                      <h4 className="font-extrabold text-sm text-slate-900 mt-1">{client.name}</h4>
+                      </Badge>
+                      <h4 className="font-extrabold text-sm text-stone-900 mt-1">{client.name}</h4>
                     </div>
                     {client.id && (
                       <Link
                         href={`/customers?search=${encodeURIComponent(client.name)}`}
-                        className="text-slate-400 hover:text-purple-600 p-1"
+                        className="text-stone-400 hover:text-[#0F766E] p-1"
                         title="View in Customer Directory"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -495,54 +493,60 @@ export default function ShopOrdersPage() {
                     )}
                   </div>
 
-                  <div className="space-y-1 text-xs text-slate-600">
+                  <div className="space-y-1 text-xs text-stone-600">
                     <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Users className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                       <span>{client.contactPerson}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <a href={`tel:${client.phone}`} className="hover:text-purple-600 font-medium">
+                      <Phone className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                      <a href={`tel:${client.phone}`} className="hover:text-[#0F766E] font-semibold">
                         {client.phone}
                       </a>
                     </div>
                     {client.area && (
                       <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                         <span className="truncate">{client.area}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/70 text-center text-xs">
-                    <div className="bg-white p-2 rounded-xl border border-slate-200/60">
-                      <span className="text-[10px] text-slate-400 block">Orders</span>
-                      <span className="font-bold text-slate-900 tabular-nums">{client.ordersCount}</span>
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-stone-100 text-center text-xs">
+                    <div className="bg-[#F6F2EA] p-2 rounded-xl border border-stone-200/60">
+                      <span className="text-[10px] text-stone-500 font-medium block">Orders</span>
+                      <span className="font-extrabold text-stone-900 tabular-nums">{client.ordersCount}</span>
                     </div>
-                    <div className="bg-white p-2 rounded-xl border border-slate-200/60">
-                      <span className="text-[10px] text-slate-400 block">Volume</span>
-                      <span className="font-bold text-emerald-700 tabular-nums">{client.totalVolume} L</span>
+                    <div className="bg-[#F6F2EA] p-2 rounded-xl border border-stone-200/60">
+                      <span className="text-[10px] text-stone-500 font-medium block">Volume</span>
+                      <span className="font-extrabold text-[#0F766E] tabular-nums">{client.totalVolume} L</span>
                     </div>
-                    <div className="bg-white p-2 rounded-xl border border-slate-200/60">
-                      <span className="text-[10px] text-slate-400 block">Balance</span>
-                      <span className={`font-bold tabular-nums ${client.balance > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+                    <div className="bg-[#F6F2EA] p-2 rounded-xl border border-stone-200/60">
+                      <span className="text-[10px] text-stone-500 font-medium block">Balance</span>
+                      <span
+                        className={`font-extrabold tabular-nums ${
+                          client.balance > 0 ? 'text-orange-700' : 'text-stone-700'
+                        }`}
+                      >
                         ₹{client.balance.toLocaleString()}
                       </span>
                     </div>
                   </div>
 
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
                     onClick={() => openModal('createOrder')}
-                    className="w-full py-2 bg-white hover:bg-purple-50 text-purple-700 hover:text-purple-800 border border-purple-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    leftIcon={<Plus className="w-3.5 h-3.5 text-[#0F766E]" />}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Create Order for {client.name.split(' ')[0]}</span>
-                  </button>
+                    Create Order for {client.name.split(' ')[0]}
+                  </Button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

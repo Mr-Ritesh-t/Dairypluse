@@ -1,5 +1,4 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -18,18 +17,15 @@ import {
   Milk,
   DollarSign,
   CheckCircle2,
-  Truck,
   History,
-  AlertCircle,
-  ArrowRight,
   MessageSquare,
   Send,
   Copy,
   Check,
   ExternalLink,
-  Sparkles,
 } from 'lucide-react';
-import { Customer, Subscription, DeliveryTask } from '@/types';
+import { PageHead } from '@/components/common/PageHead';
+import { Customer, Subscription } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
 import { AddSubscriptionModal } from '@/components/subscriptions/AddSubscriptionModal';
@@ -37,16 +33,33 @@ import { AddMilkModal } from '@/components/customers/AddMilkModal';
 import { CollectPaymentModal } from '@/components/customers/CollectPaymentModal';
 import { MonthEndWhatsAppModal } from '@/components/customers/MonthEndWhatsAppModal';
 import { postCustomerWhatsAppReminderApi, postNotifyOwnerNewCustomerApi } from '@/lib/api';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+  Tabs,
+} from '@/components/ui';
 
 export default function CustomersPage() {
-  const { customers, subscriptions, deliveries, openModal, activeDairy, dairies, updateCustomer } = useDairyPulse();
+  const {
+    customers,
+    subscriptions,
+    deliveries,
+    openModal,
+    activeDairy,
+    dairies,
+    updateCustomer,
+  } = useDairyPulse();
+
   const [isEditingDairy, setIsEditingDairy] = useState(false);
   const [filterType, setFilterType] = useState<'ALL' | 'HOUSEHOLD' | 'SHOP' | 'RESTAURANT'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(customers[0] || null);
   const [selectedSubForManage, setSelectedSubForManage] = useState<Subscription | null>(null);
-  
-  // Modal states for Add Milk, Collect Payment & Month-End WhatsApp
+
+  // Modal states
   const [isAddMilkOpen, setIsAddMilkOpen] = useState(false);
   const [isCollectPaymentOpen, setIsCollectPaymentOpen] = useState(false);
   const [isAddSubOpen, setIsAddSubOpen] = useState(false);
@@ -56,13 +69,11 @@ export default function CustomersPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [copiedSelectedId, setCopiedSelectedId] = useState<string | null>(null);
 
-  // Sync selected customer when active dairy changes or customers list updates
   React.useEffect(() => {
     if (customers.length > 0) {
       if (!selectedCust || !customers.some((c) => c.id === selectedCust.id)) {
         setSelectedCust(customers[0]);
       } else {
-        // Refresh selected customer state if updated in list
         const refreshed = customers.find((c) => c.id === selectedCust.id);
         if (refreshed) setSelectedCust(refreshed);
       }
@@ -71,7 +82,6 @@ export default function CustomersPage() {
     }
   }, [customers, selectedCust]);
 
-  // Toast auto-clear
   React.useEffect(() => {
     if (toastMessage) {
       const timer = setTimeout(() => setToastMessage(null), 5000);
@@ -86,13 +96,16 @@ export default function CustomersPage() {
 
   const filteredCustomers = customers.filter((c) => {
     if (filterType !== 'ALL' && c.type !== filterType) return false;
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.phone.includes(search)) {
+    if (
+      search &&
+      !c.name.toLowerCase().includes(search.toLowerCase()) &&
+      !c.phone.includes(search)
+    ) {
       return false;
     }
     return true;
   });
 
-  // Calculate delivery stats for selected customer
   const custDeliveries = deliveries.filter(
     (d) =>
       (selectedCust && d.customerName && d.customerName.toLowerCase() === selectedCust.name.toLowerCase()) ||
@@ -100,10 +113,13 @@ export default function CustomersPage() {
   );
 
   const deliveredTasks = custDeliveries.filter((d) => d.status === 'Delivered');
-  const totalDeliveredLiters = Math.round(deliveredTasks.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
-  
+  const totalDeliveredLiters =
+    Math.round(deliveredTasks.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
+
   const customerSub = subscriptions.find(
-    (s) => s.customerId === selectedCust?.id || s.customerName.toLowerCase() === selectedCust?.name.toLowerCase()
+    (s) =>
+      s.customerId === selectedCust?.id ||
+      s.customerName.toLowerCase() === selectedCust?.name.toLowerCase()
   );
 
   const handleOpenAddMilk = (cust: Customer, e?: React.MouseEvent) => {
@@ -154,658 +170,614 @@ export default function CustomersPage() {
     }
   };
 
+  const customerFilterTabs = [
+    { id: 'ALL', label: 'All Clients', count: customers.length },
+    { id: 'HOUSEHOLD', label: 'Households', count: householdCount },
+    { id: 'SHOP', label: 'Shops & Cafes', count: commercialCount },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Customer Directory" description="Complete customer roster, doorstep GPS coordinates, active subscriptions, and account balances." />
+      <PageHead
+        title="Customer Directory"
+        description="Complete customer roster, doorstep GPS coordinates, active subscriptions, and account balances."
+      />
 
-      {/* Toast Notification Alert */}
+      {/* Floating Toast Alert */}
       {toastMessage && (
-        <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl shadow-xs text-xs font-semibold animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 bg-[#0F766E] text-white font-semibold text-xs rounded-xl shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-teal-200 shrink-0" />
             <span>{toastMessage}</span>
           </div>
           <button
             onClick={() => setToastMessage(null)}
-            className="text-emerald-700 hover:text-emerald-900 font-bold px-2 py-0.5 rounded cursor-pointer"
+            className="text-teal-200 hover:text-white font-bold cursor-pointer"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Page Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Customer Management</h2>
-            {activeDairy && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-semibold">
-                <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{activeDairy.name}</span>
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Track milk delivered to each customer, add extra milk, and dispatch month-end payment reminders on WhatsApp.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Month-End WhatsApp Broadcast Button */}
-          <button
-            onClick={() => setIsMonthEndModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-extrabold shadow-xs transition cursor-pointer"
-            title="Send month-end WhatsApp payment reminders to all customers with dues"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Month-End WhatsApp Dues</span>
-            {customersWithDuesCount > 0 && (
-              <span className="bg-white/25 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
-                {customersWithDuesCount}
-              </span>
-            )}
-          </button>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Customer Directory & Accounts"
+        description="Track doorstep milk dispatches, manage subscriptions, record daily milk intake, and send WhatsApp payment notices."
+        badge={
+          activeDairy ? (
+            <Badge variant="teal" size="sm">
+              <Building2 className="w-3.5 h-3.5 mr-1" />
+              {activeDairy.name}
+            </Badge>
+          ) : undefined
+        }
+        actions={
+          <>
+            <Button
+              variant="amber"
+              size="sm"
+              onClick={() => setIsMonthEndModalOpen(true)}
+              leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
+              rightIcon={
+                customersWithDuesCount > 0 ? (
+                  <span className="bg-white/30 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
+                    {customersWithDuesCount}
+                  </span>
+                ) : undefined
+              }
+            >
+              Month-End WhatsApp Dues
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => openModal('addCustomer')}
+              leftIcon={<UserPlus className="w-3.5 h-3.5" />}
+            >
+              Add New Customer
+            </Button>
+          </>
+        }
+      />
 
-          <button
-            onClick={() => openModal('addCustomer')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Add New Customer</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Month-End Payment Collection Banner */}
+      {/* ── Month-End Broadcast Banner ── */}
       {totalDues > 0 && (
-        <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="p-4 bg-gradient-to-r from-teal-500/10 via-amber-500/10 to-orange-500/10 border border-stone-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-xs">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-extrabold text-slate-900">Month-End WhatsApp Payment Notices Ready</span>
-                <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-rose-200">
+                <span className="text-xs font-extrabold text-stone-900">
+                  Month-End WhatsApp Payment Notices Ready
+                </span>
+                <span className="bg-orange-100 text-orange-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-orange-200">
                   ₹{totalDues.toLocaleString()} Outstanding
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 mt-0.5">
+              <p className="text-[11px] text-stone-600 mt-0.5 font-normal">
                 {customersWithDuesCount} customer{customersWithDuesCount > 1 ? 's have' : ' has'} pending balances. Send 1-click WhatsApp bills with delivered liters and UPI pay link.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setIsMonthEndModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer w-full sm:w-auto justify-center"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Broadcast WhatsApp Dues</span>
-            </button>
-          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsMonthEndModalOpen(true)}
+            leftIcon={<Send className="w-3.5 h-3.5" />}
+          >
+            Broadcast WhatsApp Dues
+          </Button>
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* ── KPI Metrics Grid ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Clients</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{customers.length}</h3>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">Active directory</p>
-        </div>
+        <StatCard
+          title="Total Directory"
+          value={customers.length}
+          subtitle="Registered farm subscribers"
+          icon={<Users className="w-5 h-5" />}
+          variant="teal"
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Households</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{householdCount}</h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Daily subscribers</p>
-        </div>
+        <StatCard
+          title="Households"
+          value={householdCount}
+          subtitle="Doorstep milk subscriptions"
+          icon={<Milk className="w-5 h-5" />}
+          variant="blue"
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Commercial</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
-            {commercialCount}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Shops & cafes</p>
-        </div>
+        <StatCard
+          title="Commercial Accounts"
+          value={commercialCount}
+          subtitle="Bakeries, cafes, sweet shops"
+          icon={<Building2 className="w-5 h-5" />}
+          variant="amber"
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Remaining Payment</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-rose-600">
-            ₹{totalDues.toLocaleString()}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-rose-500 font-medium mt-0.5 truncate">Pending from customers</p>
-        </div>
+        <StatCard
+          title="Total Dues Pending"
+          value={`₹${totalDues.toLocaleString()}`}
+          subtitle={`${customersWithDuesCount} accounts with pending balance`}
+          icon={<CreditCard className="w-5 h-5" />}
+          variant="terracotta"
+          trend={{
+            value: totalDues > 0 ? 'Dues' : 'Clear',
+            isPositive: totalDues === 0,
+          }}
+        />
       </section>
 
-      {/* Main Customers Grid with Detail Drawer */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Table View (8 cols) */}
-        <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setFilterType('ALL')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  filterType === 'ALL' ? 'bg-emerald-100 text-emerald-800' : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilterType('HOUSEHOLD')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  filterType === 'HOUSEHOLD' ? 'bg-emerald-100 text-emerald-800' : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Households
-              </button>
-              <button
-                onClick={() => setFilterType('SHOP')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  filterType === 'SHOP' ? 'bg-blue-100 text-blue-800' : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Shops (B2B)
-              </button>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search name or phone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="w-full text-left text-xs min-w-[700px]">
-              <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="pb-2.5 font-medium">Customer Name</th>
-                  <th className="pb-2.5 font-medium">Type</th>
-                  <th className="pb-2.5 font-medium">Milk Delivered</th>
-                  <th className="pb-2.5 font-medium">Remaining Payment</th>
-                  <th className="pb-2.5 font-medium text-right">Quick Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredCustomers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Users className="w-8 h-8 text-slate-300" />
-                        <span className="font-semibold text-sm text-slate-600">No customers registered yet</span>
-                        <span className="text-xs text-slate-400">Click &apos;+ Add Customer&apos; above to begin</span>
-                      </div>
-                    </td>
+      {/* ── Main Split View: Customer Table (8 cols) & Detail Drawer (4 cols) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Table View */}
+        <div className="lg:col-span-8">
+          <Card
+            title="Customer Registry"
+            subtitle="All households, shops, and restaurants"
+            headerClassName="flex-col sm:flex-row items-start sm:items-center gap-3"
+            action={
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <Tabs
+                  tabs={customerFilterTabs}
+                  activeTab={filterType}
+                  onChange={(t) => setFilterType(t as any)}
+                  variant="pill"
+                  size="sm"
+                />
+                <div className="relative w-full sm:w-56">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                  <input
+                    type="text"
+                    placeholder="Search name or phone..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                    aria-label="Search customer"
+                  />
+                </div>
+              </div>
+            }
+          >
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[660px]" aria-label="Customers Table">
+                <thead>
+                  <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                    <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Customer</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Type</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Milk Delivered</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Balance</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">Actions</th>
                   </tr>
-                ) : (
-                  filteredCustomers.map((c) => {
-                    const isSelected = selectedCust?.id === c.id;
-                    
-                    // Customer-specific delivery metrics
-                    const cTasks = deliveries.filter(
-                      (d) =>
-                        (d.customerName && d.customerName.toLowerCase() === c.name.toLowerCase()) ||
-                        (d.customerPhone && d.customerPhone === c.phone)
-                    );
-                    const cDelivered = cTasks.filter((d) => d.status === 'Delivered');
-                    const cDeliveredLiters = Math.round(cDelivered.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
-                    const cSub = subscriptions.find((s) => s.customerId === c.id || s.customerName.toLowerCase() === c.name.toLowerCase());
-
-                    return (
-                      <tr
-                        key={c.id}
-                        onClick={() => setSelectedCust(c)}
-                        className={`cursor-pointer transition ${
-                          isSelected ? 'bg-emerald-50/60' : 'hover:bg-slate-50/60'
-                        }`}
-                      >
-                        <td className="py-3.5 font-semibold text-slate-800">
-                          <div className="text-xs font-bold text-slate-900">{c.name}</div>
-                          <div className="text-[10px] text-slate-500 font-normal">{c.address} • <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-emerald-700 font-medium">{c.phone}</a></div>
-                        </td>
-
-                        <td className="py-3.5">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              c.type === 'HOUSEHOLD'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-blue-50 text-blue-700'
-                            }`}
-                          >
-                            {c.type}
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-stone-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Users className="w-8 h-8 text-stone-300" />
+                          <span className="font-bold text-sm text-stone-800">No customers found</span>
+                          <span className="text-xs text-stone-500 font-normal">
+                            Click &apos;Add New Customer&apos; above to begin
                           </span>
-                        </td>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCustomers.map((c) => {
+                      const isSelected = selectedCust?.id === c.id;
+                      const cTasks = deliveries.filter(
+                        (d) =>
+                          (d.customerName && d.customerName.toLowerCase() === c.name.toLowerCase()) ||
+                          (d.customerPhone && d.customerPhone === c.phone)
+                      );
+                      const cDelivered = cTasks.filter((d) => d.status === 'Delivered');
+                      const cDeliveredLiters =
+                        Math.round(cDelivered.reduce((sum, d) => sum + (d.quantityLiters || 0), 0) * 10) / 10;
+                      const cSub = subscriptions.find(
+                        (s) =>
+                          s.customerId === c.id ||
+                          s.customerName.toLowerCase() === c.name.toLowerCase()
+                      );
 
-                        <td className="py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Milk className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="font-extrabold text-slate-900 tabular-nums">
-                              {cDeliveredLiters > 0 ? `${cDeliveredLiters}L` : cSub ? `${cSub.quantityLiters}L (Daily)` : '0L'}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              {cDelivered.length > 0 ? `(${cDelivered.length} stops)` : ''}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="py-3.5 font-bold tabular-nums">
-                          {c.balance > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 font-extrabold border border-rose-200">
-                              ₹{c.balance.toLocaleString()} Due
-                            </span>
-                          ) : c.balance < 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                              ₹{Math.abs(c.balance)} Advance
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                              ₹0 Cleared
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={(e) => handleOpenAddMilk(c, e)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-                              title="Add milk to this customer"
-                            >
-                              <Plus className="w-3 h-3" />
-                              <span>Add Milk</span>
-                            </button>
-
-                            {c.balance > 0 && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSendWhatsAppForSelected(c);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-                                title="Send WhatsApp bill reminder"
+                      return (
+                        <tr
+                          key={c.id}
+                          onClick={() => setSelectedCust(c)}
+                          className={`cursor-pointer transition-colors ${
+                            isSelected ? 'bg-teal-50/70' : 'hover:bg-stone-50/80'
+                          }`}
+                        >
+                          <td className="py-3 px-3 font-semibold text-stone-800">
+                            <div className="font-bold text-stone-900">{c.name}</div>
+                            <div className="text-[10px] text-stone-500 font-normal">
+                              {c.address} •{' '}
+                              <a
+                                href={`tel:${c.phone}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="hover:underline text-[#0F766E] font-medium"
                               >
-                                <MessageSquare className="w-3 h-3 text-emerald-600" />
-                                <span>WhatsApp</span>
-                              </button>
-                            )}
+                                {c.phone}
+                              </a>
+                            </div>
+                          </td>
 
-                            {c.balance > 0 && (
-                              <button
-                                onClick={(e) => handleOpenCollectPayment(c, e)}
-                                className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition cursor-pointer shadow-2xs"
-                                title="Collect remaining payment"
-                              >
-                                Settle
-                              </button>
+                          <td className="py-3 px-3">
+                            <Badge variant={c.type === 'HOUSEHOLD' ? 'teal' : 'info'} size="xs">
+                              {c.type}
+                            </Badge>
+                          </td>
+
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Milk className="w-3.5 h-3.5 text-[#0F766E]" />
+                              <span className="font-extrabold text-stone-900 tabular-nums">
+                                {cDeliveredLiters > 0
+                                  ? `${cDeliveredLiters}L`
+                                  : cSub
+                                  ? `${cSub.quantityLiters}L (Daily)`
+                                  : '0L'}
+                              </span>
+                              <span className="text-[10px] text-stone-400">
+                                {cDelivered.length > 0 ? `(${cDelivered.length} stops)` : ''}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-3 font-bold tabular-nums">
+                            {c.balance > 0 ? (
+                              <Badge variant="danger" size="xs">
+                                ₹{c.balance.toLocaleString()} Due
+                              </Badge>
+                            ) : c.balance < 0 ? (
+                              <Badge variant="info" size="xs">
+                                ₹{Math.abs(c.balance)} Advance
+                              </Badge>
+                            ) : (
+                              <Badge variant="success" size="xs">
+                                ₹0 Clear
+                              </Badge>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </td>
+
+                          <td className="py-3 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => handleOpenAddMilk(c, e)}
+                                leftIcon={<Plus className="w-3 h-3 text-[#0F766E]" />}
+                              >
+                                Add Milk
+                              </Button>
+
+                              {c.balance > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSendWhatsAppForSelected(c);
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#0F766E] border border-teal-200 font-bold text-[11px] transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                                  title="Send WhatsApp bill reminder"
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                  <span>WhatsApp</span>
+                                </button>
+                              )}
+
+                              {c.balance > 0 && (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={(e) => handleOpenCollectPayment(c, e)}
+                                >
+                                  Settle
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
 
-        {/* Selected Customer Profile Detail Drawer (4 cols) */}
-        <div className="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-          {selectedCust ? (
-            <>
-              {/* Profile Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-lg flex items-center justify-center shrink-0 shadow-xs">
-                    {selectedCust.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                      {selectedCust.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{selectedCust.type} Client • {selectedCust.area}</p>
-                  </div>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    selectedCust.status === 'Active'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}
-                >
-                  {selectedCust.status}
-                </span>
-              </div>
-
-              {/* 1. HOW MANY MILK WAS DELIVERED CARD */}
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 border border-emerald-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                      <Milk className="w-4 h-4" />
+        {/* Selected Customer Profile Drawer */}
+        <div className="lg:col-span-4">
+          <Card
+            title={selectedCust ? selectedCust.name : 'Customer Profile'}
+            subtitle={selectedCust ? `${selectedCust.type} • ${selectedCust.area}` : 'Select a customer'}
+          >
+            {selectedCust ? (
+              <div className="space-y-4">
+                {/* Header Badge */}
+                <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#0F766E] to-[#14B8A6] text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs">
+                      {selectedCust.name.charAt(0)}
                     </div>
                     <div>
-                      <span className="text-[11px] text-emerald-800 font-bold uppercase tracking-wider block">Total Milk Delivered</span>
-                      <div className="text-xl font-black text-slate-900 tabular-nums">
-                        {totalDeliveredLiters > 0 ? `${totalDeliveredLiters} Liters` : customerSub ? `${customerSub.quantityLiters} Liters (Active)` : '0 Liters'}
-                      </div>
+                      <h4 className="font-extrabold text-sm text-stone-900 leading-tight">
+                        {selectedCust.name}
+                      </h4>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        Route: <span className="font-semibold text-stone-700">{selectedCust.route}</span>
+                      </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleOpenAddMilk(selectedCust)}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  <Badge
+                    variant={selectedCust.status === 'Active' ? 'success' : 'warning'}
+                    dot
+                    size="xs"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Milk</span>
-                  </button>
+                    {selectedCust.status}
+                  </Badge>
                 </div>
 
-                <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-xs text-slate-600">
-                  <span>
-                    Daily Quota:{' '}
-                    <strong className="text-slate-800 font-bold">
-                      {customerSub ? `${customerSub.quantityLiters}L/day (${customerSub.productVariant})` : 'Spot Orders'}
-                    </strong>
-                  </span>
-                  <span>
-                    Delivered Stops: <strong className="text-slate-800 font-bold">{deliveredTasks.length}</strong>
-                  </span>
-                </div>
-
-                {/* Delivery History Accordion / Toggle */}
-                {custDeliveries.length > 0 && (
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowHistory(!showHistory)}
-                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 transition cursor-pointer"
-                    >
-                      <History className="w-3.5 h-3.5" />
-                      <span>{showHistory ? 'Hide Delivery History' : `View ${custDeliveries.length} Delivery Runs`}</span>
-                    </button>
-
-                    {showHistory && (
-                      <div className="mt-2 space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                        {custDeliveries.slice(0, 5).map((d) => (
-                          <div
-                            key={d.id}
-                            className="flex items-center justify-between p-2 rounded-xl bg-white border border-emerald-100 text-[11px]"
-                          >
-                            <div>
-                              <span className="font-bold text-slate-800">{d.quantityLiters}L {d.productVariant}</span>
-                              <div className="text-[10px] text-slate-400">{d.deliveryDate || 'Today'} • {d.slot}</div>
-                            </div>
-                            <span
-                              className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                                d.status === 'Delivered'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {d.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* 2. REMAINING PAYMENT CARD */}
-              <div
-                className={`p-4 rounded-2xl border transition ${
-                  selectedCust.balance > 0
-                    ? 'bg-rose-50/90 border-rose-200'
-                    : selectedCust.balance < 0
-                    ? 'bg-blue-50/90 border-blue-200'
-                    : 'bg-emerald-50/90 border-emerald-200'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wider ${
-                      selectedCust.balance > 0 ? 'text-rose-600' : 'text-emerald-700'
-                    }`}
-                  >
-                    Remaining Payment Due
-                  </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      selectedCust.balance > 0
-                        ? 'bg-rose-200 text-rose-800'
-                        : selectedCust.balance < 0
-                        ? 'bg-blue-200 text-blue-800'
-                        : 'bg-emerald-200 text-emerald-800'
-                    }`}
-                  >
-                    {selectedCust.balance > 0 ? 'Payment Pending' : selectedCust.balance < 0 ? 'Advance Credit' : 'All Cleared'}
-                  </span>
-                </div>
-
-                <div className="flex items-baseline justify-between mt-1">
-                  <div className="text-2xl font-black tabular-nums">
-                    {selectedCust.balance > 0 ? (
-                      <span className="text-rose-700">₹{selectedCust.balance.toLocaleString()}</span>
-                    ) : selectedCust.balance < 0 ? (
-                      <span className="text-blue-700">₹{Math.abs(selectedCust.balance)}</span>
-                    ) : (
-                      <span className="text-emerald-700">₹0.00</span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => handleOpenCollectPayment(selectedCust)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1 ${
-                      selectedCust.balance > 0
-                        ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    }`}
-                  >
-                    <DollarSign className="w-3.5 h-3.5" />
-                    <span>{selectedCust.balance > 0 ? 'Collect Payment' : 'Record Payment'}</span>
-                  </button>
-                </div>
-
-                <div className="mt-2 pt-2 border-t border-slate-200/60 text-[11px] text-slate-500 flex items-center justify-between">
-                  <span>Billing Route: <strong className="text-slate-700 font-semibold">{selectedCust.route}</strong></span>
-                  <span>Unit Price: <strong className="text-slate-700 font-semibold">₹{customerSub?.unitPrice || 62}/L</strong></span>
-                </div>
-              </div>
-
-              {/* 3. MONTH-END WHATSAPP DUE NOTICE CARD */}
-              {selectedCust.balance > 0 && (
-                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 text-xs space-y-2.5 animate-in fade-in">
+                {/* Delivered Milk Card */}
+                <div className="p-3.5 rounded-2xl bg-[#F6F2EA] border border-stone-200/80 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-extrabold text-[11px] uppercase tracking-wider text-emerald-900">
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>WhatsApp Month-End Notice</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shadow-xs">
+                        <Milk className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block">
+                          Total Milk Delivered
+                        </span>
+                        <div className="text-lg font-black text-stone-900 tabular-nums">
+                          {totalDeliveredLiters > 0
+                            ? `${totalDeliveredLiters} Litres`
+                            : customerSub
+                            ? `${customerSub.quantityLiters} L (Active Plan)`
+                            : '0 Litres'}
+                        </div>
+                      </div>
                     </div>
-                    {selectedCust.last_reminder_sent && (
-                      <span className="text-[10px] text-slate-500 font-medium">
-                        Sent: {selectedCust.last_reminder_sent}
-                      </span>
-                    )}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenAddMilk(selectedCust)}
+                      leftIcon={<Plus className="w-3 h-3" />}
+                    >
+                      Add
+                    </Button>
                   </div>
 
-                  <p className="text-[11px] text-slate-600 leading-tight">
-                    Send {selectedCust.name} an itemized monthly milk bill breakdown with 1-click UPI pay link.
-                  </p>
+                  <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs text-stone-600 font-medium">
+                    <span>
+                      Daily Plan:{' '}
+                      <strong className="text-stone-900 font-bold">
+                        {customerSub
+                          ? `${customerSub.quantityLiters}L/day (${customerSub.productVariant})`
+                          : 'Spot Orders'}
+                      </strong>
+                    </span>
+                    <span>
+                      Stops: <strong className="text-stone-900 font-bold">{deliveredTasks.length}</strong>
+                    </span>
+                  </div>
 
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <button
-                      onClick={() => handleSendWhatsAppForSelected(selectedCust)}
-                      className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Send className="w-3 h-3" />
-                      <span>Send WhatsApp Bill</span>
-                      <ExternalLink className="w-2.5 h-2.5 opacity-75" />
-                    </button>
+                  {custDeliveries.length > 0 && (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowHistory(!showHistory)}
+                        className="text-[11px] font-bold text-[#0F766E] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        <span>
+                          {showHistory
+                            ? 'Hide Delivery Runs'
+                            : `View ${custDeliveries.length} Delivery Runs`}
+                        </span>
+                      </button>
 
-                    <button
-                      onClick={() => handleCopyWhatsAppForSelected(selectedCust)}
-                      className="py-1.5 px-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-                      title="Copy WhatsApp bill text"
-                    >
-                      {copiedSelectedId === selectedCust.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
+                      {showHistory && (
+                        <div className="mt-2 space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                          {custDeliveries.slice(0, 5).map((d) => (
+                            <div
+                              key={d.id}
+                              className="flex items-center justify-between p-2 rounded-xl bg-white border border-stone-200 text-[11px]"
+                            >
+                              <div>
+                                <span className="font-bold text-stone-900">
+                                  {d.quantityLiters}L {d.productVariant}
+                                </span>
+                                <div className="text-[10px] text-stone-500">
+                                  {d.deliveryDate || 'Today'} • {d.slot}
+                                </div>
+                              </div>
+                              <Badge
+                                variant={d.status === 'Delivered' ? 'success' : 'warning'}
+                                size="xs"
+                              >
+                                {d.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Customer Contact Details */}
-              <div className="space-y-2.5 text-xs p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="flex items-center justify-between text-slate-600">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="truncate">Dairy: <strong className="text-slate-800 font-semibold">{selectedCust.dairyName || activeDairy?.name || 'DairyPulse Farm HQ'}</strong></span>
-                  </div>
-                  {dairies && dairies.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingDairy(!isEditingDairy)}
-                      className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition cursor-pointer shrink-0 ml-2"
-                      title="Change customer's supplying dairy farm"
-                    >
-                      {isEditingDairy ? 'Cancel' : 'Change Dairy'}
-                    </button>
+                    </div>
                   )}
                 </div>
 
-                {isEditingDairy && dairies && (
-                  <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 animate-in fade-in">
-                    <span className="text-[10px] font-bold text-emerald-900 uppercase">Reassign Supplying Dairy:</span>
-                    <select
-                      value={selectedCust.dairyName || activeDairy?.name || ''}
-                      onChange={async (e) => {
-                        const newDairy = e.target.value;
-                        const ok = await updateCustomer(selectedCust.id, { dairyName: newDairy });
-                        if (ok) {
-                          setSelectedCust({ ...selectedCust, dairyName: newDairy });
-                          setToastMessage(`Supplying farm updated to ${newDairy}!`);
-                          setIsEditingDairy(false);
-                        }
-                      }}
-                      className="w-full px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                    >
-                      {dairies.map((d) => (
-                        <option key={d.name} value={d.name}>
-                          {d.name} ({d.city || 'Pune'})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <a href={`tel:${selectedCust.phone}`} className="font-semibold text-slate-800 hover:underline">
-                    {selectedCust.phone}
-                  </a>
-                </div>
-                {selectedCust.email && (
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <a href={`mailto:${selectedCust.email}`} className="font-semibold text-slate-800 hover:underline hover:text-emerald-700">{selectedCust.email}</a>
-                  </div>
-                )}
-                <div className="flex items-start gap-2 text-slate-600">
-                  <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{selectedCust.address}</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Joined {selectedCust.joinedDate}</span>
-                </div>
-              </div>
-
-              {/* Customer Portal Login Credentials Box for Owner */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-purple-50/60 border border-indigo-200/80 text-xs text-indigo-950 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider text-indigo-900">
-                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Customer Portal Login Info</span>
-                  </div>
-                </div>
-               
-                <div className="p-2.5 rounded-xl bg-white/90 border border-indigo-100 space-y-1 font-mono text-[11px]">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">Login ID:</span>
-                    <strong className="text-slate-900">{selectedCust.phone}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">Default Password:</span>
-                    <strong className="text-indigo-700">cust123</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">Alternative:</span>
-                    <span className="text-emerald-700 font-sans font-bold">SMS OTP Login</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Action Buttons */}
-              <div className="pt-1 flex flex-col gap-2">
-                {selectedCust.type === 'HOUSEHOLD' && (
-                  customerSub ? (
-                    <button
-                      onClick={() => setSelectedSubForManage(customerSub)}
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Settings2 className="w-3.5 h-3.5" />
-                      <span>Manage Daily Milk (Skip / Vacation / Qty)</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsAddSubOpen(true)}
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Add Household Subscription</span>
-                    </button>
-                  )
-                )}
-                <button
-                  onClick={() => openModal('generateBill')}
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                {/* Remaining Payment Due Card */}
+                <div
+                  className={`p-3.5 rounded-2xl border transition-colors ${
+                    selectedCust.balance > 0
+                      ? 'bg-orange-50/80 border-orange-200'
+                      : selectedCust.balance < 0
+                      ? 'bg-sky-50/80 border-sky-200'
+                      : 'bg-emerald-50/80 border-emerald-200'
+                  }`}
                 >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Generate Invoice</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    const res = await postNotifyOwnerNewCustomerApi(selectedCust.id);
-                    if (res && res.owner_whatsapp_url) {
-                      window.open(res.owner_whatsapp_url, '_blank', 'noopener,noreferrer');
-                      setToastMessage(`📲 Forwarding ${selectedCust.name} alert to Owner WhatsApp!`);
-                    } else {
-                      setToastMessage(`Owner notified in Notification Center!`);
-                    }
-                  }}
-                  className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-                  title="Forward new customer registration alert to Owner WhatsApp"
-                >
-                  <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Notify Owner on WhatsApp</span>
-                  <ExternalLink className="w-3 h-3 text-emerald-600" />
-                </button>
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      className={`text-[11px] font-bold uppercase tracking-wider ${
+                        selectedCust.balance > 0 ? 'text-orange-900' : 'text-emerald-800'
+                      }`}
+                    >
+                      Remaining Payment Due
+                    </span>
+                    <Badge
+                      variant={
+                        selectedCust.balance > 0
+                          ? 'danger'
+                          : selectedCust.balance < 0
+                          ? 'info'
+                          : 'success'
+                      }
+                      size="xs"
+                    >
+                      {selectedCust.balance > 0
+                        ? 'Payment Pending'
+                        : selectedCust.balance < 0
+                        ? 'Advance Credit'
+                        : 'Cleared'}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-baseline justify-between mt-1">
+                    <div className="text-xl font-black tabular-nums">
+                      {selectedCust.balance > 0 ? (
+                        <span className="text-orange-950">₹{selectedCust.balance.toLocaleString()}</span>
+                      ) : selectedCust.balance < 0 ? (
+                        <span className="text-sky-950">₹{Math.abs(selectedCust.balance)}</span>
+                      ) : (
+                        <span className="text-emerald-950">₹0.00</span>
+                      )}
+                    </div>
+
+                    <Button
+                      variant={selectedCust.balance > 0 ? 'danger' : 'primary'}
+                      size="sm"
+                      onClick={() => handleOpenCollectPayment(selectedCust)}
+                      leftIcon={<DollarSign className="w-3.5 h-3.5" />}
+                    >
+                      {selectedCust.balance > 0 ? 'Collect' : 'Record'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* WhatsApp Notice Card if balance > 0 */}
+                {selectedCust.balance > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-teal-50/90 border border-teal-200/90 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider text-teal-900">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#0F766E]" />
+                        <span>WhatsApp Month-End Notice</span>
+                      </div>
+                      {selectedCust.last_reminder_sent && (
+                        <span className="text-[10px] text-stone-500 font-medium">
+                          Sent: {selectedCust.last_reminder_sent}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-stone-600 font-normal leading-tight">
+                      Send {selectedCust.name} an itemized monthly milk bill breakdown with 1-click UPI pay link.
+                    </p>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleSendWhatsAppForSelected(selectedCust)}
+                        leftIcon={<Send className="w-3 h-3" />}
+                        rightIcon={<ExternalLink className="w-3 h-3 opacity-75" />}
+                      >
+                        Send WhatsApp Bill
+                      </Button>
+                      <button
+                        onClick={() => handleCopyWhatsAppForSelected(selectedCust)}
+                        className="p-2 bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-xl transition-colors cursor-pointer"
+                        title="Copy WhatsApp bill text"
+                        aria-label="Copy WhatsApp bill"
+                      >
+                        {copiedSelectedId === selectedCust.id ? (
+                          <Check className="w-3.5 h-3.5 text-[#0F766E]" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Contact Info */}
+                <div className="space-y-2 text-xs p-3.5 rounded-2xl bg-[#F6F2EA] border border-stone-200/70">
+                  <div className="flex items-center gap-2 text-stone-700">
+                    <Phone className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                    <a href={`tel:${selectedCust.phone}`} className="font-semibold text-stone-900 hover:underline">
+                      {selectedCust.phone}
+                    </a>
+                  </div>
+                  {selectedCust.email && (
+                    <div className="flex items-center gap-2 text-stone-700">
+                      <Mail className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                      <a href={`mailto:${selectedCust.email}`} className="font-semibold text-stone-900 hover:underline">
+                        {selectedCust.email}
+                      </a>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2 text-stone-700">
+                    <MapPin className="w-3.5 h-3.5 text-[#0F766E] shrink-0 mt-0.5" />
+                    <span>{selectedCust.address}</span>
+                  </div>
+                </div>
+
+                {/* Additional Buttons */}
+                <div className="space-y-2 pt-1">
+                  {selectedCust.type === 'HOUSEHOLD' && (
+                    customerSub ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setSelectedSubForManage(customerSub)}
+                        leftIcon={<Settings2 className="w-3.5 h-3.5 text-stone-500" />}
+                      >
+                        Manage Daily Milk Plan
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setIsAddSubOpen(true)}
+                        leftIcon={<Plus className="w-3.5 h-3.5" />}
+                      >
+                        + Add Household Subscription
+                      </Button>
+                    )
+                  )}
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => openModal('generateBill')}
+                    leftIcon={<CreditCard className="w-3.5 h-3.5 text-stone-500" />}
+                  >
+                    Generate Invoice
+                  </Button>
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="text-center py-12 text-slate-400 text-xs">
-              Select a customer to view their delivery history and ledger
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-12 text-stone-400 text-xs">
+                Select a customer to view their delivery history and ledger
+              </div>
+            )}
+          </Card>
         </div>
       </div>
 

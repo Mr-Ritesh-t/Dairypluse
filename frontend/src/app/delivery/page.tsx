@@ -1,5 +1,4 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -12,27 +11,30 @@ import {
   User,
   Plus,
   Compass,
-  Filter,
   Check,
   X,
-  ArrowRight,
   ArrowUp,
   ArrowDown,
   Sparkles,
-  Building2,
-  RefreshCw,
   Search,
-  BadgeAlert,
-  Send,
   Edit3,
   AlertTriangle,
   Gauge,
   CheckCheck,
 } from 'lucide-react';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { DeliveryTask, StaffMember, RouteBuildPayload } from '@/types';
+import { DeliveryTask, RouteBuildPayload } from '@/types';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 import RouteBuilderStudio from '@/components/delivery/RouteBuilderStudio';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+  ProgressBar,
+} from '@/components/ui';
 
 export default function DeliveryManagementPage() {
   const {
@@ -56,11 +58,15 @@ export default function DeliveryManagementPage() {
     activeDairy,
   } = useDairyPulse();
 
-  // Dynamic extraction of distinct delivery areas from routes and deliveries (supports any city/location)
+  // Distinct delivery areas
   const dynamicAreas = useMemo<string[]>(() => {
     const set = new Set<string>();
-    routes.forEach((r) => { if (r.area && r.area.trim()) set.add(r.area.trim()); });
-    deliveries.forEach((d) => { if (d.area && d.area.trim()) set.add(d.area.trim()); });
+    routes.forEach((r) => {
+      if (r.area && r.area.trim()) set.add(r.area.trim());
+    });
+    deliveries.forEach((d) => {
+      if (d.area && d.area.trim()) set.add(d.area.trim());
+    });
     return Array.from(set);
   }, [routes, deliveries]);
 
@@ -82,13 +88,14 @@ export default function DeliveryManagementPage() {
   const [customFailReason, setCustomFailReason] = useState('');
   const [reassigningTask, setReassigningTask] = useState<DeliveryTask | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingDaily, setIsGeneratingDaily] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const handleRouteStudioDispatch = async (payload: RouteBuildPayload) => {
     const success = await buildAndDispatchRoute(payload);
     if (success) {
-      setActionNotice(`Route ${payload.routeCode} (${payload.name}) dispatched with ${payload.stops.length} sequenced stops to ${payload.assignedRider}!`);
+      setActionNotice(
+        `Route ${payload.routeCode} (${payload.name}) dispatched with ${payload.stops.length} sequenced stops to ${payload.assignedRider}!`
+      );
       setTimeout(() => setActionNotice(null), 5000);
     }
     return success;
@@ -158,9 +165,8 @@ export default function DeliveryManagementPage() {
     if (products && products.length > 0 && !products.some((p) => p.variant === newVariant)) {
       setNewVariant(products[0].variant);
     }
-  }, [products]);
+  }, [products, newVariant]);
 
-  // Active Delivery Riders
   const deliveryRiders = staff.filter((s) => s.role === 'Delivery Rider');
   const defaultRiderName = deliveryRiders[0]?.name || 'Rahul Deshmukh';
 
@@ -171,15 +177,16 @@ export default function DeliveryManagementPage() {
   const pending = deliveries.filter((d) => d.status === 'Pending').length;
   const failed = deliveries.filter((d) => d.status === 'Failed').length;
 
-  // Filtered Deliveries (matches exact Route Code, Route Name, or Geographic Area)
   const filteredDeliveries = deliveries.filter((d) => {
     if (selectedRoute !== 'ALL') {
       const activeRouteObj = routes.find(
         (r) => r.routeCode === selectedRoute || r.name === selectedRoute || r.area === selectedRoute
       );
-      const matchesRouteCode = d.route && (d.route === selectedRoute || (activeRouteObj && d.route === activeRouteObj.routeCode));
+      const matchesRouteCode =
+        d.route && (d.route === selectedRoute || (activeRouteObj && d.route === activeRouteObj.routeCode));
       const matchesArea = d.area === selectedRoute || (activeRouteObj && d.area === activeRouteObj.area);
-      const matchesNotes = d.notes && activeRouteObj && d.notes.toLowerCase().includes(activeRouteObj.routeCode.toLowerCase());
+      const matchesNotes =
+        d.notes && activeRouteObj && d.notes.toLowerCase().includes(activeRouteObj.routeCode.toLowerCase());
       if (!matchesRouteCode && !matchesArea && !matchesNotes) return false;
     }
     if (selectedRiderFilter !== 'ALL' && d.assignedRider !== selectedRiderFilter) return false;
@@ -196,7 +203,6 @@ export default function DeliveryManagementPage() {
     return true;
   });
 
-  // Handle Route Assign Submit
   const handleAssignRouteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const rider = routeRider || defaultRiderName;
@@ -208,7 +214,6 @@ export default function DeliveryManagementPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  // Handle Individual Reassign Submit
   const handleSingleReassignSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reassigningTask) return;
@@ -223,7 +228,6 @@ export default function DeliveryManagementPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  // Handle Create New Delivery
   const handleCreateDeliverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCustName.trim() || !newAddress.trim()) return;
@@ -242,7 +246,6 @@ export default function DeliveryManagementPage() {
     });
     setIsSubmitting(false);
     setIsNewDeliveryOpen(false);
-    // Reset
     setNewCustName('');
     setNewCustPhone('');
     setNewAddress('');
@@ -251,22 +254,6 @@ export default function DeliveryManagementPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  // Handle Generate Daily Deliveries
-  const handleGenerateDailyDeliveries = async () => {
-    setIsGeneratingDaily(true);
-    const res = await generateDailyDeliveries();
-    setIsGeneratingDaily(false);
-    if (res && res.success) {
-      setActionNotice(
-        `Generated ${res.created_count} daily stops! Deduplication skipped ${res.skipped_duplicates} duplicate subscriptions.`
-      );
-    } else {
-      setActionNotice('Daily deliveries generated and sequenced by society!');
-    }
-    setTimeout(() => setActionNotice(null), 5000);
-  };
-
-  // Handle Create Route Submit
   const handleCreateRouteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRouteCode.trim() || !newRouteName.trim()) return;
@@ -298,7 +285,6 @@ export default function DeliveryManagementPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  // Handle Edit Address Submit
   const handleEditAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingAddressTask) return;
@@ -320,7 +306,6 @@ export default function DeliveryManagementPage() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  // Handle Log Failed Submit
   const handleLogFailedSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!failModalTask) return;
@@ -334,1012 +319,582 @@ export default function DeliveryManagementPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Delivery Dispatch & Routes" description="Live morning and evening delivery run status, driver assigned routes, vehicle capacity loads, and doorstep proof." />
+      <PageHead
+        title="Delivery Dispatch & Routes"
+        description="Live morning and evening delivery run status, driver assigned routes, vehicle capacity loads, and doorstep proof."
+      />
 
       {/* Notice Alert */}
       {actionNotice && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-xs animate-in slide-in-from-top-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{actionNotice}</span>
+        <div className="p-3 bg-teal-50 border border-teal-200 text-teal-900 rounded-2xl text-xs font-semibold flex items-center justify-between gap-2 shadow-xs animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+            <span>{actionNotice}</span>
+          </div>
+          <button onClick={() => setActionNotice(null)} className="text-teal-700 font-bold cursor-pointer">
+            ✕
+          </button>
         </div>
       )}
 
-      {/* Page Header */}
-      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Delivery & Dispatch Management</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Calculate actual rider loads against vehicle capacities, cluster by society, eliminate duplicates, and manage live dispatches.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Delivery Fleet & Route Dispatch"
+        description="Live status per rider, vehicle capacity loads, cluster sequencing by society, and doorstep proof of delivery."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setRouteRider(defaultRiderName);
+                setIsAssignRouteOpen(true);
+              }}
+              leftIcon={<User className="w-3.5 h-3.5 text-[#0F766E]" />}
+            >
+              Assign Route
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setNewRider(defaultRiderName);
+                setIsNewDeliveryOpen(true);
+              }}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+            >
+              + Schedule Stop
+            </Button>
+          </>
+        }
+      />
 
-
-
-
-          {/* 3. Assign Route */}
-          <button
-            onClick={() => {
-              setRouteRider(defaultRiderName);
-              setIsAssignRouteOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-          >
-            <User className="w-3.5 h-3.5 text-blue-600" />
-            <span>Assign Route</span>
-          </button>
-
-          {/* 4. Schedule Stop */}
-          <button
-            onClick={() => {
-              setNewRider(defaultRiderName);
-              setIsNewDeliveryOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition transform active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Schedule Stop</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Distribution Routes & Society Clusters Overview */}
-      <section className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800">
-                <Compass className="w-4 h-4" />
-              </span>
-              <h3 className="text-sm font-extrabold text-slate-900">
-                Delivery Routes & Society Clusters ({routes.length})
-              </h3>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Delivery routes cluster customer doorsteps by housing society and street for rapid consecutive deliveries.
-            </p>
-          </div>
+      {/* ── Routes & Clusters Overview ── */}
+      <Card
+        title={`Delivery Routes & Society Loops (${routes.length})`}
+        subtitle="Customer doorsteps clustered by housing society for quick consecutive deliveries"
+        action={
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 setNewRouteRider(defaultRiderName);
                 setIsCreateRouteOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Add Route</span>
-            </button>
-
-            <button
+              Add Route
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={async () => {
-                const targetArea = selectedRoute === 'ALL' ? (dynamicAreas[0] || 'Default Route') : selectedRoute;
+                const targetArea = selectedRoute === 'ALL' ? dynamicAreas[0] || 'Default Route' : selectedRoute;
                 await autoSequenceRoute(targetArea);
                 setActionNotice(`Stops in ${targetArea} auto-clustered by building & apartment sequence!`);
                 setTimeout(() => setActionNotice(null), 4000);
               }}
-              title="Automatically arrange stops so customers in the same building/society are delivered consecutively"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition cursor-pointer"
+              leftIcon={<Sparkles className="w-3.5 h-3.5 text-purple-600" />}
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>Auto-Cluster Stops by Society</span>
-            </button>
+              Auto-Cluster
+            </Button>
           </div>
-        </div>
-
-        {/* Route Cards */}
+        }
+      >
         {routes.length === 0 ? (
-          <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
-            <p className="text-xs font-semibold text-slate-600">No delivery routes configured yet</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Click &apos;+ Add Route&apos; to configure delivery runs.</p>
+          <div className="p-6 text-center bg-[#F6F2EA] border border-stone-200 rounded-2xl">
+            <p className="text-xs font-semibold text-stone-600">No delivery routes configured yet</p>
+            <p className="text-[11px] text-stone-400 mt-0.5 font-normal">
+              Click &apos;+ Add Route&apos; to configure delivery runs.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {routes.map((r) => {
-            const isFilterActive = selectedRoute === r.routeCode || selectedRoute === r.area;
-            const areaStops = deliveries.filter(
-              (d) => d.route === r.routeCode || d.area === r.area || (d.notes && d.notes.includes(r.routeCode))
-            );
-            const totalLiters = areaStops.reduce((sum, d) => sum + (d.quantityLiters || 0), 0);
-            const socList: string[] = Array.isArray(r.societies)
-              ? r.societies
-              : typeof r.societies === 'string'
-              ? r.societies.split(',').map((s) => s.trim()).filter(Boolean)
-              : [];
+            {routes.map((r) => {
+              const isFilterActive = selectedRoute === r.routeCode || selectedRoute === r.area;
+              const areaStops = deliveries.filter(
+                (d) =>
+                  d.route === r.routeCode ||
+                  d.area === r.area ||
+                  (d.notes && d.notes.includes(r.routeCode))
+              );
+              const totalLiters = areaStops.reduce((sum, d) => sum + (d.quantityLiters || 0), 0);
+              const socList: string[] = Array.isArray(r.societies)
+                ? r.societies
+                : typeof r.societies === 'string'
+                ? r.societies.split(',').map((s) => s.trim()).filter(Boolean)
+                : [];
 
-            return (
-              <div
-                key={r.id}
-                className={`p-3.5 rounded-2xl border transition relative flex flex-col justify-between ${
-                  isFilterActive
-                    ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-900 text-white tracking-wide">
-                      {r.routeCode}
-                    </span>
-                    <span className="text-xs font-extrabold text-slate-800 tabular-nums">
-                      {areaStops.length || r.totalStops} drops
-                    </span>
-                  </div>
-
-                  <h4 className="font-extrabold text-xs text-slate-900 mt-2">{r.name}</h4>
-                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3 text-slate-400" />
-                    <span>{r.slot?.split(' ')[0] || 'Morning'}</span>
-                    <span>&bull;</span>
-                    <span className="font-bold text-emerald-700">{(totalLiters || r.totalLiters).toFixed(1)} L</span>
-                  </div>
-
-                  <div className="mt-2 text-[11px] text-slate-600 font-semibold truncate" title={r.assignedRider}>
-                    🚴 {r.assignedRider || 'Unassigned'}
-                  </div>
-
-                  {/* Society Badges */}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {socList.slice(0, 2).map((soc, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className="px-1.5 py-0.5 bg-white border border-slate-200 text-slate-600 rounded text-[9px] font-medium truncate max-w-[105px]"
-                        title={soc}
-                      >
-                        🏢 {soc}
-                      </span>
-                    ))}
-                    {socList.length > 2 && (
-                      <span className="px-1 py-0.5 bg-white border border-slate-200 text-slate-400 rounded text-[9px] font-medium">
-                        +{socList.length - 2}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Vehicle Capacity Meter */}
-                  {(() => {
-                    const maxCap = r.maxCapacityLiters || 60.0;
-                    const liters = totalLiters || r.totalLiters;
-                    const capPercent = Math.round((liters / maxCap) * 100);
-                    const isOver = liters > maxCap;
-                    return (
-                      <div className="mt-2.5 pt-2 border-t border-slate-200/60 space-y-1">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-slate-500 font-medium">Vehicle Load:</span>
-                          <span className={`font-bold tabular-nums ${isOver ? 'text-rose-600' : 'text-slate-700'}`}>
-                            {liters.toFixed(1)} / {maxCap} L ({capPercent}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              isOver ? 'bg-rose-500' : capPercent > 85 ? 'bg-amber-500' : 'bg-emerald-600'
-                            }`}
-                            style={{ width: `${Math.min(100, capPercent)}%` }}
-                          />
-                        </div>
-                        {isOver && (
-                          <div className="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded flex items-center gap-1 mt-1">
-                            <AlertTriangle className="w-2.5 h-2.5 shrink-0 text-rose-600" />
-                            <span>Overload (+{(liters - maxCap).toFixed(1)} L)</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Actions: View stops & assign */}
-                <div className="mt-3 pt-2 border-t border-slate-200/80 flex items-center gap-1.5">
-                  <button
-                    onClick={() => setSelectedRoute(isFilterActive ? 'ALL' : r.routeCode)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition text-center cursor-pointer ${
-                      isFilterActive
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-white border border-slate-200 hover:bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {isFilterActive ? 'Active Route' : 'Filter Stops'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRouteArea(r.area);
-                      setRouteRider(r.assignedRider || defaultRiderName);
-                      setRouteSlot(r.slot || 'Morning (6:00 AM - 7:30 AM)');
-                      setIsAssignRouteOpen(true);
-                    }}
-                    title={`Assign ${r.area} Route to Rider`}
-                    className="p-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition cursor-pointer"
-                  >
-                    <User className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        )}
-      </section>
-
-      {/* 4 Metric KPI Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Route Drops</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{total}</h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">{deliveryRiders.length} Delivery Riders</p>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Delivered</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1 tabular-nums">{delivered}</h3>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
-            {total > 0 ? Math.round((delivered / total) * 100) : 0}% completion
-          </p>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">In Transit</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-blue-600 mt-1 tabular-nums">{inProgress}</h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">On delivery bikes</p>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Pending</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1 tabular-nums">{pending}</h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">{failed > 0 ? `${failed} exceptions` : 'In queue'}</p>
-        </div>
-      </section>
-
-      {/* Delivery Staff Tracking & Dispatch Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* ======================================================== */}
-        {/* LEFT PANEL: RIDER LIVE TRACKING & ROSTER (4 cols)        */}
-        {/* ======================================================== */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Rider Live Tracking</h3>
-              <p className="text-[11px] text-slate-400">Real-time progress per delivery boy</p>
-            </div>
-            <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-              {deliveryRiders.length} On Duty
-            </span>
-          </div>
-
-          {selectedRiderFilter !== 'ALL' && (
-            <div className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
-              <span>Filtering by: <strong>{selectedRiderFilter}</strong></span>
-              <button
-                onClick={() => setSelectedRiderFilter('ALL')}
-                className="text-[11px] font-bold text-blue-700 underline cursor-pointer"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {deliveryRiders.map((rider) => {
-              const riderStops = deliveries.filter((d) => d.assignedRider === rider.name);
-              const riderDelivered = riderStops.filter((d) => d.status === 'Delivered').length;
-              const riderPending = riderStops.filter((d) => d.status === 'Pending').length;
-              const riderProgress = riderStops.length > 0 ? Math.round((riderDelivered / riderStops.length) * 100) : 0;
-              const isSelected = selectedRiderFilter === rider.name;
+              const maxCap = r.maxCapacityLiters || 60.0;
+              const liters = totalLiters || r.totalLiters;
+              const capPercent = Math.round((liters / maxCap) * 100);
+              const isOver = liters > maxCap;
 
               return (
                 <div
-                  key={rider.id}
-                  onClick={() => setSelectedRiderFilter(isSelected ? 'ALL' : rider.name)}
-                  className={`p-4 rounded-2xl border transition cursor-pointer space-y-2.5 ${
-                    isSelected
-                      ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20 shadow-xs'
-                      : 'border-slate-200 hover:bg-slate-50/80'
+                  key={r.id}
+                  className={`p-3.5 rounded-2xl border transition-colors relative flex flex-col justify-between space-y-2.5 ${
+                    isFilterActive
+                      ? 'border-[#0F766E] bg-teal-50/70 ring-2 ring-teal-500/20 shadow-xs'
+                      : 'border-stone-200 bg-white hover:border-stone-300'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
-                        {rider.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-900">{rider.name}</h4>
-                        <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          {rider.assignedArea}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      ★ {rider.rating}
-                    </span>
-                  </div>
-
-                  {/* Rider Live Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-500">
-                        {riderDelivered} of {riderStops.length} drops done
+                  <div className="space-y-1.5">
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-stone-900 text-white tracking-wide">
+                        {r.routeCode}
                       </span>
-                      <span className="font-bold text-slate-800 tabular-nums">{riderProgress}%</span>
+                      <span className="text-xs font-black text-stone-800 tabular-nums">
+                        {areaStops.length || r.totalStops} drops
+                      </span>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                        style={{ width: `${riderProgress}%` }}
+
+                    <h4 className="font-extrabold text-xs text-stone-900 truncate">{r.name}</h4>
+                    <div className="text-[11px] text-stone-500 font-medium flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-stone-400" />
+                      <span>{r.slot?.split(' ')[0] || 'Morning'}</span>
+                      <span>•</span>
+                      <span className="font-bold text-[#0F766E]">
+                        {(totalLiters || r.totalLiters).toFixed(1)} L
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-stone-600 font-semibold truncate">
+                      🚴 {r.assignedRider || 'Unassigned'}
+                    </div>
+
+                    {socList.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {socList.slice(0, 2).map((soc, sIdx) => (
+                          <span
+                            key={sIdx}
+                            className="px-1.5 py-0.5 bg-stone-100 border border-stone-200 text-stone-600 rounded text-[9px] font-medium truncate max-w-[100px]"
+                            title={soc}
+                          >
+                            🏢 {soc}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Capacity */}
+                    <div className="pt-2 border-t border-stone-100 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-stone-500 font-medium">Load:</span>
+                        <span className={`font-bold tabular-nums ${isOver ? 'text-orange-700' : 'text-stone-700'}`}>
+                          {liters.toFixed(1)} / {maxCap} L ({capPercent}%)
+                        </span>
+                      </div>
+                      <ProgressBar
+                        value={capPercent}
+                        variant={isOver ? 'orange' : capPercent > 85 ? 'amber' : 'teal'}
+                        size="sm"
                       />
                     </div>
                   </div>
 
-                  {/* Metric Chips & Call */}
-                  <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 border-t border-slate-100">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-emerald-700 font-semibold">{riderDelivered} Delivered</span>
-                      <span>&bull;</span>
-                      <span className="text-amber-700 font-semibold">{riderPending} Pending</span>
-                    </div>
-                    <a
-                      href={`tel:${rider.phone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 text-[11px]"
+                  <div className="pt-2 border-t border-stone-100 flex items-center gap-1.5">
+                    <button
+                      onClick={() => setSelectedRoute(isFilterActive ? 'ALL' : r.routeCode)}
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                        isFilterActive
+                          ? 'bg-[#0F766E] text-white'
+                          : 'bg-[#F6F2EA] hover:bg-stone-200 text-stone-700'
+                      }`}
                     >
-                      <Phone className="w-3 h-3" /> Call
-                    </a>
+                      {isFilterActive ? 'Active' : 'Filter Stops'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRouteArea(r.area);
+                        setRouteRider(r.assignedRider || defaultRiderName);
+                        setRouteSlot(r.slot || 'Morning (6:00 AM - 7:30 AM)');
+                        setIsAssignRouteOpen(true);
+                      }}
+                      title={`Assign ${r.area} Route to Rider`}
+                      className="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#0F766E] transition-colors cursor-pointer"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
+        )}
+      </Card>
+
+      {/* ── 4 Metric KPI Cards ── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          title="Total Route Drops"
+          value={total}
+          subtitle={`${deliveryRiders.length} Delivery Riders on duty`}
+          icon={<Truck className="w-5 h-5" />}
+          variant="teal"
+        />
+
+        <StatCard
+          title="Delivered"
+          value={delivered}
+          subtitle={`${total > 0 ? Math.round((delivered / total) * 100) : 0}% completion`}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          variant="blue"
+          trend={{ value: 'Delivered', isPositive: true }}
+        />
+
+        <StatCard
+          title="In Transit"
+          value={inProgress}
+          subtitle="On delivery bikes"
+          icon={<Clock className="w-5 h-5" />}
+          variant="amber"
+        />
+
+        <StatCard
+          title="Pending Queue"
+          value={pending}
+          subtitle={failed > 0 ? `${failed} delivery exceptions` : 'In route queue'}
+          icon={<AlertCircle className="w-5 h-5" />}
+          variant="terracotta"
+        />
+      </section>
+
+      {/* ── Main Split View: Rider Tracking (4 cols) & Route Stops Table (8 cols) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left: Rider Tracking Panel */}
+        <div className="lg:col-span-4">
+          <Card
+            title="Rider Live Fleet"
+            subtitle="Progress per delivery partner"
+            action={
+              <Badge variant="success" size="xs">
+                {deliveryRiders.length} On Duty
+              </Badge>
+            }
+          >
+            {selectedRiderFilter !== 'ALL' && (
+              <div className="flex items-center justify-between p-2 mb-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-800">
+                <span>
+                  Filtering: <strong>{selectedRiderFilter}</strong>
+                </span>
+                <button
+                  onClick={() => setSelectedRiderFilter('ALL')}
+                  className="text-[11px] font-bold text-teal-800 underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {deliveryRiders.map((rider) => {
+                const riderStops = deliveries.filter((d) => d.assignedRider === rider.name);
+                const riderDelivered = riderStops.filter((d) => d.status === 'Delivered').length;
+                const riderPending = riderStops.filter((d) => d.status === 'Pending').length;
+                const riderProgress =
+                  riderStops.length > 0 ? Math.round((riderDelivered / riderStops.length) * 100) : 0;
+                const isSelected = selectedRiderFilter === rider.name;
+
+                return (
+                  <div
+                    key={rider.id}
+                    onClick={() => setSelectedRiderFilter(isSelected ? 'ALL' : rider.name)}
+                    className={`p-3.5 rounded-2xl border transition-colors cursor-pointer space-y-2 ${
+                      isSelected
+                        ? 'border-[#0F766E] bg-teal-50/70 ring-2 ring-teal-500/20 shadow-xs'
+                        : 'border-stone-200 bg-[#F6F2EA]/40 hover:bg-white hover:border-stone-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-900 font-bold text-xs flex items-center justify-center">
+                          {rider.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs text-stone-900">{rider.name}</h4>
+                          <p className="text-[10px] text-stone-500 font-medium flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5 text-stone-400" />
+                            {rider.assignedArea}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="amber" size="xs">
+                        ★ {rider.rating}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-stone-600 font-medium">
+                        <span>{riderDelivered} of {riderStops.length} done</span>
+                        <span className="font-bold tabular-nums">{riderProgress}%</span>
+                      </div>
+                      <ProgressBar value={riderProgress} variant="teal" size="sm" />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px] text-stone-500 border-t border-stone-100">
+                      <span className="font-semibold text-emerald-700">
+                        {riderDelivered} Delivered • {riderPending} Left
+                      </span>
+                      <a
+                        href={`tel:${rider.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[#0F766E] font-semibold hover:underline flex items-center gap-1"
+                      >
+                        <Phone className="w-3 h-3" /> Call
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
         </div>
 
-        {/* ======================================================== */}
-        {/* RIGHT PANEL: ROUTE STOPS & LIVE TRACKING TABLE (8 cols)  */}
-        {/* ======================================================== */}
-        <div className="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">
-                Active Delivery Stops ({filteredDeliveries.length})
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Stops are sequenced building-by-building. Use ▲ ▼ or Auto-Sequence to optimize rider path.
-              </p>
-            </div>
-
-            {/* Action / Search Bar */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  const targetArea = selectedRoute === 'ALL' ? (dynamicAreas[0] || 'Default Route') : selectedRoute;
-                  await autoSequenceRoute(targetArea);
-                  setActionNotice(`Stops re-ordered! All flats in same society clustered consecutively.`);
-                  setTimeout(() => setActionNotice(null), 4000);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition cursor-pointer"
-                title="Sort stops so all flats in the same society are delivered consecutively"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                <span className="hidden sm:inline">Auto-Sequence</span>
-              </button>
-
-              {/* Search Input */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search customer, area, or rider..."
-                  className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+        {/* Right: Active Delivery Stops Table */}
+        <div className="lg:col-span-8">
+          <Card
+            title={`Active Stops (${filteredDeliveries.length})`}
+            subtitle="Sequenced doorstep drops. Use ▲ ▼ or Auto-Sequence to optimize"
+            action={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const targetArea = selectedRoute === 'ALL' ? dynamicAreas[0] || 'Default Route' : selectedRoute;
+                    await autoSequenceRoute(targetArea);
+                    setActionNotice(`Stops re-ordered! Clustered by building & apartment.`);
+                    setTimeout(() => setActionNotice(null), 4000);
+                  }}
+                  leftIcon={<Sparkles className="w-3.5 h-3.5 text-purple-600" />}
+                >
+                  Auto-Sequence
+                </Button>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search stop..."
+                    className="pl-8 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Filter Bar: Route, Slot, Status */}
-          <div className="flex flex-wrap items-center gap-2 pt-1 pb-1 text-xs">
-            {/* Route Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-              <span className="text-slate-400 font-medium">Route:</span>
+            }
+          >
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-stone-100 text-xs">
               <select
                 value={selectedRoute}
                 onChange={(e) => setSelectedRoute(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer max-w-[210px] truncate"
+                className="px-2.5 py-1 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
               >
                 <option value="ALL">All Routes ({deliveries.length} drops)</option>
-                {routes.length > 0 && (
-                  <optgroup label="Configured Routes">
-                    {routes.map((r) => (
-                      <option key={r.id || r.routeCode} value={r.routeCode}>
-                        {r.routeCode} - {r.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {dynamicAreas.length > 0 && (
-                  <optgroup label="Delivery Areas">
-                    {dynamicAreas.map((area: string) => (
-                      <option key={area} value={area}>
-                        {area} (All Area Drops)
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
+                {routes.map((r) => (
+                  <option key={r.id} value={r.routeCode}>
+                    {r.routeCode} - {r.name}
+                  </option>
+                ))}
               </select>
-            </div>
 
-            {/* Time Slot Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-              <span className="text-slate-400 font-medium">Shift:</span>
               <select
                 value={selectedSlotFilter}
                 onChange={(e) => setSelectedSlotFilter(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                className="px-2.5 py-1 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
               >
                 <option value="ALL">All Shifts</option>
-                <option value="Morning">Morning (6:00 - 7:30 AM)</option>
-                <option value="Evening">Evening (5:30 - 7:00 PM)</option>
+                <option value="Morning">Morning</option>
+                <option value="Evening">Evening</option>
               </select>
-            </div>
 
-            {/* Status Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-              <span className="text-slate-400 font-medium">Status:</span>
               <select
                 value={selectedStatusFilter}
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                className="px-2.5 py-1 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
               >
                 <option value="ALL">All Status</option>
                 <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
+                <option value="In Progress">In Transit</option>
                 <option value="Delivered">Delivered</option>
-                <option value="Failed">Failed / Locked</option>
+                <option value="Failed">Failed</option>
               </select>
             </div>
-          </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="w-full text-left text-xs min-w-[700px]">
-              <thead>
-                <tr className="text-slate-400 border-b border-slate-100">
-                  <th className="pb-2.5 font-medium">Seq & Shift</th>
-                  <th className="pb-2.5 font-medium">Customer & Society Address</th>
-                  <th className="pb-2.5 font-medium">Milk Qty</th>
-                  <th className="pb-2.5 font-medium">Assigned Rider</th>
-                  <th className="pb-2.5 font-medium">Status & Time</th>
-                  <th className="pb-2.5 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredDeliveries.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Truck className="w-8 h-8 text-slate-300" />
-                        <span className="font-semibold text-sm text-slate-600">No delivery stops found</span>
-                        <span className="text-xs text-slate-400">Create delivery stops or configure routes.</span>
-                      </div>
-                    </td>
+            {/* Stops Table */}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[700px]" aria-label="Delivery Stops Table">
+                <thead>
+                  <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                    <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Seq</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Customer & Address</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-center">Milk Qty</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Rider & Shift</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold">Status</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">Actions</th>
                   </tr>
-                ) : (
-                  filteredDeliveries.map((del, idx) => (
-                  <tr key={del.id} className="hover:bg-slate-50/70 transition">
-                    {/* Stop Sequence Order & Slot */}
-                    <td className="py-3 font-medium text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <div className="flex flex-col gap-0.5 shrink-0">
-                          <button
-                            onClick={() => moveDeliveryStop(del.id, 'UP')}
-                            title="Move Stop Earlier (Up in Sequence)"
-                            className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-800 transition cursor-pointer"
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => moveDeliveryStop(del.id, 'DOWN')}
-                            title="Move Stop Later (Down in Sequence)"
-                            className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-800 transition cursor-pointer"
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredDeliveries.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-stone-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Truck className="w-8 h-8 text-stone-300" />
+                          <span className="font-bold text-sm text-stone-800">No matching delivery stops</span>
+                          <span className="text-xs text-stone-500 font-normal">
+                            Try resetting filters or click &apos;+ Schedule Stop&apos; above
+                          </span>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-extrabold text-xs px-2 py-0.5 bg-slate-900 text-white rounded-md tabular-nums">
-                              #{del.sequenceOrder || idx + 1}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredDeliveries.map((task, idx) => (
+                      <tr key={task.id} className="hover:bg-stone-50/80 transition-colors">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-1">
+                            <span className="w-6 h-6 rounded-md bg-[#F6F2EA] text-stone-800 font-black text-[11px] flex items-center justify-center tabular-nums">
+                              {task.sequenceOrder || idx + 1}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {del.deliveryNumber}
-                            </span>
+                            <div className="flex flex-col">
+                              <button
+                                onClick={() => moveDeliveryStop(task.id, 'UP')}
+                                disabled={idx === 0}
+                                className="text-stone-400 hover:text-[#0F766E] disabled:opacity-30 cursor-pointer"
+                              >
+                                <ArrowUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => moveDeliveryStop(task.id, 'DOWN')}
+                                disabled={idx === filteredDeliveries.length - 1}
+                                className="text-stone-400 hover:text-[#0F766E] disabled:opacity-30 cursor-pointer"
+                              >
+                                <ArrowDown className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-1">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>{del.slot?.includes('Evening') ? 'Evening' : 'Morning'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+                        </td>
 
-                    {/* Customer & Address & Society Badge */}
-                    <td className="py-3 font-semibold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">{del.customerName}</span>
-                        {del.isExtraOrder && (
-                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-extrabold uppercase">
-                            Extra
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        {del.route && (
-                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[10px] font-bold shrink-0">
-                            🛣️ {del.route}
-                          </span>
-                        )}
-                        {del.flatOrUnit && (
-                          <span className="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[10px] font-bold shrink-0">
-                            🚪 {del.flatOrUnit}
-                          </span>
-                        )}
-                        {del.societyOrLandmark && (
-                          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-bold shrink-0">
-                            🏢 {del.societyOrLandmark}
-                          </span>
-                        )}
-                        <span className="text-[11px] text-slate-500 font-normal flex items-center gap-1 max-w-xs truncate" title={del.address}>
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{del.address}</span>
-                        </span>
-                        {del.landmark && (
-                          <span className="text-[10px] text-slate-400 italic">
-                            (Near {del.landmark})
-                          </span>
-                        )}
-                        {del.latitude && del.longitude && (
-                          <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${del.latitude},${del.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 hover:underline pt-0.5"
-                            title="Direct Google Maps turn-by-turn navigation link"
+                        <td className="py-3 px-3 font-semibold text-stone-800">
+                          <div className="font-bold text-stone-900">{task.customerName}</div>
+                          <div className="text-[10px] text-stone-500 font-normal flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                            <span className="truncate max-w-[200px]">{task.address}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3 text-center font-extrabold text-stone-900 tabular-nums">
+                          {task.quantityLiters} L ({task.productVariant.split(' ')[0]})
+                        </td>
+
+                        <td className="py-3 px-3 text-stone-700">
+                          <div className="font-semibold text-xs text-stone-900">{task.assignedRider}</div>
+                          <div className="text-[10px] text-stone-500">{task.slot}</div>
+                        </td>
+
+                        <td className="py-3 px-3">
+                          <Badge
+                            variant={
+                              task.status === 'Delivered'
+                                ? 'success'
+                                : task.status === 'In Progress'
+                                ? 'info'
+                                : task.status === 'Failed'
+                                ? 'danger'
+                                : 'warning'
+                            }
+                            dot
+                            size="xs"
                           >
-                            <Compass className="w-2.5 h-2.5 text-blue-500" />
-                            <span>GPS Pin ({del.latitude.toFixed(3)}, {del.longitude.toFixed(3)})</span>
-                          </a>
-                        )}
-                      </div>
-                    </td>
+                            {task.status}
+                          </Badge>
+                        </td>
 
-                    {/* Milk Variant & Quantity */}
-                    <td className="py-3.5 font-bold text-slate-700 tabular-nums">
-                      <div>{del.quantityLiters} L</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{del.productVariant}</div>
-                    </td>
-
-                    {/* Assigned Rider (Inline Select) */}
-                    <td className="py-3.5">
-                      <select
-                        value={del.assignedRider}
-                        onChange={(e) => assignDelivery(del.id, e.target.value, del.slot, del.area)}
-                        className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                      >
-                        {deliveryRiders.map((r) => (
-                          <option key={r.id} value={r.name}>
-                            {r.name} ({r.assignedArea})
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* Status & Delivery Timestamp */}
-                    <td className="py-3.5">
-                      <div className="space-y-0.5">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            del.status === 'Delivered'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : del.status === 'Out for Delivery' || del.status === 'In Progress'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : del.status === 'Failed'
-                              ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : del.status === 'Assigned'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {del.status}
-                        </span>
-                        {del.deliveredAt && (
-                          <div className="text-[10px] text-emerald-700 font-medium">
-                            at {del.deliveredAt}
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {task.status !== 'Delivered' && (
+                              <button
+                                onClick={() => updateDeliveryStatus(task.id, 'Delivered')}
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors cursor-pointer"
+                                title="Mark Delivered"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setEditingAddressTask(task);
+                                setEditFlat(task.flatOrUnit || '');
+                                setEditSociety(task.societyOrLandmark || '');
+                                setEditLandmark(task.landmark || '');
+                                setEditAddress(task.address || '');
+                                setEditArea(task.area || '');
+                                setEditNotes(task.notes || '');
+                                setEditLat(task.latitude || 18.5593);
+                                setEditLng(task.longitude || 73.7788);
+                              }}
+                              className="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Location GPS"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReassigningTask(task);
+                                setTargetRider(task.assignedRider);
+                                setTargetSlot(task.slot);
+                              }}
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors cursor-pointer"
+                              title="Reassign Rider / Shift"
+                            >
+                              <User className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                        )}
-                        {del.failedReason && (
-                          <div className="text-[10px] text-rose-600 font-medium" title={del.failedReason}>
-                            ⚠️ {del.failedReason}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 text-right space-x-1 whitespace-nowrap">
-                      {del.status !== 'Delivered' && (
-                        <button
-                          onClick={() => updateDeliveryStatus(del.id, 'Delivered')}
-                          title="Mark Delivered"
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-[10px] transition cursor-pointer"
-                        >
-                          Mark Done
-                        </button>
-                      )}
-                      {(del.status === 'Pending' || del.status === 'Assigned') && (
-                        <button
-                          onClick={() => updateDeliveryStatus(del.id, 'Out for Delivery')}
-                          title="Dispatch Stop (Out for Delivery)"
-                          className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-[10px] transition cursor-pointer"
-                        >
-                          Dispatch
-                        </button>
-                      )}
-                      {del.status !== 'Delivered' && del.status !== 'Failed' && (
-                        <button
-                          onClick={() => {
-                            setFailModalTask(del);
-                            setFailReasonSelect('Door locked / No one answered');
-                            setCustomFailReason('');
-                          }}
-                          title="Log Delivery Failure / Exception"
-                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg text-[10px] transition cursor-pointer"
-                        >
-                          Failed
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setEditingAddressTask(del);
-                          setEditFlat(del.flatOrUnit || '');
-                          setEditSociety(del.societyOrLandmark || '');
-                          setEditLandmark(del.landmark || '');
-                          setEditAddress(del.address);
-                          setEditArea(del.area);
-                          setEditNotes(del.notes || '');
-                          setEditLat(del.latitude || 18.5593);
-                          setEditLng(del.longitude || 73.7788);
-                        }}
-                        title="Edit Delivery Address / Society / Flat"
-                        className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-lg text-[10px] transition cursor-pointer inline-flex items-center gap-1"
-                      >
-                        <Edit3 className="w-2.5 h-2.5" />
-                        <span>Edit Loc</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setReassigningTask(del);
-                          setTargetRider(del.assignedRider);
-                          setTargetSlot(del.slot || 'Morning (6:00 AM - 7:30 AM)');
-                        }}
-                        title="Reassign Rider & Time Slot"
-                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-[10px] transition cursor-pointer"
-                      >
-                        Reassign
-                      </button>
-                    </td>
-                  </tr>
-                ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
-
       </div>
 
-      {/* ======================================================== */}
-      {/* MODAL 1: ASSIGN ENTIRE ROUTE TO RIDER                    */}
-      {/* ======================================================== */}
+      {/* ── MODAL: BULK ROUTE ASSIGN ── */}
       {isAssignRouteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Assign Route to Delivery Rider</h3>
-                <p className="text-[11px] text-slate-400">Allocate all stops in a geographic route to a rider</p>
-              </div>
-              <button
-                onClick={() => setIsAssignRouteOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-extrabold text-stone-900 text-sm">Assign Area Route to Rider</h3>
+              <button onClick={() => setIsAssignRouteOpen(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAssignRouteSubmit} className="space-y-4">
+            <form onSubmit={handleAssignRouteSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Select Delivery Route / Area *
-                </label>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Select Delivery Area</label>
                 <select
                   value={routeArea}
                   onChange={(e) => setRouteArea(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                 >
-                  <option value="Baner">Baner (Morning Route R-04)</option>
-                  <option value="Aundh">Aundh (Route A-01)</option>
-                  <option value="Kothrud">Kothrud (Route K-02)</option>
-                  <option value="Wanowrie">Wanowrie (Route W-01)</option>
-                  <option value="Wakad">Wakad (Route WK-03)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Assign to Delivery Rider *
-                </label>
-                <select
-                  value={routeRider}
-                  onChange={(e) => setRouteRider(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                >
-                  {deliveryRiders.map((r) => (
-                    <option key={r.id} value={r.name}>
-                      {r.name} ({r.phone})
+                  {dynamicAreas.map((area) => (
+                    <option key={area} value={area}>
+                      {area}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Delivery Time Slot / Shift *
-                </label>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Designated Rider</label>
                 <select
-                  value={routeSlot}
-                  onChange={(e) => setRouteSlot(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="Morning (6:00 AM - 7:30 AM)">Morning Shift (6:00 AM - 7:30 AM)</option>
-                  <option value="Evening (5:30 PM - 7:00 PM)">Evening Shift (5:30 PM - 7:00 PM)</option>
-                </select>
-              </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-[11px] text-blue-800">
-                All scheduled household drops in <strong>{routeArea}</strong> will immediately synchronize to this rider&apos;s mobile app.
-              </div>
-
-              <div className="flex gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAssignRouteOpen(false)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Assigning...' : 'Confirm Route Assignment'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL 2: SCHEDULE / DISPATCH ON-DEMAND STOP             */}
-      {/* ======================================================== */}
-      {isNewDeliveryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Schedule & Dispatch Stop</h3>
-                <p className="text-[11px] text-slate-400">Add an on-demand doorstep delivery task</p>
-              </div>
-              <button
-                onClick={() => setIsNewDeliveryOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateDeliverySubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Customer Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newCustName}
-                  onChange={(e) => setNewCustName(e.target.value)}
-                  placeholder="e.g. Ramesh Kulkarni"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Contact Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={newCustPhone}
-                    onChange={(e) => setNewCustPhone(e.target.value)}
-                    placeholder="+91 98..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Route / Area *
-                  </label>
-                  <select
-                    value={newArea}
-                    onChange={(e) => setNewArea(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Baner">Baner</option>
-                    <option value="Aundh">Aundh</option>
-                    <option value="Kothrud">Kothrud</option>
-                    <option value="Wanowrie">Wanowrie</option>
-                    <option value="Wakad">Wakad</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Doorstep Delivery Address *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newAddress}
-                  onChange={(e) => setNewAddress(e.target.value)}
-                  placeholder="e.g. Flat 304, Marvel Zephyr, Baner"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Housing Society / Building Complex (for Route Clustering)
-                </label>
-                <input
-                  type="text"
-                  value={newSociety}
-                  onChange={(e) => setNewSociety(e.target.value)}
-                  placeholder="e.g. Marvel Zephyr / Rohan Nilay / Green Glen"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Milk Variant
-                  </label>
-                  <select
-                    value={newVariant}
-                    onChange={(e) => setNewVariant(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    {products && products.length > 0 ? (
-                      products.map((p) => (
-                        <option key={p.id || p.variant} value={p.variant}>
-                          {p.name} ({p.variant})
-                        </option>
-                      ))
-                    ) : (
-                      <option value="Cow Milk">No varieties added yet</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Quantity (Liters)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={newQty}
-                    onChange={(e) => setNewQty(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Time Slot / Shift
-                  </label>
-                  <select
-                    value={newSlot}
-                    onChange={(e) => setNewSlot(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 - 7:30 AM)</option>
-                    <option value="Evening (5:30 PM - 7:00 PM)">Evening (5:30 - 7:00 PM)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Assign Rider *
-                  </label>
-                  <select
-                    value={newRider}
-                    onChange={(e) => setNewRider(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    {deliveryRiders.map((r) => (
-                      <option key={r.id} value={r.name}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsNewDeliveryOpen(false)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Scheduling...' : 'Schedule & Dispatch'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* MODAL 3: REASSIGN INDIVIDUAL STOP RIDER & TIME           */}
-      {/* ======================================================== */}
-      {reassigningTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Reassign Delivery Stop</h3>
-                <p className="text-[11px] text-slate-400 font-medium">#{reassigningTask.deliveryNumber} &bull; {reassigningTask.customerName}</p>
-              </div>
-              <button
-                onClick={() => setReassigningTask(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSingleReassignSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Assign to Rider *
-                </label>
-                <select
-                  value={targetRider}
-                  onChange={(e) => setTargetRider(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  value={routeRider}
+                  onChange={(e) => setRouteRider(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                 >
                   {deliveryRiders.map((r) => (
                     <option key={r.id} value={r.name}>
@@ -1350,118 +905,128 @@ export default function DeliveryManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Delivery Time Slot / Shift *
-                </label>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Delivery Shift</label>
                 <select
-                  value={targetSlot}
-                  onChange={(e) => setTargetSlot(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  value={routeSlot}
+                  onChange={(e) => setRouteSlot(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                 >
                   <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 AM - 7:30 AM)</option>
                   <option value="Evening (5:30 PM - 7:00 PM)">Evening (5:30 PM - 7:00 PM)</option>
                 </select>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                <div><strong>Address:</strong> {reassigningTask.address}</div>
-                <div><strong>Requirement:</strong> {reassigningTask.quantityLiters}L {reassigningTask.productVariant}</div>
-              </div>
-
-              <div className="flex gap-2.5 pt-1">
-                <button
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <Button
                   type="button"
-                  onClick={() => setReassigningTask(null)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setIsAssignRouteOpen(false)}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Updating...' : 'Update Assignment'}</span>
-                </button>
+                </Button>
+                <Button type="submit" variant="primary" size="md" isLoading={isSubmitting}>
+                  Assign All Stops
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 4: CREATE NEW ROUTE                                */}
-      {/* ======================================================== */}
-      {isCreateRouteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Create New Route</h3>
-                <p className="text-[11px] text-slate-400">Define a new route, cluster societies, and configure vehicle load limit</p>
-              </div>
-              <button
-                onClick={() => setIsCreateRouteOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
+      {/* ── MODAL: SCHEDULE NEW STOP ── */}
+      {isNewDeliveryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-extrabold text-stone-900 text-sm">Schedule Individual Delivery Stop</h3>
+              <button onClick={() => setIsNewDeliveryOpen(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRouteSubmit} className="space-y-3.5">
+            <form onSubmit={handleCreateDeliverySubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Route Code *
-                  </label>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Customer Name *</label>
                   <input
                     type="text"
                     required
-                    value={newRouteCode}
-                    onChange={(e) => setNewRouteCode(e.target.value)}
-                    placeholder="e.g. H-05"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    value={newCustName}
+                    onChange={(e) => setNewCustName(e.target.value)}
+                    placeholder="e.g. Priya Kulkarni"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Delivery Area / Route *
-                  </label>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Phone Number</label>
                   <input
                     type="text"
-                    required
-                    value={newRouteArea}
-                    onChange={(e) => setNewRouteArea(e.target.value)}
-                    placeholder="e.g. North Zone, Civil Lines, or Locality Name"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="+91 94230 77812"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Route Name *
-                </label>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Doorstep Address *</label>
                 <input
                   type="text"
                   required
-                  value={newRouteName}
-                  onChange={(e) => setNewRouteName(e.target.value)}
-                  placeholder="e.g. Hinjawadi Tech Park Morning Loop"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  placeholder="Flat 402, Rohan Nilay"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Assigned Rider *
-                  </label>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Milk Variety</label>
                   <select
-                    value={newRouteRider}
-                    onChange={(e) => setNewRouteRider(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    value={newVariant}
+                    onChange={(e) => setNewVariant(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.variant}>
+                        {p.variant}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Quantity (Liters)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={newQty}
+                    onChange={(e) => setNewQty(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs tabular-nums focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Shift</label>
+                  <select
+                    value={newSlot}
+                    onChange={(e) => setNewSlot(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                  >
+                    <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 AM - 7:30 AM)</option>
+                    <option value="Evening (5:30 PM - 7:00 PM)">Evening (5:30 PM - 7:00 PM)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Assigned Rider</label>
+                  <select
+                    value={newRider}
+                    onChange={(e) => setNewRider(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                   >
                     {deliveryRiders.map((r) => (
                       <option key={r.id} value={r.name}>
@@ -1470,403 +1035,126 @@ export default function DeliveryManagementPage() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Vehicle Capacity (L)
-                  </label>
-                  <input
-                    type="number"
-                    step="5"
-                    value={newRouteCapacity}
-                    onChange={(e) => setNewRouteCapacity(e.target.value)}
-                    placeholder="e.g. 60"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold tabular-nums focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Housing Societies / Complexes in Route
-                </label>
-                <input
-                  type="text"
-                  value={newRouteSocieties}
-                  onChange={(e) => setNewRouteSocieties(e.target.value)}
-                  placeholder="e.g. Blue Ridge, Megapolis, Life Republic"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Comma-separated building names to cluster together</p>
-              </div>
-
-              {/* Select Customers for this Route & Rider */}
-              <div className="pt-2.5 border-t border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900">
-                      Select Customers for Route ({selectedRouteCustomerIds.length} selected)
-                    </label>
-                    <p className="text-[11px] text-slate-500">
-                      Assigned rider ({newRouteRider || defaultRiderName}) will deliver milk to these doorsteps
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRouteCustomerIds(filteredCustomersForNewRoute.map((c) => c.id))}
-                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
-                    >
-                      Select All
-                    </button>
-                    <span className="text-slate-300">•</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRouteCustomerIds([])}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-
-                {/* Search customers inside modal */}
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={routeCustomerSearch}
-                    onChange={(e) => setRouteCustomerSearch(e.target.value)}
-                    placeholder="Search customers by name, phone, or address..."
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* Customer List */}
-                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-slate-50/50">
-                  {filteredCustomersForNewRoute.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-slate-400 font-medium">
-                      No matching customers found
-                    </div>
-                  ) : (
-                    filteredCustomersForNewRoute.map((cust) => {
-                      const isSelected = selectedRouteCustomerIds.includes(cust.id);
-                      const sub = subscriptions.find((s) => s.customerId === cust.id && s.status === 'Active');
-                      const qty = sub?.quantityLiters || 1.5;
-                      const variant = sub?.productVariant || 'Cow Milk';
-
-                      return (
-                        <div
-                          key={cust.id}
-                          onClick={() => {
-                            setSelectedRouteCustomerIds((prev) =>
-                              isSelected ? prev.filter((id) => id !== cust.id) : [...prev, cust.id]
-                            );
-                          }}
-                          className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected ? 'bg-emerald-50/90' : 'hover:bg-white'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 shrink-0 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-xs text-slate-900 truncate">{cust.name}</span>
-                                (<a href={`tel:${cust.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-emerald-600 font-mono text-[10px] text-slate-500">{cust.phone}</a>)
-                              </div>
-                              <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
-                                <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-400" />
-                                <span>{cust.address}</span>
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-emerald-800 text-[10px] font-bold shadow-2xs">
-                              🥛 {qty} L {variant}
-                            </span>
-                            {cust.route && (
-                              <div className="text-[9px] text-slate-400 font-medium mt-0.5">
-                                Current: {cust.route}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* Real-time Summary Card */}
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-slate-800">{selectedRouteCustomerIds.length} stops</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="font-extrabold text-emerald-700">
-                      {selectedRouteCustomersTotalLiters.toFixed(1)} L Total Milk
-                    </span>
-                  </div>
-                  <div className="text-[11px] font-bold text-slate-600">
-                    Load: {Math.round((selectedRouteCustomersTotalLiters / (parseFloat(newRouteCapacity) || 60)) * 100)}% of {newRouteCapacity || 60}L
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2.5 pt-2">
-                <button
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <Button
                   type="button"
-                  onClick={() => setIsCreateRouteOpen(false)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setIsNewDeliveryOpen(false)}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Creating...' : 'Create & Assign Route'}</span>
-                </button>
+                </Button>
+                <Button type="submit" variant="primary" size="md" isLoading={isSubmitting}>
+                  Schedule Stop
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 5: EDIT DELIVERY ADDRESS & LOCATION (SUPPORT INACCURATE ADDRESSES) */}
-      {/* ======================================================== */}
+      {/* ── MODAL: EDIT ADDRESS & MAP LOCATION ── */}
       {editingAddressTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Edit Delivery Location</h3>
-                <p className="text-[11px] text-slate-400">Correct address, flat number, society, or landmark</p>
+                <h3 className="font-extrabold text-stone-900 text-sm">Update Delivery Location</h3>
+                <p className="text-[11px] text-stone-500 font-normal">
+                  {editingAddressTask.customerName} (#{editingAddressTask.deliveryNumber})
+                </p>
               </div>
               <button
                 onClick={() => setEditingAddressTask(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="text-stone-400 hover:text-stone-600"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleEditAddressSubmit} className="space-y-3.5">
-              <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-900">
-                Updating location for <strong>{editingAddressTask.customerName}</strong> ({editingAddressTask.deliveryNumber}).
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Flat / Unit / Door #
-                  </label>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Flat / Unit</label>
                   <input
                     type="text"
                     value={editFlat}
                     onChange={(e) => setEditFlat(e.target.value)}
-                    placeholder="e.g. Flat 302, B-Wing"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. Flat 402"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Housing Society / Complex *
-                  </label>
+                  <label className="text-[11px] font-bold text-stone-700 block mb-1">Society / Building</label>
                   <input
                     type="text"
                     value={editSociety}
                     onChange={(e) => setEditSociety(e.target.value)}
-                    placeholder="e.g. Marvel Zephyr"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-purple-700 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. Rohan Nilay"
+                    className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Full Street Address *
-                </label>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">Full Address</label>
                 <input
                   type="text"
-                  required
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
-                  placeholder="e.g. Flat 302, B-Wing, Marvel Zephyr, Baner"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                  placeholder="Street address, landmark"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
                 />
               </div>
 
-              {/* Exact Map Pin Location for Delivery Rider */}
-              <MapLocationPicker
-                initialLat={editLat}
-                initialLng={editLng}
-                areaHint={editArea}
-                onLocationSelect={(lat, lng) => {
-                  setEditLat(lat);
-                  setEditLng(lng);
-                }}
-                label="Pin Exact Delivery Doorstep on Map"
-                compact={false}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Nearby Landmark
-                  </label>
-                  <input
-                    type="text"
-                    value={editLandmark}
-                    onChange={(e) => setEditLandmark(e.target.value)}
-                    placeholder="e.g. Opposite DMart"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Delivery Area / Route
-                  </label>
-                  <input
-                    type="text"
-                    value={editArea}
-                    onChange={(e) => setEditArea(e.target.value)}
-                    placeholder="e.g. Sector 12, Civil Lines, or Locality Name"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
+              {/* Map Location Picker Component */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Rider Delivery Note
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">
+                  GPS Pin Placement (Draggable Pin)
                 </label>
-                <input
-                  type="text"
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="e.g. Leave milk in bag at door handle"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                <MapLocationPicker
+                  initialLat={editLat}
+                  initialLng={editLng}
+                  onLocationSelect={(lat: number, lng: number) => {
+                    setEditLat(lat);
+                    setEditLng(lng);
+                  }}
                 />
               </div>
 
-              <div className="flex gap-2.5 pt-2">
-                <button
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
                   onClick={() => setEditingAddressTask(null)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Saving...' : 'Save Location'}</span>
-                </button>
+                </Button>
+                <Button type="submit" variant="primary" size="md" isLoading={isSubmitting}>
+                  Save Coordinates
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 6: LOG DELIVERY FAILURE / EXCEPTION WITH REASON    */}
-      {/* ======================================================== */}
-      {failModalTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Log Delivery Exception</h3>
-                <p className="text-[11px] text-slate-400">Record reason for undelivered stop #{failModalTask.deliveryNumber}</p>
-              </div>
-              <button
-                onClick={() => setFailModalTask(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleLogFailedSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Reason for Failure / Return *
-                </label>
-                <select
-                  value={failReasonSelect}
-                  onChange={(e) => setFailReasonSelect(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="Door locked / No one answered">Door locked / No one answered</option>
-                  <option value="Customer out of station (Unnotified)">Customer out of station (Unnotified)</option>
-                  <option value="Customer refused delivery">Customer refused delivery</option>
-                  <option value="Wrong / Incomplete address">Wrong / Incomplete address</option>
-                  <option value="Aggressive pet / Gate inaccessible">Aggressive pet / Gate inaccessible</option>
-                  <option value="Payment / Cash dispute">Payment / Cash dispute</option>
-                  <option value="Other">Other (Enter custom reason)</option>
-                </select>
-              </div>
-
-              {failReasonSelect === 'Other' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Describe Exception Details *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={customFailReason}
-                    onChange={(e) => setCustomFailReason(e.target.value)}
-                    placeholder="Enter reason..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              )}
-
-              <div className="flex gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setFailModalTask(null)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-2/3 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Confirm Exception</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Embedded RouteBuilderStudio Modal */}
+      {isRouteStudioOpen && (
+        <RouteBuilderStudio
+          isOpen={isRouteStudioOpen}
+          onClose={() => setIsRouteStudioOpen(false)}
+          customers={customers}
+          subscriptions={subscriptions}
+          staff={staff}
+          routes={routes}
+          dairies={dairies}
+          onDispatch={handleRouteStudioDispatch}
+        />
       )}
-
-      {/* ======================================================== */}
-      {/* MODAL: INTERACTIVE ROUTE BUILDER STUDIO (MAP + SEQUENCING) */}
-      {/* ======================================================== */}
-      <RouteBuilderStudio
-        isOpen={isRouteStudioOpen}
-        onClose={() => setIsRouteStudioOpen(false)}
-        customers={customers}
-        subscriptions={subscriptions}
-        staff={staff}
-        routes={routes}
-        dairies={dairies}
-        onDispatch={handleRouteStudioDispatch}
-      />
     </div>
   );
 }

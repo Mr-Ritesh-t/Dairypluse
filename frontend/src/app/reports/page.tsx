@@ -7,30 +7,21 @@ import {
   Download,
   Calendar,
   TrendingUp,
-  TrendingDown,
   FileSpreadsheet,
-  FileText,
   PieChart as PieChartIcon,
   Truck,
   Star,
   CheckCircle2,
-  Clock,
-  Layers,
   Milk,
   DollarSign,
   CreditCard,
-  AlertTriangle,
   Search,
-  Filter,
   Sparkles,
   ArrowUpRight,
-  ArrowDownRight,
   ShieldCheck,
-  RefreshCw,
-  UserCheck,
-  ChevronRight,
   Droplets,
   PackageCheck,
+  Building,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -51,19 +42,23 @@ import {
 } from 'recharts';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { getDemandForecastApi } from '@/lib/api';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { StatCard } from '@/components/ui/StatCard';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 type DateRangeOption = 'TODAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'LAST_MONTH' | 'ALL_TIME';
 type ActiveReportTab = 'overview' | 'financials' | 'routes' | 'inventory' | 'forecast';
 type OverviewChartMetric = 'FINANCIAL' | 'VOLUME';
 
-// Custom Tooltip for Recharts
+// Custom Tooltip for Recharts styled to match Hallmark theme
 const CustomChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900/95 backdrop-blur-md text-white p-3 rounded-xl shadow-xl border border-slate-800 text-xs space-y-1.5 min-w-[170px]">
-      <PageHead title="Reports & Analytics" description="Executive reporting on dairy profitability, spoilage rates, revenue trends, and delivery fulfillment." />
-
-        <p className="font-bold text-slate-300 text-[11px] pb-1 border-b border-slate-800">{label}</p>
+      <div className="bg-[#151413]/95 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-2xl border border-stone-800 text-xs space-y-1.5 min-w-[180px]">
+        <p className="font-bold text-stone-300 text-[11px] pb-1 border-b border-stone-800">{label}</p>
         {payload.map((entry: any, index: number) => {
           const isCurrency =
             entry.unit === '₹' ||
@@ -77,14 +72,14 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
 
           return (
             <div key={`item-${index}`} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 text-slate-400">
+              <span className="flex items-center gap-1.5 text-stone-400">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color || entry.fill }} />
                 <span>{entry.name}:</span>
               </span>
               <span className="font-bold tabular-nums text-white">
                 {isCurrency
-                  ? `₹${Math.round(entry.value).toLocaleString()}`
-                  : `${Number(entry.value).toLocaleString()} ${entry.unit || ''}`}
+                  ? `₹${Math.round(entry.value).toLocaleString('en-IN')}`
+                  : `${Number(entry.value).toLocaleString('en-IN')} ${entry.unit || ''}`}
               </span>
             </div>
           );
@@ -147,7 +142,7 @@ export default function ReportsDashboardPage() {
     if (range === 'ALL_TIME' || !dateStr) return true;
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    const thisMonthPrefix = todayStr.substring(0, 7); // YYYY-MM
+    const thisMonthPrefix = todayStr.substring(0, 7);
 
     if (range === 'TODAY') {
       return dateStr.startsWith(todayStr);
@@ -227,7 +222,7 @@ export default function ReportsDashboardPage() {
   const totalBilled = paidInvoicesRevenue + pendingReceivables;
   const collectionEfficiency = totalBilled > 0 ? Math.round((paidInvoicesRevenue / totalBilled) * 100) : 100;
 
-  // ================= 1. DYNAMIC & REAL PRODUCT VARIANT SALES SHARE =================
+  // 1. Dynamic product variant share
   const variantSalesData = useMemo(() => {
     const variantMap: Record<
       string,
@@ -243,12 +238,12 @@ export default function ReportsDashboardPage() {
     > = {};
 
     const colorPalette = [
+      { bg: 'bg-teal-700', hex: '#0F766E' },
+      { bg: 'bg-sky-600', hex: '#0284C7' },
+      { bg: 'bg-amber-600', hex: '#D97706' },
       { bg: 'bg-emerald-600', hex: '#059669' },
-      { bg: 'bg-blue-600', hex: '#2563EB' },
-      { bg: 'bg-amber-500', hex: '#D97706' },
+      { bg: 'bg-rose-600', hex: '#E11D48' },
       { bg: 'bg-purple-600', hex: '#7C3AED' },
-      { bg: 'bg-rose-500', hex: '#E11D48' },
-      { bg: 'bg-teal-600', hex: '#0D9488' },
     ];
     let colorIdx = 0;
 
@@ -324,10 +319,10 @@ export default function ReportsDashboardPage() {
 
     if (totalVolume === 0) {
       return [
-        { name: 'Cow Milk (Standard 4.2% FAT)', liters: 6400, share: 52, color: 'bg-emerald-600', hexColor: '#059669', revenue: 396800 },
-        { name: 'Pure Buffalo Milk (7.0% FAT)', liters: 3800, share: 30, color: 'bg-blue-600', hexColor: '#2563EB', revenue: 296400 },
-        { name: 'Homogenized Toned Milk', liters: 1500, share: 12, color: 'bg-amber-500', hexColor: '#D97706', revenue: 81000 },
-        { name: 'A2 Gir Cow Organic Milk', liters: 750, share: 6, color: 'bg-purple-600', hexColor: '#7C3AED', revenue: 71250 },
+        { name: 'Cow Milk (Standard 4.2% FAT)', liters: 6400, share: 52, color: 'bg-teal-700', hexColor: '#0F766E', revenue: 396800 },
+        { name: 'Pure Buffalo Milk (7.0% FAT)', liters: 3800, share: 30, color: 'bg-sky-600', hexColor: '#0284C7', revenue: 296400 },
+        { name: 'Homogenized Toned Milk', liters: 1500, share: 12, color: 'bg-amber-600', hexColor: '#D97706', revenue: 81000 },
+        { name: 'A2 Gir Cow Organic Milk', liters: 750, share: 6, color: 'bg-emerald-600', hexColor: '#059669', revenue: 71250 },
       ];
     }
 
@@ -349,7 +344,7 @@ export default function ReportsDashboardPage() {
     return variantSalesData.reduce((acc, v) => acc + v.liters, 0);
   }, [variantSalesData]);
 
-  // ================= 2. DAILY TREND TIME SERIES DATA FOR CHARTS =================
+  // 2. Financial time series data
   const financialTrendChartData = useMemo(() => {
     const pointsCount = selectedRange === 'TODAY' ? 6 : selectedRange === 'LAST_7_DAYS' ? 7 : 10;
     const now = new Date();
@@ -365,7 +360,6 @@ export default function ReportsDashboardPage() {
       const dateStr = d.toISOString().split('T')[0];
       const label = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 
-      // Sum real transactions for this date
       const dayInvoices = invoices.filter((inv) => inv.issueDate === dateStr);
       const dayExpenses = expenses.filter((e) => e.date === dateStr);
       const dayDelivs = deliveries.filter((del) => del.deliveryDate === dateStr && del.status === 'Delivered');
@@ -374,7 +368,6 @@ export default function ReportsDashboardPage() {
       let dayExp = dayExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
       let dayLit = dayDelivs.reduce((acc, del) => acc + (del.quantityLiters || 0), 0);
 
-      // Realistic smoothing curve if real entries are sparse
       if (dayRev === 0) {
         const factor = 0.85 + ((i * 17) % 35) / 100;
         dayRev = Math.round(baseDailyRev * factor);
@@ -400,7 +393,7 @@ export default function ReportsDashboardPage() {
     return result;
   }, [totalRevenue, totalCost, totalLitersSold, invoices, expenses, deliveries, selectedRange]);
 
-  // ================= 3. ROUTE EFFICIENCY DATA FOR CHARTS =================
+  // 3. Route efficiency data
   const routeEfficiencyData = useMemo(() => {
     const defaultRouteBenchmarks: Record<
       string,
@@ -485,7 +478,7 @@ export default function ReportsDashboardPage() {
     });
   }, [routes, deliveries, staff, driverRatings]);
 
-  // ================= 4. INVENTORY & WASTAGE METRICS =================
+  // 4. Inventory & wastage metrics
   const inventoryReportMetrics = useMemo(() => {
     const list = filteredMovements.length > 0 ? filteredMovements : movements;
     const intakeLiters = list
@@ -522,7 +515,7 @@ export default function ReportsDashboardPage() {
     };
   }, [filteredMovements, movements]);
 
-  // ================= 5. EXPENSE CATEGORY BREAKDOWN =================
+  // 5. Expense breakdown
   const expenseCategories = useMemo(() => {
     const list = filteredExpenses.length > 0 ? filteredExpenses : expenses;
     const catMap: Record<string, number> = {};
@@ -539,20 +532,20 @@ export default function ReportsDashboardPage() {
 
     if (entries.length === 0) {
       return [
-        { name: 'Cattle Feed & Silage', amount: 48000, share: 44, fill: '#10B981' },
-        { name: 'Fuel & Logistics', amount: 26000, share: 24, fill: '#3B82F6' },
-        { name: 'Cold Storage Power', amount: 18500, share: 17, fill: '#F59E0B' },
-        { name: 'Packaging Pouches', amount: 11000, share: 10, fill: '#8B5CF6' },
-        { name: 'Veterinary Care', amount: 5500, share: 5, fill: '#EC4899' },
+        { name: 'Cattle Feed & Silage', amount: 48000, share: 44, fill: '#0F766E' },
+        { name: 'Fuel & Logistics', amount: 26000, share: 24, fill: '#0284C7' },
+        { name: 'Cold Storage Power', amount: 18500, share: 17, fill: '#D97706' },
+        { name: 'Packaging Pouches', amount: 11000, share: 10, fill: '#7C3AED' },
+        { name: 'Veterinary Care', amount: 5500, share: 5, fill: '#C2410C' },
       ];
     }
-    const colors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6'];
+    const colors = ['#0F766E', '#0284C7', '#D97706', '#7C3AED', '#C2410C', '#059669'];
     return entries
       .sort((a, b) => b.amount - a.amount)
       .map((item, idx) => ({ ...item, fill: colors[idx % colors.length] }));
   }, [filteredExpenses, expenses, totalCost]);
 
-  // ================= 6. INVOICE SEARCH & FILTER =================
+  // 6. Invoices search
   const searchableInvoices = useMemo(() => {
     return filteredInvoices.filter((inv) => {
       const matchesSearch =
@@ -563,7 +556,7 @@ export default function ReportsDashboardPage() {
     });
   }, [filteredInvoices, invoiceSearchQuery, invoiceStatusFilter]);
 
-  // ================= 7. CSV EXPORT HANDLER =================
+  // 7. CSV Export
   const handleExportCsv = () => {
     const rows = [
       ['DairyPulse Enterprise Operational & Financial Report'],
@@ -617,138 +610,100 @@ export default function ReportsDashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150 pb-12">
+      <PageHead
+        title="Business Reports & Analytics | DairyPulse"
+        description="Executive reporting on dairy profitability, spoilage rates, revenue trends, and delivery fulfillment."
+      />
+
       {/* Page Header */}
-      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Business Reports & Analytics</h2>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Audit Ready</span>
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time financial performance charts, volume distribution, fleet fulfillment, and AI procurement forecasting for{' '}
-            <strong className="text-slate-800 font-semibold">{activeDairy?.name || 'DairyPulse Farm HQ'}</strong>.
-          </p>
-        </div>
+      <PageHeader
+        title="Business Reports & Analytics"
+        description={`Real-time financial charts, volume distribution, fleet fulfillment, and AI procurement forecasting for ${activeDairy?.name || 'DairyPulse Farm HQ'}.`}
+        badge={
+          <Badge variant="teal" dot>
+            Audit Ready
+          </Badge>
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center bg-white border border-stone-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-stone-400 mr-1.5 shrink-0" />
+              <select
+                value={selectedRange}
+                onChange={(e) => setSelectedRange(e.target.value as DateRangeOption)}
+                aria-label="Filter report date range"
+                className="text-xs font-semibold text-stone-800 bg-transparent border-none focus-visible:outline-hidden cursor-pointer"
+              >
+                <option value="TODAY">Today</option>
+                <option value="LAST_7_DAYS">Last 7 Days</option>
+                <option value="THIS_MONTH">This Month (Current)</option>
+                <option value="LAST_MONTH">Last Month</option>
+                <option value="ALL_TIME">All-Time Cumulative</option>
+              </select>
+            </div>
 
-        {/* Global Date Range Selector & Export Actions */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Date Range Selector */}
-          <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 ml-2 mr-1 shrink-0" />
-            <select
-              value={selectedRange}
-              onChange={(e) => setSelectedRange(e.target.value as DateRangeOption)}
-              className="text-xs font-semibold text-slate-700 bg-transparent py-1 pr-2 border-none focus:outline-hidden cursor-pointer"
+            <Button
+              variant="secondary"
+              size="md"
+              leftIcon={<FileSpreadsheet className="w-4 h-4 text-teal-700" />}
+              onClick={handleExportCsv}
             >
-              <option value="TODAY">Today</option>
-              <option value="LAST_7_DAYS">Last 7 Days</option>
-              <option value="THIS_MONTH">This Month (Current)</option>
-              <option value="LAST_MONTH">Last Month</option>
-              <option value="ALL_TIME">All-Time Cumulative</option>
-            </select>
+              Export CSV
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<Download className="w-4 h-4" />}
+              onClick={() => window.print()}
+            >
+              Print PDF
+            </Button>
           </div>
+        }
+      />
 
-          <button
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>Print PDF</span>
-          </button>
-        </div>
+      {/* KPI Cards Grid */}
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <StatCard
+          title="Gross Revenue"
+          value={`₹${totalRevenue.toLocaleString('en-IN')}`}
+          subtitle={`₹${paidInvoicesRevenue.toLocaleString('en-IN')} collected`}
+          icon={<DollarSign className="w-4 h-4" />}
+          variant="teal"
+        />
+        <StatCard
+          title="Volume Delivered"
+          value={`${totalLitersSold.toLocaleString('en-IN')} L`}
+          subtitle={`Across ${routes.length || 4} active routes`}
+          icon={<Milk className="w-4 h-4" />}
+          variant="blue"
+        />
+        <StatCard
+          title="Operational Costs"
+          value={`₹${totalCost.toLocaleString('en-IN')}`}
+          subtitle="Feed, logistics, energy"
+          icon={<CreditCard className="w-4 h-4" />}
+          variant="terracotta"
+        />
+        <StatCard
+          title="Net Operating Profit"
+          value={`₹${netEstimatedProfit.toLocaleString('en-IN')}`}
+          subtitle={`${profitMarginPercent}% Operating margin`}
+          icon={<TrendingUp className="w-4 h-4" />}
+          variant={netEstimatedProfit >= 0 ? 'teal' : 'terracotta'}
+        />
+        <StatCard
+          title="Collection Rate"
+          value={`${collectionEfficiency}%`}
+          subtitle={`₹${pendingReceivables.toLocaleString('en-IN')} pending`}
+          icon={<CheckCircle2 className="w-4 h-4" />}
+          variant={pendingReceivables > 0 ? 'amber' : 'stone'}
+        />
       </section>
 
-      {/* Macro Key Performance Indicator Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        {/* Gross Revenue */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-medium">Gross Revenue</span>
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tabular-nums">
-            ₹{totalRevenue.toLocaleString()}
-          </h3>
-          <p className="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-            <ArrowUpRight className="w-3 h-3" />
-            <span>₹{paidInvoicesRevenue.toLocaleString()} collected</span>
-          </p>
-        </div>
-
-        {/* Volume Sold */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-medium">Volume Delivered</span>
-            <Milk className="w-4 h-4 text-blue-600" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tabular-nums">
-            {totalLitersSold.toLocaleString()} L
-          </h3>
-          <p className="text-[10px] text-slate-500 font-medium mt-1">
-            Across {routes.length || 4} active routes
-          </p>
-        </div>
-
-        {/* Operational Expenses */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-medium">Operational Expenses</span>
-            <CreditCard className="w-4 h-4 text-rose-500" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tabular-nums">
-            ₹{totalCost.toLocaleString()}
-          </h3>
-          <p className="text-[10px] text-slate-400 font-medium mt-1">
-            Feed, logistics, energy
-          </p>
-        </div>
-
-        {/* Net Profit */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-medium">Net Operating Profit</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
-          </div>
-          <h3
-            className={`text-xl sm:text-2xl font-black mt-1 tabular-nums ${
-              netEstimatedProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'
-            }`}
-          >
-            ₹{netEstimatedProfit.toLocaleString()}
-          </h3>
-          <p className="text-[10px] text-emerald-700 font-semibold mt-1">
-            {profitMarginPercent}% Operating margin
-          </p>
-        </div>
-
-        {/* Collection Efficiency */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-medium">Collection Efficiency</span>
-            <CheckCircle2 className="w-4 h-4 text-purple-600" />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tabular-nums">
-            {collectionEfficiency}%
-          </h3>
-          <p className="text-[10px] text-amber-700 font-semibold mt-1">
-            ₹{pendingReceivables.toLocaleString()} outstanding
-          </p>
-        </div>
-      </section>
-
-      {/* Sub-Navigation Tabs */}
-      <section className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-full sm:w-fit overflow-x-auto">
+      {/* Sub-Navigation Pill Tabs */}
+      <div className="flex items-center gap-1.5 p-1 bg-stone-200/60 rounded-2xl w-full sm:w-fit overflow-x-auto">
         {[
           { id: 'overview', label: 'Executive Overview', icon: BarChart3 },
           { id: 'financials', label: 'Financials & Invoices', icon: DollarSign },
@@ -762,37 +717,35 @@ export default function ReportsDashboardPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as ActiveReportTab)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer focus-visible:outline-hidden ${
                 isActive
-                  ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/40'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-teal-700' : 'text-stone-400'}`} />
               <span>{tab.label}</span>
             </button>
           );
         })}
-      </section>
+      </div>
 
       {/* =================================================================== */}
-      {/* TAB 1: EXECUTIVE OVERVIEW (WITH CHARTS)                             */}
+      {/* TAB 1: EXECUTIVE OVERVIEW                                          */}
       {/* =================================================================== */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* PRIMARY INTERACTIVE CHART: Daily Revenue, Expenses & Net Profit Trend */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+          {/* Primary Trend Chart Card */}
+          <Card variant="default">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  <h3 className="text-base font-extrabold text-stone-900 tracking-tight">
                     {overviewMetric === 'FINANCIAL' ? 'Revenue, Expenses & Profit Velocity' : 'Daily Milk Dispatch Volume'}
                   </h3>
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    Live Velocity
-                  </span>
+                  <Badge variant="teal" size="xs">Live Velocity</Badge>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {overviewMetric === 'FINANCIAL'
                     ? 'Comparing gross daily collections vs operating expenses and net margin'
                     : 'Daily volume delivered (Liters) across all routes and fulfillment channels'}
@@ -800,14 +753,14 @@ export default function ReportsDashboardPage() {
               </div>
 
               {/* Chart Metric Toggle */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+              <div className="flex items-center bg-stone-100 p-1 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setOverviewMetric('FINANCIAL')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     overviewMetric === 'FINANCIAL'
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-teal-800 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
                   Revenue & Costs (₹)
@@ -815,10 +768,10 @@ export default function ReportsDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setOverviewMetric('VOLUME')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     overviewMetric === 'VOLUME'
-                      ? 'bg-white text-blue-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-sky-800 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
                   Milk Volume (L)
@@ -827,39 +780,39 @@ export default function ReportsDashboardPage() {
             </div>
 
             {/* Recharts Area Container */}
-            <div className="h-72 w-full pt-2">
+            <div className="h-72 w-full pt-3">
               {!isMounted ? (
-                <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center text-xs text-slate-400">
-                  Loading performance chart...
+                <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl flex items-center justify-center text-xs text-stone-400">
+                  Loading performance velocity...
                 </div>
               ) : overviewMetric === 'FINANCIAL' ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={financialTrendChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#0F766E" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0F766E" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#E11D48" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#E11D48" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#C2410C" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#C2410C" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0D9488" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#0D9488" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#D97706" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#D97706" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
-                      axisLine={{ stroke: '#CBD5E1' }}
-                      tick={{ fill: '#64748B', fontSize: 11 }}
+                      axisLine={{ stroke: '#D6D3D1' }}
+                      tick={{ fill: '#78716C', fontSize: 11 }}
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fill: '#64748B', fontSize: 11 }}
+                      tick={{ fill: '#78716C', fontSize: 11 }}
                       tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                     />
                     <RechartsTooltip content={<CustomChartTooltip />} />
@@ -873,7 +826,7 @@ export default function ReportsDashboardPage() {
                       type="monotone"
                       dataKey="revenue"
                       name="Gross Revenue"
-                      stroke="#059669"
+                      stroke="#0F766E"
                       strokeWidth={2.5}
                       fill="url(#revenueGrad)"
                     />
@@ -881,7 +834,7 @@ export default function ReportsDashboardPage() {
                       type="monotone"
                       dataKey="expense"
                       name="Operating Expenses"
-                      stroke="#E11D48"
+                      stroke="#C2410C"
                       strokeWidth={2}
                       fill="url(#expenseGrad)"
                     />
@@ -889,7 +842,7 @@ export default function ReportsDashboardPage() {
                       type="monotone"
                       dataKey="profit"
                       name="Net Profit"
-                      stroke="#0D9488"
+                      stroke="#D97706"
                       strokeWidth={2}
                       fill="url(#profitGrad)"
                     />
@@ -900,21 +853,21 @@ export default function ReportsDashboardPage() {
                   <AreaChart data={financialTrendChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                     <defs>
                       <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#0284C7" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
-                      axisLine={{ stroke: '#CBD5E1' }}
-                      tick={{ fill: '#64748B', fontSize: 11 }}
+                      axisLine={{ stroke: '#D6D3D1' }}
+                      tick={{ fill: '#78716C', fontSize: 11 }}
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fill: '#64748B', fontSize: 11 }}
+                      tick={{ fill: '#78716C', fontSize: 11 }}
                       tickFormatter={(val) => `${val} L`}
                     />
                     <RechartsTooltip content={<CustomChartTooltip />} />
@@ -923,39 +876,37 @@ export default function ReportsDashboardPage() {
                       dataKey="liters"
                       name="Delivered Volume (L)"
                       unit="L"
-                      stroke="#2563EB"
-                      strokeWidth={3}
+                      stroke="#0284C7"
+                      strokeWidth={2.5}
                       fill="url(#volumeGrad)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </div>
+          </Card>
 
+          {/* 2-Column Split: Product Variant Share + Route Fulfillment */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Product Variant Share (With Donut Chart + Breakdown) */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            {/* Product Variant Share */}
+            <Card variant="default">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900">Product Variant Sales Share</h3>
-                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Volume & Revenue
-                    </span>
+                    <h3 className="text-base font-bold text-stone-900">Product Variant Sales Share</h3>
+                    <Badge variant="teal" size="xs">Volume & Revenue</Badge>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Distribution by product ({totalVariantMonthlyVolume.toLocaleString()} L Total)
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Distribution by product ({totalVariantMonthlyVolume.toLocaleString('en-IN')} L Total)
                   </p>
                 </div>
-                <PieChartIcon className="w-5 h-5 text-emerald-600" />
+                <PieChartIcon className="w-5 h-5 text-teal-700" />
               </div>
 
-              {/* Recharts Donut Chart */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2">
                 <div className="h-48 w-full relative">
                   {!isMounted ? (
-                    <div className="h-full w-full bg-slate-50 animate-pulse rounded-full" />
+                    <div className="h-full w-full bg-stone-100 animate-pulse rounded-full" />
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -979,122 +930,117 @@ export default function ReportsDashboardPage() {
                   )}
                   {/* Center Stat */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-sm font-black text-slate-900 tabular-nums">
-                      {totalVariantMonthlyVolume.toLocaleString()}
+                    <span className="text-sm font-black text-stone-900 tabular-nums">
+                      {totalVariantMonthlyVolume.toLocaleString('en-IN')}
                     </span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Liters</span>
+                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Liters</span>
                   </div>
                 </div>
 
-                {/* Progress Breakdown */}
                 <div className="space-y-3">
                   {variantSalesData.map((p, idx) => (
                     <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold text-slate-800">
+                      <div className="flex justify-between text-xs font-semibold text-stone-800">
                         <div className="flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${p.color}`} />
-                          <span className="font-bold text-[11px] text-slate-900 truncate max-w-[120px]">{p.name}</span>
+                          <span className="font-bold text-[11px] text-stone-900 truncate max-w-[120px]">{p.name}</span>
                         </div>
-                        <span className="tabular-nums font-extrabold text-[11px] text-slate-900">
+                        <span className="tabular-nums font-extrabold text-[11px] text-stone-900">
                           {p.share}%
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
                         <div className={`${p.color} h-1.5 rounded-full`} style={{ width: `${p.share}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Route Fulfillment Bar Chart */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <Card variant="default">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900">Route Fulfillment & Stops</h3>
-                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
-                      Live Delivery Efficiency
-                    </span>
+                    <h3 className="text-base font-bold text-stone-900">Route Fulfillment & Stops</h3>
+                    <Badge variant="info" size="xs">Live Delivery Efficiency</Badge>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">Completed stops & on-time fulfillment rates</p>
+                  <p className="text-xs text-stone-500 mt-0.5">Completed stops & on-time fulfillment rates</p>
                 </div>
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <BarChart3 className="w-5 h-5 text-sky-700" />
               </div>
 
-              {/* Recharts Bar Chart for Routes */}
               <div className="h-52 w-full pt-1">
                 {!isMounted ? (
-                  <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                  <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={routeEfficiencyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
                       <XAxis
                         dataKey="shortName"
                         tickLine={false}
-                        axisLine={{ stroke: '#CBD5E1' }}
-                        tick={{ fill: '#64748B', fontSize: 11 }}
+                        axisLine={{ stroke: '#D6D3D1' }}
+                        tick={{ fill: '#78716C', fontSize: 11 }}
                       />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: '#64748B', fontSize: 11 }}
+                        tick={{ fill: '#78716C', fontSize: 11 }}
                       />
                       <RechartsTooltip content={<CustomChartTooltip />} />
-                      <Bar dataKey="stops" name="Stops Completed" fill="#10B981" radius={[6, 6, 0, 0]} barSize={24} />
-                      <Bar dataKey="liters" name="Volume Dispatched (L)" unit="L" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={24} />
+                      <Bar dataKey="stops" name="Stops Completed" fill="#0F766E" radius={[6, 6, 0, 0]} barSize={24} />
+                      <Bar dataKey="liters" name="Volume Dispatched (L)" unit="L" fill="#0284C7" radius={[6, 6, 0, 0]} barSize={24} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
-              {/* Route Rating Footnote */}
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>Fleet Average Rating: <strong className="text-amber-600 font-bold">4.9 / 5.0 ★</strong></span>
-                <span className="text-emerald-700 font-semibold">97% On-Time Fulfillment</span>
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
+                <span>Fleet Average Rating: <strong className="text-amber-700 font-bold">4.9 / 5.0 ★</strong></span>
+                <span className="text-teal-800 font-semibold">97% On-Time Fulfillment</span>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Quick Health Summary Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs uppercase tracking-wider">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 space-y-2">
+              <div className="flex items-center gap-2 text-teal-900 font-bold text-xs uppercase tracking-wider">
+                <CheckCircle2 className="w-4 h-4 text-teal-700" />
                 <span>Collection Health</span>
               </div>
-              <h4 className="text-xl font-black text-emerald-950">
-                ₹{paidInvoicesRevenue.toLocaleString()} Collected
+              <h4 className="text-xl font-black text-stone-900 tabular-nums">
+                ₹{paidInvoicesRevenue.toLocaleString('en-IN')} Collected
               </h4>
-              <p className="text-xs text-emerald-800">
-                {collectionEfficiency}% collection rate. Overdue balance stands at ₹{pendingReceivables.toLocaleString()}.
+              <p className="text-xs text-stone-600">
+                {collectionEfficiency}% collection rate. Overdue balance stands at ₹{pendingReceivables.toLocaleString('en-IN')}.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/80 space-y-2">
-              <div className="flex items-center gap-2 text-blue-800 font-bold text-xs uppercase tracking-wider">
-                <Milk className="w-4 h-4 text-blue-600" />
+            <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-200/80 space-y-2">
+              <div className="flex items-center gap-2 text-sky-900 font-bold text-xs uppercase tracking-wider">
+                <Milk className="w-4 h-4 text-sky-700" />
                 <span>Cold Storage & Stock</span>
               </div>
-              <h4 className="text-xl font-black text-blue-950">
-                {products.reduce((acc, p) => acc + (p.availableStock || 0), 0).toLocaleString()} L Available
+              <h4 className="text-xl font-black text-stone-900 tabular-nums">
+                {products.reduce((acc, p) => acc + (p.availableStock || 0), 0).toLocaleString('en-IN')} L Available
               </h4>
-              <p className="text-xs text-blue-800">
+              <p className="text-xs text-stone-600">
                 Stock across {products.length} milk varieties in chiller tanks with healthy low-stock buffers.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200/80 space-y-2">
-              <div className="flex items-center gap-2 text-purple-800 font-bold text-xs uppercase tracking-wider">
-                <Sparkles className="w-4 h-4 text-purple-600" />
+            <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                <Sparkles className="w-4 h-4 text-amber-700" />
                 <span>AI Forecasting Recommendation</span>
               </div>
-              <h4 className="text-xl font-black text-purple-950">
+              <h4 className="text-xl font-black text-stone-900 tabular-nums">
                 {forecastData?.total_suggested_procurement || 814} L Recommended
               </h4>
-              <p className="text-xs text-purple-800">
+              <p className="text-xs text-stone-600">
                 Procurement suggestion for {forecastData?.target_day_name || 'tomorrow'} to satisfy residential morning surge.
               </p>
             </div>
@@ -1103,80 +1049,77 @@ export default function ReportsDashboardPage() {
       )}
 
       {/* =================================================================== */}
-      {/* TAB 2: FINANCIALS & INVOICE LEDGER (WITH CHARTS)                   */}
+      {/* TAB 2: FINANCIALS & INVOICE LEDGER                                 */}
       {/* =================================================================== */}
       {activeTab === 'financials' && (
         <div className="space-y-6">
-          {/* Revenue & Expense Balance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Revenue Streams Chart */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center justify-between">
-                <span>Revenue Breakdown</span>
-                <span className="text-xs text-emerald-600 font-bold">Total: ₹{totalRevenue.toLocaleString()}</span>
-              </h4>
+            {/* Revenue Breakdown */}
+            <Card variant="default">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h4 className="text-sm font-bold text-stone-900">Revenue Breakdown</h4>
+                <span className="text-xs text-teal-800 font-bold tabular-nums">Total: ₹{totalRevenue.toLocaleString('en-IN')}</span>
+              </div>
 
-              {/* Recharts Bar Comparison for Revenue vs Unpaid */}
-              <div className="h-44 w-full">
+              <div className="h-44 w-full pt-1">
                 {!isMounted ? (
-                  <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                  <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={[
-                        { name: 'Household Subs', amount: paidInvoicesRevenue, fill: '#059669' },
-                        { name: 'B2B Shops', amount: shopRevenue, fill: '#2563EB' },
-                        { name: 'Pending Credit', amount: pendingReceivables, fill: '#F59E0B' },
+                        { name: 'Household Subs', amount: paidInvoicesRevenue, fill: '#0F766E' },
+                        { name: 'B2B Shops', amount: shopRevenue, fill: '#0284C7' },
+                        { name: 'Pending Credit', amount: pendingReceivables, fill: '#D97706' },
                       ]}
                       margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="name" tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748B' }} tickFormatter={(v) => `₹${v/1000}k`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+                      <XAxis dataKey="name" tickLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#78716C' }} tickFormatter={(v) => `₹${v/1000}k`} />
                       <RechartsTooltip content={<CustomChartTooltip />} />
                       <Bar dataKey="amount" name="Amount (₹)" radius={[6, 6, 0, 0]} barSize={32}>
-                        <Cell fill="#059669" />
-                        <Cell fill="#2563EB" />
-                        <Cell fill="#F59E0B" />
+                        <Cell fill="#0F766E" />
+                        <Cell fill="#0284C7" />
+                        <Cell fill="#D97706" />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
-              <div className="space-y-1.5 text-xs pt-1">
-                <div className="flex justify-between p-2 bg-slate-50 rounded-xl">
-                  <span className="text-slate-600 font-medium">Household Invoices (Subscriptions)</span>
-                  <strong className="text-slate-900 font-bold">₹{paidInvoicesRevenue.toLocaleString()}</strong>
+              <div className="space-y-1.5 text-xs pt-2">
+                <div className="flex justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-600 font-medium">Household Invoices (Subscriptions)</span>
+                  <strong className="text-stone-900 font-bold tabular-nums">₹{paidInvoicesRevenue.toLocaleString('en-IN')}</strong>
                 </div>
-                <div className="flex justify-between p-2 bg-slate-50 rounded-xl">
-                  <span className="text-slate-600 font-medium">Commercial & Shop Orders</span>
-                  <strong className="text-slate-900 font-bold">₹{shopRevenue.toLocaleString()}</strong>
+                <div className="flex justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-600 font-medium">Commercial & Shop Orders</span>
+                  <strong className="text-stone-900 font-bold tabular-nums">₹{shopRevenue.toLocaleString('en-IN')}</strong>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            {/* Operating Expenses Breakdown Chart */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center justify-between">
-                <span>Expense Allocation</span>
-                <span className="text-xs text-rose-600 font-bold">Total: ₹{totalCost.toLocaleString()}</span>
-              </h4>
+            {/* Operating Expenses Breakdown */}
+            <Card variant="default">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h4 className="text-sm font-bold text-stone-900">Expense Allocation</h4>
+                <span className="text-xs text-rose-700 font-bold tabular-nums">Total: ₹{totalCost.toLocaleString('en-IN')}</span>
+              </div>
 
-              {/* Recharts Bar for Expense Categories */}
-              <div className="h-44 w-full">
+              <div className="h-44 w-full pt-1">
                 {!isMounted ? (
-                  <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                  <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={expenseCategories.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 20, left: 25, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
-                      <XAxis type="number" tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} tickFormatter={(v) => `₹${v/1000}k`} />
-                      <YAxis type="category" dataKey="name" tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} width={80} />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E7E5E4" />
+                      <XAxis type="number" tickLine={false} tick={{ fontSize: 10, fill: '#78716C' }} tickFormatter={(v) => `₹${v/1000}k`} />
+                      <YAxis type="category" dataKey="name" tickLine={false} tick={{ fontSize: 10, fill: '#78716C' }} width={80} />
                       <RechartsTooltip content={<CustomChartTooltip />} />
-                      <Bar dataKey="amount" name="Expense (₹)" fill="#E11D48" radius={[0, 6, 6, 0]} barSize={16}>
+                      <Bar dataKey="amount" name="Expense (₹)" fill="#C2410C" radius={[0, 6, 6, 0]} barSize={16}>
                         {expenseCategories.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill || '#E11D48'} />
+                          <Cell key={`cell-${index}`} fill={entry.fill || '#C2410C'} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -1184,42 +1127,42 @@ export default function ReportsDashboardPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5 text-xs pt-1">
+              <div className="space-y-1.5 text-xs pt-2">
                 {expenseCategories.slice(0, 3).map((cat, idx) => (
-                  <div key={idx} className="flex justify-between p-2 bg-slate-50 rounded-xl">
-                    <span className="text-slate-600 font-medium">{cat.name}</span>
-                    <strong className="text-slate-900 font-bold">₹{cat.amount.toLocaleString()} ({cat.share}%)</strong>
+                  <div key={idx} className="flex justify-between p-2.5 bg-stone-50 rounded-xl">
+                    <span className="text-stone-600 font-medium">{cat.name}</span>
+                    <strong className="text-stone-900 font-bold tabular-nums">₹{cat.amount.toLocaleString('en-IN')} ({cat.share}%)</strong>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           </div>
 
-          {/* Searchable Invoices Audit Table */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          {/* Searchable Invoices Table */}
+          <Card variant="default">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Customer Invoices & Collections Audit</h3>
-                <p className="text-xs text-slate-400">Detailed billing ledger and payment reconciliation</p>
+                <h3 className="text-sm font-bold text-stone-900">Customer Invoices & Collections Audit</h3>
+                <p className="text-xs text-stone-500">Detailed billing ledger and payment reconciliation</p>
               </div>
 
-              {/* Filters */}
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5 pointer-events-none" />
                   <input
                     type="text"
                     value={invoiceSearchQuery}
                     onChange={(e) => setInvoiceSearchQuery(e.target.value)}
                     placeholder="Search customer / invoice #"
-                    className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium w-48 sm:w-60"
+                    className="pl-8 pr-3 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus-visible:bg-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-600 font-medium w-48 sm:w-60"
                   />
                 </div>
 
                 <select
                   value={invoiceStatusFilter}
                   onChange={(e) => setInvoiceStatusFilter(e.target.value as any)}
-                  className="text-xs bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2.5 font-semibold text-slate-700 cursor-pointer"
+                  aria-label="Filter by invoice status"
+                  className="text-xs bg-stone-50 border border-stone-200 rounded-xl py-1.5 px-2.5 font-semibold text-stone-700 cursor-pointer focus-visible:outline-hidden"
                 >
                   <option value="ALL">All Status</option>
                   <option value="Paid">Paid</option>
@@ -1229,52 +1172,53 @@ export default function ReportsDashboardPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-6 px-6 mt-2">
               <table className="w-full text-left text-xs min-w-[650px]">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="pb-2 font-medium">Invoice #</th>
-                    <th className="pb-2 font-medium">Customer</th>
-                    <th className="pb-2 font-medium">Billing Period</th>
-                    <th className="pb-2 font-medium text-right">Total Amount</th>
-                    <th className="pb-2 font-medium text-right">Paid Amount</th>
-                    <th className="pb-2 font-medium text-center">Status</th>
+                  <tr className="text-stone-400 border-b border-stone-100 font-medium">
+                    <th className="pb-2.5 font-semibold">Invoice #</th>
+                    <th className="pb-2.5 font-semibold">Customer</th>
+                    <th className="pb-2.5 font-semibold">Billing Period</th>
+                    <th className="pb-2.5 font-semibold text-right">Total Amount</th>
+                    <th className="pb-2.5 font-semibold text-right">Paid Amount</th>
+                    <th className="pb-2.5 font-semibold text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-stone-100">
                   {searchableInvoices.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
+                      <td colSpan={6} className="py-8 text-center text-stone-400">
                         No invoices match the selected date or search filter.
                       </td>
                     </tr>
                   ) : (
                     searchableInvoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50/60 transition">
-                        <td className="py-2.5 font-bold font-mono text-slate-700">{inv.invoiceNumber}</td>
-                        <td className="py-2.5 font-bold text-slate-800">
+                      <tr key={inv.id} className="hover:bg-stone-50/70 transition-colors">
+                        <td className="py-2.5 font-bold font-mono text-stone-700">{inv.invoiceNumber}</td>
+                        <td className="py-2.5 font-bold text-stone-900">
                           {inv.customerName}
-                          <span className="text-[10px] text-slate-400 block font-normal">{inv.customerType}</span>
+                          <span className="text-[10px] text-stone-400 block font-normal">{inv.customerType}</span>
                         </td>
-                        <td className="py-2.5 text-slate-600">{inv.billingPeriod}</td>
-                        <td className="py-2.5 text-right font-black text-slate-900 tabular-nums">
-                          ₹{inv.totalAmount.toLocaleString()}
+                        <td className="py-2.5 text-stone-600">{inv.billingPeriod}</td>
+                        <td className="py-2.5 text-right font-black text-stone-900 tabular-nums">
+                          ₹{inv.totalAmount.toLocaleString('en-IN')}
                         </td>
-                        <td className="py-2.5 text-right font-bold text-emerald-700 tabular-nums">
-                          ₹{inv.paidAmount.toLocaleString()}
+                        <td className="py-2.5 text-right font-bold text-teal-800 tabular-nums">
+                          ₹{inv.paidAmount.toLocaleString('en-IN')}
                         </td>
                         <td className="py-2.5 text-center">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          <Badge
+                            variant={
                               inv.status === 'Paid'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                ? 'success'
                                 : inv.status === 'Partial'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
+                                ? 'info'
+                                : 'amber'
+                            }
+                            size="xs"
                           >
                             {inv.status}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))
@@ -1282,112 +1226,103 @@ export default function ReportsDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* =================================================================== */}
-      {/* TAB 3: ROUTE & FLEET EFFICIENCY (WITH CHARTS)                      */}
+      {/* TAB 3: ROUTE & FLEET EFFICIENCY                                    */}
       {/* =================================================================== */}
       {activeTab === 'routes' && (
         <div className="space-y-6">
-          {/* Route Performance Chart */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <Card variant="default">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Route Delivery Stops & On-Time Performance</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Comparative analysis of active daily delivery runs</p>
+                <h3 className="text-base font-bold text-stone-900">Route Delivery Stops & On-Time Performance</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Comparative analysis of active daily delivery runs</p>
               </div>
-              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-                Morning & Evening Slots
-              </span>
+              <Badge variant="info" size="xs">Morning & Evening Slots</Badge>
             </div>
 
             <div className="h-64 w-full pt-1">
               {!isMounted ? (
-                <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={routeEfficiencyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="route" tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+                    <XAxis dataKey="route" tickLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
                     <RechartsTooltip content={<CustomChartTooltip />} />
                     <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 11, paddingBottom: 10 }} />
-                    <Bar dataKey="stops" name="Stops Completed" fill="#10B981" radius={[6, 6, 0, 0]} barSize={28} />
-                    <Bar dataKey="onTime" name="On-Time Rate (%)" unit="%" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={28} />
+                    <Bar dataKey="stops" name="Stops Completed" fill="#0F766E" radius={[6, 6, 0, 0]} barSize={28} />
+                    <Bar dataKey="onTime" name="On-Time Rate (%)" unit="%" fill="#0284C7" radius={[6, 6, 0, 0]} barSize={28} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </div>
+          </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {routeEfficiencyData.map((r, idx) => (
-              <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+              <Card key={idx} variant="default" className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200/60 text-teal-700 flex items-center justify-center font-bold">
                     <Truck className="w-5 h-5" />
                   </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      r.onTime >= 96
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}
-                  >
+                  <Badge variant={r.onTime >= 96 ? 'success' : 'amber'} size="xs">
                     {r.onTime}% On-Time
-                  </span>
+                  </Badge>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-extrabold text-slate-900">{r.route}</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Assigned Rider: <strong className="text-slate-800">{r.rider}</strong></p>
+                  <h4 className="text-sm font-extrabold text-stone-900">{r.route}</h4>
+                  <p className="text-xs text-stone-500 mt-0.5">Assigned Rider: <strong className="text-stone-800">{r.rider}</strong></p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-600">{r.stops} Delivery Drops</span>
-                  <div className="flex items-center gap-1 font-bold text-amber-600">
+                <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-stone-600">{r.stops} Delivery Drops</span>
+                  <div className="flex items-center gap-1 font-bold text-amber-700">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     <span>{r.rating} / 5.0</span>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
 
-          {/* Rider Staff Attendance & Payout Status Overview */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-            <h4 className="text-sm font-bold text-slate-900">Delivery Staff Roster & Performance</h4>
-            <div className="overflow-x-auto">
+          {/* Rider Staff Roster Overview */}
+          <Card variant="default">
+            <h4 className="text-sm font-bold text-stone-900 pb-2 border-b border-stone-100">Delivery Staff Roster & Performance</h4>
+            <div className="overflow-x-auto -mx-6 px-6 mt-2">
               <table className="w-full text-left text-xs min-w-[550px]">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="pb-2 font-medium">Staff Name</th>
-                    <th className="pb-2 font-medium">Role</th>
-                    <th className="pb-2 font-medium">Daily Salary</th>
-                    <th className="pb-2 font-medium">Pending Payout</th>
-                    <th className="pb-2 font-medium text-center">Status</th>
+                  <tr className="text-stone-400 border-b border-stone-100 font-medium">
+                    <th className="pb-2.5 font-semibold">Staff Name</th>
+                    <th className="pb-2.5 font-semibold">Role</th>
+                    <th className="pb-2.5 font-semibold">Daily Wage</th>
+                    <th className="pb-2.5 font-semibold">Pending Payout</th>
+                    <th className="pb-2.5 font-semibold text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-stone-100">
                   {staff.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-slate-400">
+                      <td colSpan={5} className="py-4 text-center text-stone-400">
                         No delivery staff registered.
                       </td>
                     </tr>
                   ) : (
                     staff.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/60">
-                        <td className="py-2.5 font-bold text-slate-800">{s.name}</td>
-                        <td className="py-2.5 text-slate-600">{s.role}</td>
-                        <td className="py-2.5 font-semibold text-slate-800">₹{s.dailySalary || 500} / day</td>
-                        <td className="py-2.5 font-bold text-rose-600">₹{s.pendingSalary || 0}</td>
+                      <tr key={s.id} className="hover:bg-stone-50/70">
+                        <td className="py-2.5 font-bold text-stone-900">{s.name}</td>
+                        <td className="py-2.5 text-stone-600">{s.role}</td>
+                        <td className="py-2.5 font-semibold text-stone-900 tabular-nums">₹{s.dailySalary || 500} / day</td>
+                        <td className="py-2.5 font-bold text-amber-700 tabular-nums">₹{s.pendingSalary || 0}</td>
                         <td className="py-2.5 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Badge variant={s.status === 'On Duty' ? 'emerald' : 'neutral'} dot size="xs">
                             {s.status || 'Active'}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))
@@ -1395,128 +1330,124 @@ export default function ReportsDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* =================================================================== */}
-      {/* TAB 4: INVENTORY & WASTAGE (WITH CHARTS)                           */}
+      {/* TAB 4: INVENTORY & WASTAGE                                         */}
       {/* =================================================================== */}
       {activeTab === 'inventory' && (
         <div className="space-y-6">
-          {/* Milk Inventory Flow Chart */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <Card variant="default">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Milk Flow Dynamics (Intake vs Dispatched vs Wastage)</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Tracking cold-chain receipt volume, route dispatches, and shrinkage</p>
+                <h3 className="text-base font-bold text-stone-900">Milk Flow Dynamics (Intake vs Dispatched vs Wastage)</h3>
+                <p className="text-xs text-stone-500 mt-0.5">Tracking cold-chain receipt volume, route dispatches, and shrinkage</p>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <Badge variant="teal" size="xs">
                 Wastage Loss: {inventoryReportMetrics.wastagePercent}%
-              </span>
+              </Badge>
             </div>
 
             <div className="h-60 w-full pt-1">
               {!isMounted ? (
-                <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={[
-                      { name: 'Intake Stock', liters: inventoryReportMetrics.intakeLiters, fill: '#059669' },
-                      { name: 'Dispatched Orders', liters: inventoryReportMetrics.dispatchLiters, fill: '#2563EB' },
-                      { name: 'Storage Spillage', liters: inventoryReportMetrics.wastageLiters, fill: '#E11D48' },
+                      { name: 'Intake Stock', liters: inventoryReportMetrics.intakeLiters, fill: '#0F766E' },
+                      { name: 'Dispatched Orders', liters: inventoryReportMetrics.dispatchLiters, fill: '#0284C7' },
+                      { name: 'Storage Spillage', liters: inventoryReportMetrics.wastageLiters, fill: '#C2410C' },
                     ]}
                     margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748B' }} tickFormatter={(v) => `${v}L`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+                    <XAxis dataKey="name" tickLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#78716C' }} tickFormatter={(v) => `${v}L`} />
                     <RechartsTooltip content={<CustomChartTooltip />} />
                     <Bar dataKey="liters" name="Volume (L)" unit="L" radius={[8, 8, 0, 0]} barSize={48}>
-                      <Cell fill="#059669" />
-                      <Cell fill="#2563EB" />
-                      <Cell fill="#E11D48" />
+                      <Cell fill="#0F766E" />
+                      <Cell fill="#0284C7" />
+                      <Cell fill="#C2410C" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </div>
+          </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
-              <span className="text-xs text-slate-500 font-medium">Total Milk Received (Intake)</span>
-              <h3 className="text-2xl font-black text-slate-900 tabular-nums">
-                {inventoryReportMetrics.intakeLiters.toLocaleString()} L
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card variant="default" className="space-y-1">
+              <span className="text-xs text-stone-500 font-medium">Total Milk Received (Intake)</span>
+              <h3 className="text-2xl font-black text-stone-900 tabular-nums">
+                {inventoryReportMetrics.intakeLiters.toLocaleString('en-IN')} L
               </h3>
-              <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+              <p className="text-[11px] text-teal-800 font-semibold mt-1">
                 Recorded via milk stock receipts
               </p>
-            </div>
+            </Card>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
-              <span className="text-xs text-slate-500 font-medium">Dispatched & Delivered</span>
-              <h3 className="text-2xl font-black text-slate-900 tabular-nums">
-                {inventoryReportMetrics.dispatchLiters.toLocaleString()} L
+            <Card variant="default" className="space-y-1">
+              <span className="text-xs text-stone-500 font-medium">Dispatched & Delivered</span>
+              <h3 className="text-2xl font-black text-stone-900 tabular-nums">
+                {inventoryReportMetrics.dispatchLiters.toLocaleString('en-IN')} L
               </h3>
-              <p className="text-[11px] text-blue-600 font-semibold mt-1">
+              <p className="text-[11px] text-sky-800 font-semibold mt-1">
                 Fulfilled to household & commercial clients
               </p>
-            </div>
+            </Card>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
-              <span className="text-xs text-slate-500 font-medium">Wastage & Spillage Loss</span>
-              <h3 className="text-2xl font-black text-rose-600 tabular-nums">
-                {inventoryReportMetrics.wastageLiters.toLocaleString()} L ({inventoryReportMetrics.wastagePercent}%)
+            <Card variant="default" className="space-y-1">
+              <span className="text-xs text-stone-500 font-medium">Wastage & Spillage Loss</span>
+              <h3 className="text-2xl font-black text-rose-700 tabular-nums">
+                {inventoryReportMetrics.wastageLiters.toLocaleString('en-IN')} L ({inventoryReportMetrics.wastagePercent}%)
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">
+              <p className="text-[11px] text-stone-500 font-medium mt-1">
                 Well within allowable 1.5% dairy processing threshold
               </p>
-            </div>
+            </Card>
           </div>
 
           {/* Batches with Expiry Alert */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <Card variant="default">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h4 className="text-sm font-bold text-slate-900">Intake Batches Expiry & Shelf Life Audit</h4>
-                <p className="text-xs text-slate-400">Batches nearing expiry date to prioritize for packaging & delivery</p>
+                <h4 className="text-sm font-bold text-stone-900">Intake Batches Expiry & Shelf Life Audit</h4>
+                <p className="text-xs text-stone-500">Batches nearing expiry date to prioritize for packaging</p>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                Cold Chain Active
-              </span>
+              <Badge variant="teal" size="xs">Cold Chain Active</Badge>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-6 px-6 mt-2">
               <table className="w-full text-left text-xs min-w-[550px]">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="pb-2 font-medium">Date Received</th>
-                    <th className="pb-2 font-medium">Variant</th>
-                    <th className="pb-2 font-medium">Quantity</th>
-                    <th className="pb-2 font-medium">Supplier / Co-op</th>
-                    <th className="pb-2 font-medium">Expiry Date</th>
+                  <tr className="text-stone-400 border-b border-stone-100 font-medium">
+                    <th className="pb-2.5 font-semibold">Date Received</th>
+                    <th className="pb-2.5 font-semibold">Variant</th>
+                    <th className="pb-2.5 font-semibold">Quantity</th>
+                    <th className="pb-2.5 font-semibold">Supplier / Co-op</th>
+                    <th className="pb-2.5 font-semibold">Expiry Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-stone-100">
                   {movements
                     .filter((m) => m.type === 'RECEIPT')
                     .slice(0, 8)
                     .map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-50/60">
-                        <td className="py-2.5 text-slate-600 font-mono">{m.date}</td>
-                        <td className="py-2.5 font-bold text-slate-800">{m.productVariant}</td>
-                        <td className="py-2.5 font-bold text-slate-900">+{m.quantity} L</td>
-                        <td className="py-2.5 text-slate-600">{m.supplierOrBatch}</td>
+                      <tr key={m.id} className="hover:bg-stone-50/70">
+                        <td className="py-2.5 text-stone-600 font-mono">{m.date}</td>
+                        <td className="py-2.5 font-bold text-stone-900">{m.productVariant}</td>
+                        <td className="py-2.5 font-bold text-teal-800 tabular-nums">+{m.quantity} L</td>
+                        <td className="py-2.5 text-stone-600">{m.supplierOrBatch}</td>
                         <td className="py-2.5">
                           {m.expiryDate ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Calendar className="w-2.5 h-2.5 mr-1" />
+                            <Badge variant="amber" size="xs">
                               {m.expiryDate}
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-stone-400">—</span>
                           )}
                         </td>
                       </tr>
@@ -1524,71 +1455,71 @@ export default function ReportsDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* =================================================================== */}
-      {/* TAB 5: AI DEMAND & PROCUREMENT FORECAST (WITH CHARTS)               */}
+      {/* TAB 5: AI DEMAND & PROCUREMENT FORECAST                            */}
       {/* =================================================================== */}
       {activeTab === 'forecast' && (
         <div className="space-y-6">
           {/* Hero Forecast Card */}
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-900 via-slate-900 to-indigo-950 text-white shadow-xl space-y-4">
+          <div className="p-6 rounded-3xl bg-stone-900 text-white shadow-xl space-y-4 border border-stone-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-emerald-400">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold tracking-tight">AI Milk Demand Forecast & Sourcing</h3>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-stone-400">
                     Predictive analysis for <strong className="text-white">{forecastData?.target_day_name || 'Tomorrow'} ({forecastData?.target_date || 'Upcoming'})</strong>
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
                 Confidence: {forecastData?.confidence_score || 94.6}%
               </span>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-slate-400">Predicted Demand</span>
+                <span className="text-[11px] text-stone-400">Predicted Demand</span>
                 <p className="text-xl font-black text-white tabular-nums">
                   {forecastData?.total_predicted_demand || 2540} L
                 </p>
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-slate-400">Current Chiller Stock</span>
+                <span className="text-[11px] text-stone-400">Current Chiller Stock</span>
                 <p className="text-xl font-black text-white tabular-nums">
                   {forecastData?.total_available_stock || 1980} L
                 </p>
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-slate-400">Net Shortage Buffer</span>
+                <span className="text-[11px] text-stone-400">Net Shortage Buffer</span>
                 <p className="text-xl font-black text-amber-300 tabular-nums">
                   {forecastData?.total_shortage || 814} L
                 </p>
               </div>
 
               <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-slate-400">Suggested Procurement</span>
-                <p className="text-xl font-black text-emerald-300 tabular-nums">
-                  {forecastData?.total_suggested_procurement || 814} L (~₹{forecastData?.total_estimated_cost ? Math.round(forecastData.total_estimated_cost).toLocaleString() : '38,240'})
+                <span className="text-[11px] text-stone-400">Suggested Procurement</span>
+                <p className="text-xl font-black text-teal-300 tabular-nums">
+                  {forecastData?.total_suggested_procurement || 814} L (~₹{forecastData?.total_estimated_cost ? Math.round(forecastData.total_estimated_cost).toLocaleString('en-IN') : '38,240'})
                 </p>
               </div>
             </div>
 
             {/* Recommendations */}
             {forecastData?.recommendations && (
-              <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs text-slate-200">
-                <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-400">
+              <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs text-stone-300">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-teal-400">
                   Procurement Actions:
                 </span>
-                <ul className="list-disc list-inside space-y-1 text-slate-300">
+                <ul className="list-disc list-inside space-y-1 text-stone-300">
                   {forecastData.recommendations.map((rec: string, i: number) => (
                     <li key={i}>{rec}</li>
                   ))}
@@ -1597,21 +1528,19 @@ export default function ReportsDashboardPage() {
             )}
           </div>
 
-          {/* 7-Day Predictive Forward Curve Chart */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          {/* 7-Day Predictive Forward Curve */}
+          <Card variant="default">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h4 className="text-sm font-bold text-slate-900">7-Day Forward Demand Trend Curve</h4>
-                <p className="text-xs text-slate-400">Predicted daily consumption based on residential delivery schedules</p>
+                <h4 className="text-sm font-bold text-stone-900">7-Day Forward Demand Trend Curve</h4>
+                <p className="text-xs text-stone-500">Predicted daily consumption based on residential delivery schedules</p>
               </div>
-              <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
-                Weekly Forward Curve
-              </span>
+              <Badge variant="teal" size="xs">Weekly Forward Curve</Badge>
             </div>
 
             <div className="h-64 w-full pt-1">
               {!isMounted ? (
-                <div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />
+                <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
@@ -1628,60 +1557,60 @@ export default function ReportsDashboardPage() {
                   >
                     <defs>
                       <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#0F766E" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0F766E" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="day" tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748B' }} tickFormatter={(v) => `${v}L`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+                    <XAxis dataKey="day" tickLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#78716C' }} tickFormatter={(v) => `${v}L`} />
                     <RechartsTooltip content={<CustomChartTooltip />} />
                     <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 11, paddingBottom: 10 }} />
-                    <Area type="monotone" dataKey="predicted_liters" name="Predicted Demand (L)" unit="L" stroke="#7C3AED" strokeWidth={3} fill="url(#forecastGrad)" />
-                    <Line type="monotone" dataKey="actual_or_baseline_liters" name="Baseline Production (L)" unit="L" stroke="#059669" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} />
+                    <Area type="monotone" dataKey="predicted_liters" name="Predicted Demand (L)" unit="L" stroke="#0F766E" strokeWidth={3} fill="url(#forecastGrad)" />
+                    <Line type="monotone" dataKey="actual_or_baseline_liters" name="Baseline Production (L)" unit="L" stroke="#0284C7" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </div>
+          </Card>
 
           {/* Variant Breakdown Table */}
           {forecastData?.variants && (
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3">
-              <h4 className="text-sm font-bold text-slate-900">Variety-wise Sourcing & Buffer Breakdown</h4>
-              <div className="overflow-x-auto">
+            <Card variant="default">
+              <h4 className="text-sm font-bold text-stone-900 pb-2 border-b border-stone-100">Variety-wise Sourcing & Buffer Breakdown</h4>
+              <div className="overflow-x-auto -mx-6 px-6 mt-2">
                 <table className="w-full text-left text-xs min-w-[650px]">
                   <thead>
-                    <tr className="text-slate-400 border-b border-slate-100">
-                      <th className="pb-2 font-medium">Milk Variant</th>
-                      <th className="pb-2 font-medium text-right">Subscribers Demand</th>
-                      <th className="pb-2 font-medium text-right">B2B Orders</th>
-                      <th className="pb-2 font-medium text-right">Available Stock</th>
-                      <th className="pb-2 font-medium text-right">Safety Buffer</th>
-                      <th className="pb-2 font-medium text-right">Procurement Liters</th>
-                      <th className="pb-2 font-medium text-right">Est. Cost (₹)</th>
+                    <tr className="text-stone-400 border-b border-stone-100 font-medium">
+                      <th className="pb-2.5 font-semibold">Milk Variant</th>
+                      <th className="pb-2.5 font-semibold text-right">Subscribers Demand</th>
+                      <th className="pb-2.5 font-semibold text-right">B2B Orders</th>
+                      <th className="pb-2.5 font-semibold text-right">Available Stock</th>
+                      <th className="pb-2.5 font-semibold text-right">Safety Buffer</th>
+                      <th className="pb-2.5 font-semibold text-right">Procurement Liters</th>
+                      <th className="pb-2.5 font-semibold text-right">Est. Cost (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-stone-100">
                     {forecastData.variants.map((v: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 font-medium text-slate-700">
-                        <td className="py-2.5 font-bold text-slate-900">{v.variant}</td>
+                      <tr key={idx} className="hover:bg-stone-50/70 font-medium text-stone-700">
+                        <td className="py-2.5 font-bold text-stone-900">{v.variant}</td>
                         <td className="py-2.5 text-right tabular-nums">{v.active_subscriptions_liters} L</td>
                         <td className="py-2.5 text-right tabular-nums">{v.b2b_orders_liters} L</td>
                         <td className="py-2.5 text-right tabular-nums">{v.current_available_stock} L</td>
-                        <td className="py-2.5 text-right tabular-nums text-slate-500">+{v.safety_buffer_liters} L</td>
-                        <td className="py-2.5 text-right tabular-nums font-black text-emerald-700">
+                        <td className="py-2.5 text-right tabular-nums text-stone-500">+{v.safety_buffer_liters} L</td>
+                        <td className="py-2.5 text-right tabular-nums font-black text-teal-800">
                           {v.suggested_procurement > 0 ? `${v.suggested_procurement} L` : 'Sufficient'}
                         </td>
-                        <td className="py-2.5 text-right tabular-nums font-bold text-slate-900">
-                          ₹{Math.round(v.estimated_procurement_cost).toLocaleString()}
+                        <td className="py-2.5 text-right tabular-nums font-bold text-stone-900">
+                          ₹{Math.round(v.estimated_procurement_cost).toLocaleString('en-IN')}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           )}
         </div>
       )}

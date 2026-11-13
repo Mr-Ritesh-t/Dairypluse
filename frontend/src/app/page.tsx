@@ -1,7 +1,6 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
   TrendingUp,
@@ -11,25 +10,26 @@ import {
   Plus,
   UserPlus,
   Receipt,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Sun,
-  Sparkles,
   ShoppingBag,
   Milk,
+  Building2,
+  Calendar,
+  ChevronRight,
+  ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
+import { Card, StatCard, Badge, Button, ProgressBar } from '@/components/ui';
 
 export default function DashboardPage() {
   const { products, deliveries, subscriptions, shopOrders, invoices, openModal } = useDairyPulse();
   const { user } = useAuth();
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Ritesh';
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Farm Admin';
   const dairyName = (user as any)?.dairyName || (user as any)?.dairy_name || 'HQ Farm & Chilling Center';
   const todayFormatted = new Date().toLocaleDateString('en-IN', {
     weekday: 'short',
@@ -49,297 +49,268 @@ export default function DashboardPage() {
   const totalShopSales = shopOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
   const totalSubscriptionSales = subscriptions
     .filter((s) => s.status === 'Active')
-    .reduce((acc, s) => acc + (s.quantityLiters * s.unitPrice), 0);
+    .reduce((acc, s) => acc + s.quantityLiters * s.unitPrice, 0);
   const todaySales = totalShopSales + totalSubscriptionSales;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Operations Dashboard" description="Real-time overview of daily milk collection, stock levels, delivery fleet dispatch, and active subscriptions." />
+      <PageHead
+        title="Operations Dashboard"
+        description="Real-time overview of daily milk collection, stock levels, delivery fleet dispatch, and active subscriptions."
+      />
 
+      {/* ── 1. Hero Welcome & Operations Banner ── */}
       <section
-        className="pastoral-banner rounded-3xl border border-emerald-100/90 shadow-xs relative px-4 sm:px-8 py-5 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between min-h-[175px] overflow-hidden gap-5 sm:gap-6"
+        className="pastoral-banner rounded-3xl border border-stone-200/90 shadow-[0_1px_3px_rgba(28,25,23,0.04)] relative px-5 sm:px-8 py-6 sm:py-8 flex flex-col lg:flex-row lg:items-center justify-between min-h-[160px] overflow-hidden gap-6"
         data-purpose="hero-banner"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-80 h-80 bg-gradient-to-br from-amber-200/50 via-emerald-100/40 to-transparent rounded-full blur-3xl" />
-
-          <svg className="w-full h-full absolute inset-0" preserveAspectRatio="none" viewBox="0 0 1200 240">
-            <defs>
-              <linearGradient id="hillDistant" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#A7F3D0" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0.15" />
-              </linearGradient>
-              <linearGradient id="hillMid" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34D399" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#059669" stopOpacity="0.2" />
-              </linearGradient>
-              <linearGradient id="hillFront" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#059669" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#047857" stopOpacity="0.35" />
-              </linearGradient>
-            </defs>
-            <path d="M0 130 Q 300 85, 620 120 T 1200 100 L 1200 240 L 0 240 Z" fill="url(#hillDistant)" />
-            <path d="M0 160 Q 280 120, 640 155 T 1200 135 L 1200 240 L 0 240 Z" fill="url(#hillMid)" />
-            <path d="M0 190 Q 380 160, 780 185 T 1200 170 L 1200 240 L 0 240 Z" fill="url(#hillFront)" />
-          </svg>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-amber-200/40 via-teal-100/30 to-transparent rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/90 text-emerald-900 text-xs font-bold border border-emerald-200/90 shadow-2xs mb-2.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>{dairyName}</span>
-            <span className="text-emerald-400">•</span>
-            <span className="text-emerald-700 font-semibold">{todayFormatted}</span>
+        <div className="relative z-10 max-w-2xl space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-xs text-stone-800 text-xs font-semibold border border-stone-200/80 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#0F766E] animate-pulse" />
+            <span className="font-bold text-stone-900">{dairyName}</span>
+            <span className="text-stone-300">•</span>
+            <span className="text-stone-500 font-medium">{todayFormatted}</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 tracking-tight leading-tight">
             {greeting},{' '}
-            <span className="text-emerald-800">
-              {firstName}!
-            </span>
-          </h2>
+            <span className="text-[#0F766E]">{firstName}!</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-stone-600 font-normal leading-relaxed">
+            All morning collection runs dispatched. Storage tanks holding <span className="font-semibold text-stone-800">{totalStockLitres} Litres</span> fresh milk ready for distribution.
+          </p>
 
-          <div className="flex flex-wrap items-center gap-2.5 mt-4">
-            <button
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => openModal('addStock')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Milk Intake</span>
-            </button>
-            <Link
-              href="/delivery"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/90 hover:bg-white text-slate-700 hover:text-emerald-700 border border-slate-200/90 rounded-xl text-xs font-bold shadow-2xs transition"
-            >
-              <Truck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>View Route Dispatches</span>
+              Add Milk Intake
+            </Button>
+            <Link href="/delivery">
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Truck className="w-3.5 h-3.5 text-[#0F766E]" />}
+              >
+                View Dispatches
+              </Button>
             </Link>
           </div>
         </div>
-      </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" data-purpose="metrics-row">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Today's Sales</p>
-              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
-                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
-                  ₹{todaySales.toLocaleString()}
-                </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-emerald-600">
-                  Live
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
-                {shopOrders.length + subscriptions.length > 0
-                  ? `${shopOrders.length + subscriptions.length} active streams`
-                  : 'No orders logged today'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Droplets className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Milk in Stock</p>
-              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
-                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
-                  {totalStockLitres.toLocaleString()} L
-                </span>
-                <span className={`text-[10px] sm:text-xs font-semibold ${totalStockLitres > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {totalStockLitres > 0 ? 'Optimal' : 'Zero'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
-                {totalStockLitres > 0 ? 'across active silos' : 'Awaiting milk intake'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Truck className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Deliveries Today</p>
-              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
-                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
-                  {deliveredCount} / {totalDeliveries}
-                </span>
-              </div>
-              <div className="mt-1.5 sm:mt-2.5">
-                <div className="w-full bg-slate-100 rounded-full h-1 sm:h-1.5 overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-1 sm:h-1.5 rounded-full origin-left transition-transform duration-300 w-full"
-                    style={{ transform: `scaleX(${Math.min(deliveryPercentage, 100) / 100})` }}
-                  ></div>
-                </div>
-                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
-                  {totalDeliveries > 0 ? `${deliveryPercentage}% done` : 'No runs'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Pending Dues</p>
-              <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
-                <span className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight tabular-nums truncate">
-                  ₹{pendingPayments.toLocaleString()}
-                </span>
-                <span className={`text-[10px] sm:text-xs font-semibold ${pendingPayments > 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
-                  {pendingPayments > 0 ? 'Dues' : 'Clear'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">
-                {invoices.filter((i) => i.status !== 'Paid').length} accounts
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs" data-purpose="inventory-status">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Milk Inventory</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Live storage silo levels and available product stock</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-slate-500">
-              Total Storage Volume: <span className="font-bold text-slate-800 text-sm tabular-nums">{totalStockLitres} Litres</span>
+        {/* Live Farm Quick Glance */}
+        <div className="relative z-10 flex lg:flex-col items-center lg:items-end justify-between border-t lg:border-t-0 lg:border-l border-stone-200/80 pt-4 lg:pt-0 lg:pl-8 gap-4 shrink-0">
+          <div className="text-left lg:text-right">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
+              Fleet Status
             </span>
-            <Link href="/inventory" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-              Manage Inventory
-            </Link>
+            <span className="text-base sm:text-lg font-extrabold text-stone-900 flex items-center gap-1.5 lg:justify-end mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Active Dispatch
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
+              Delivery Completion
+            </span>
+            <span className="text-base sm:text-lg font-extrabold text-[#0F766E] tabular-nums">
+              {deliveryPercentage}% done
+            </span>
           </div>
         </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-xs">
+      </section>
+
+      {/* ── 2. KPI Metrics Grid ── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-purpose="metrics-row">
+        <StatCard
+          title="Today's Sales"
+          value={`₹${todaySales.toLocaleString()}`}
+          subtitle={`${shopOrders.length + subscriptions.length} active order streams`}
+          icon={<TrendingUp className="w-5 h-5" />}
+          variant="teal"
+          trend={{ value: 'Live', isPositive: true }}
+        />
+
+        <StatCard
+          title="Milk in Stock"
+          value={`${totalStockLitres.toLocaleString()} L`}
+          subtitle="Across active chilling tanks"
+          icon={<Droplets className="w-5 h-5" />}
+          variant="blue"
+          trend={{
+            value: totalStockLitres > 0 ? 'Optimal' : 'Low',
+            isPositive: totalStockLitres > 0,
+          }}
+        />
+
+        <StatCard
+          title="Deliveries Today"
+          value={`${deliveredCount} / ${totalDeliveries}`}
+          subtitle={`${totalDeliveries - deliveredCount} stops remaining`}
+          icon={<Truck className="w-5 h-5" />}
+          variant="amber"
+          trend={{
+            value: `${deliveryPercentage}%`,
+            isPositive: deliveryPercentage >= 50,
+          }}
+        />
+
+        <StatCard
+          title="Pending Dues"
+          value={`₹${pendingPayments.toLocaleString()}`}
+          subtitle={`${invoices.filter((i) => i.status !== 'Paid').length} pending accounts`}
+          icon={<Wallet className="w-5 h-5" />}
+          variant="terracotta"
+          trend={{
+            value: pendingPayments > 0 ? 'Collect' : 'Clear',
+            isPositive: pendingPayments === 0,
+          }}
+        />
+      </section>
+
+      {/* ── 3. Milk Inventory Overview Table ── */}
+      <Card
+        title="Live Milk Inventory & Stock Levels"
+        subtitle="Real-time chilling center tank levels and variant availability"
+        action={
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-block text-xs text-stone-500 font-medium">
+              Total Storage:{' '}
+              <strong className="text-stone-800 font-bold tabular-nums">
+                {totalStockLitres} Litres
+              </strong>
+            </span>
+            <Link
+              href="/inventory"
+              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
+            >
+              Manage
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        }
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs" aria-label="Milk Inventory Table">
             <thead>
-              <tr className="text-slate-500 font-semibold border-b border-slate-100">
-                <th className="pb-3 font-semibold">Product / Milk Type</th>
-                <th className="pb-3 font-semibold text-center">Available Stock</th>
-                <th className="pb-3 font-semibold text-center">Unit Price</th>
-                <th className="pb-3 font-semibold text-right">Status</th>
+              <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">
+                  Product / Variety
+                </th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-center">
+                  Available Stock
+                </th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-center">
+                  Unit Price
+                </th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">
+                  Status
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {products.map((p) => (
-                <tr key={p.id}>
-                  <td className="py-3 flex items-center gap-2.5 font-semibold text-slate-800">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm shadow-2xs">
-                      <Milk className="w-4 h-4 text-emerald-700" />
+                <tr key={p.id} className="hover:bg-stone-50/80 transition-colors">
+                  <td className="py-3 px-3 flex items-center gap-2.5 font-semibold text-stone-800">
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center text-sm border border-teal-200/60 shadow-2xs shrink-0">
+                      <Milk className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="font-bold text-slate-900">{p.variant}</span>
-                      <span className="block text-xs text-slate-500 font-normal">{p.name}</span>
+                      <span className="font-bold text-stone-900 block">{p.variant}</span>
+                      <span className="text-[11px] text-stone-500 font-normal">{p.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 text-center font-bold text-slate-700 tabular-nums">
+                  <td className="py-3 px-3 text-center font-bold text-stone-800 tabular-nums">
                     {p.availableStock} {p.unit}
                   </td>
-                  <td className="py-3 text-center font-semibold text-slate-600 tabular-nums">
+                  <td className="py-3 px-3 text-center font-semibold text-stone-600 tabular-nums">
                     ₹{p.sellingPrice} / {p.unit}
                   </td>
-                  <td className="py-3 text-right">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                        p.status === 'In Stock'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}
+                  <td className="py-3 px-3 text-right">
+                    <Badge
+                      variant={p.status === 'In Stock' ? 'success' : 'warning'}
+                      dot
+                      size="sm"
                     >
                       {p.status}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </Card>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-purpose="deliveries-and-orders-tables">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Today's Delivery Route Stops</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Live status from delivery partner app</p>
-            </div>
-            <a href="/delivery" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
-              View All
-            </a>
-          </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs">
+      {/* ── 4. Split Grid: Route Stops & Commercial Orders ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5" data-purpose="deliveries-and-orders-tables">
+        {/* Today's Route Stops */}
+        <Card
+          title="Today's Route Stops"
+          subtitle="Live status from rider delivery dispatch"
+          action={
+            <Link
+              href="/delivery"
+              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
+            >
+              All Stops
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs" aria-label="Today Route Stops">
               <thead>
-                <tr className="text-slate-500 font-semibold border-b border-slate-100">
-                  <th className="pb-2.5 font-semibold">Customer</th>
-                  <th className="pb-2.5 font-semibold">Qty</th>
-                  <th className="pb-2.5 font-semibold">Rider</th>
-                  <th className="pb-2.5 font-semibold text-right">Status</th>
+                <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
+                  <th scope="col" className="pb-2.5 font-semibold">Customer</th>
+                  <th scope="col" className="pb-2.5 font-semibold">Qty</th>
+                  <th scope="col" className="pb-2.5 font-semibold">Rider</th>
+                  <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-stone-100">
                 {deliveries.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">
+                    <td colSpan={4} className="py-8 text-center text-stone-500">
                       <div className="flex flex-col items-center justify-center gap-1.5">
-                        <Truck className="w-6 h-6 text-slate-300" />
-                        <span className="font-medium text-xs text-slate-500">No delivery runs active yet today</span>
-                        <span className="text-xs text-slate-500">Add subscribers or generate daily dispatches from the Delivery tab</span>
+                        <Truck className="w-6 h-6 text-stone-300" />
+                        <span className="font-semibold text-xs text-stone-600">No active delivery runs today</span>
+                        <span className="text-xs text-stone-400">Generate stops from the Deliveries tab</span>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   deliveries.slice(0, 4).map((d) => (
-                    <tr key={d.id}>
-                      <td className="py-3 font-semibold text-slate-800">
-                        <div>{d.customerName}</div>
-                        <div className="text-xs text-slate-500 font-normal">{d.area}</div>
+                    <tr key={d.id} className="hover:bg-stone-50/80 transition-colors">
+                      <td className="py-3 font-semibold text-stone-800">
+                        <div className="font-bold text-stone-900">{d.customerName}</div>
+                        <div className="text-[11px] text-stone-500 font-normal">{d.area}</div>
                       </td>
-                      <td className="py-3 font-bold text-slate-700 tabular-nums">
-                        {d.quantityLiters} L ({d.productVariant.split(' ')[0]})
+                      <td className="py-3 font-bold text-stone-800 tabular-nums">
+                        {d.quantityLiters} L
                       </td>
-                      <td className="py-3 text-slate-600 font-medium">{d.assignedRider}</td>
+                      <td className="py-3 text-stone-600 font-medium">{d.assignedRider}</td>
                       <td className="py-3 text-right">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                        <Badge
+                          variant={
                             d.status === 'Delivered'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              ? 'success'
                               : d.status === 'In Progress'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
+                              ? 'info'
+                              : 'warning'
+                          }
+                          dot
+                          size="xs"
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              d.status === 'Delivered'
-                                ? 'bg-emerald-500'
-                                : d.status === 'In Progress'
-                                ? 'bg-blue-500'
-                                : 'bg-amber-500'
-                            }`}
-                          ></span>
                           {d.status}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))
@@ -347,62 +318,68 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Commercial & Shop Orders</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Bulk B2B orders and restaurant dispatches</p>
-            </div>
-            <a href="/orders" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
-              View All
-            </a>
-          </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs">
+        {/* Commercial & Shop Orders */}
+        <Card
+          title="Commercial & Shop Orders"
+          subtitle="Bulk B2B orders and restaurant dispatches"
+          action={
+            <Link
+              href="/orders"
+              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
+            >
+              All Orders
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs" aria-label="Commercial Orders Table">
               <thead>
-                <tr className="text-slate-500 font-semibold border-b border-slate-100">
-                  <th className="pb-2.5 font-semibold">Order #</th>
-                  <th className="pb-2.5 font-semibold">Buyer</th>
-                  <th className="pb-2.5 font-semibold">Amount</th>
-                  <th className="pb-2.5 font-semibold text-right">Order Status</th>
+                <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
+                  <th scope="col" className="pb-2.5 font-semibold">Order #</th>
+                  <th scope="col" className="pb-2.5 font-semibold">Buyer</th>
+                  <th scope="col" className="pb-2.5 font-semibold">Amount</th>
+                  <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-stone-100">
                 {shopOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">
+                    <td colSpan={4} className="py-8 text-center text-stone-500">
                       <div className="flex flex-col items-center justify-center gap-1.5">
-                        <ShoppingBag className="w-6 h-6 text-slate-300" />
-                        <span className="font-medium text-xs text-slate-500">No commercial orders logged yet</span>
-                        <span className="text-xs text-slate-500">Record wholesale or retail bulk orders by clicking 'Create Order' below</span>
+                        <ShoppingBag className="w-6 h-6 text-stone-300" />
+                        <span className="font-semibold text-xs text-stone-600">No commercial orders logged yet</span>
+                        <span className="text-xs text-stone-400">Click &apos;Shop Order&apos; below to log bulk sales</span>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  shopOrders.map((ord) => (
-                    <tr key={ord.id}>
-                      <td className="py-3 font-semibold text-emerald-700">{ord.orderNumber}</td>
-                      <td className="py-3 font-semibold text-slate-800">
-                        <div>{ord.shopName}</div>
-                        <div className="text-xs text-slate-500 font-normal">{ord.contactPerson}</div>
+                  shopOrders.slice(0, 4).map((ord) => (
+                    <tr key={ord.id} className="hover:bg-stone-50/80 transition-colors">
+                      <td className="py-3 font-mono font-bold text-[#0F766E]">{ord.orderNumber}</td>
+                      <td className="py-3 font-semibold text-stone-800">
+                        <div className="font-bold text-stone-900">{ord.shopName}</div>
+                        <div className="text-[11px] text-stone-500 font-normal">{ord.contactPerson}</div>
                       </td>
-                      <td className="py-3 font-extrabold text-slate-900 tabular-nums">
+                      <td className="py-3 font-extrabold text-stone-900 tabular-nums">
                         ₹{ord.totalAmount.toLocaleString()}
                       </td>
                       <td className="py-3 text-right">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                        <Badge
+                          variant={
                             ord.status === 'Delivered'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              ? 'success'
                               : ord.status === 'Dispatched'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
+                              ? 'info'
+                              : 'warning'
+                          }
+                          dot
+                          size="xs"
                         >
                           {ord.status}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))
@@ -410,64 +387,65 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 pt-2" data-purpose="quick-actions">
+      {/* ── 5. Quick Farm Action Bar ── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 pt-2" data-purpose="quick-actions">
         <button
           onClick={() => openModal('addStock')}
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Plus className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Add Milk Stock</h4>
-            <p className="text-[10px] sm:text-xs text-emerald-100 font-normal truncate">Incoming batch</p>
+            <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Add Milk Stock</h4>
+            <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Incoming tank batch</p>
           </div>
         </button>
 
         <button
           onClick={() => openModal('addCustomer')}
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-sky-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 text-[#0369A1] border border-sky-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <UserPlus className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Add Customer</h4>
-            <p className="text-[10px] sm:text-xs text-blue-100 font-normal truncate">New subscriber</p>
+            <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Add Customer</h4>
+            <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Household / retail</p>
           </div>
         </button>
 
         <button
           onClick={() => openModal('generateBill')}
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Receipt className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Generate Bill</h4>
-            <p className="text-[10px] sm:text-xs text-orange-100 font-normal truncate">Create invoice</p>
+            <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Generate Bill</h4>
+            <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Create customer invoice</p>
           </div>
         </button>
 
-        <a
+        <Link
           href="/delivery"
-          className="flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
         >
-          <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Truck className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-xs sm:text-sm leading-snug truncate">Deliveries</h4>
-            <p className="text-[10px] sm:text-xs text-purple-100 font-normal truncate">Route runs</p>
+            <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Delivery Runs</h4>
+            <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Route fleet management</p>
           </div>
-        </a>
+        </Link>
       </section>
     </div>
   );

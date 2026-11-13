@@ -16,9 +16,11 @@ import {
   Receipt,
   BarChart3,
   X,
-  Building2,
   MapPin,
+  Sparkles,
+  Building2,
 } from 'lucide-react';
+import { useDairyPulse } from '@/context/DairyPulseContext';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -31,55 +33,60 @@ const navItems = [
   { label: 'Billing & Payments', href: '/billing', icon: CreditCard },
   { label: 'Staff Management', href: '/staff', icon: Briefcase },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
-  { label: 'Reports', href: '/reports', icon: BarChart3 },
+  { label: 'Reports & Analytics', href: '/reports', icon: BarChart3 },
 ];
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const { activeDairy } = useDairyPulse();
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-stone-950/70 backdrop-blur-xs z-40 lg:hidden transition-opacity"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       <aside
-        className={`w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`w-64 bg-[#151413] text-stone-300 border-r border-[#262320] flex flex-col justify-between shrink-0 fixed top-0 bottom-0 left-0 z-50 overflow-y-auto transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         data-purpose="main-sidebar"
+        aria-label="Main Sidebar"
       >
-        {/* Top Branding & Navigation */}
-        <div>
-          {/* Brand Logo & Title */}
-          <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-slate-100 lg:border-none">
+        {/* Top Header & Navigation */}
+        <div className="flex flex-col">
+          {/* Brand Logo & Name */}
+          <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-[#24211E]">
             <Link
               href="/"
               onClick={onClose}
               className="flex items-center gap-3 group cursor-pointer focus:outline-hidden"
-              title="Return to DairyPulse Dashboard"
+              title="DairyPulse Hub"
             >
-              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden group-hover:border-emerald-300 transition">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1 shadow-md border border-stone-200 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-150">
                 <Image
                   src="/logo.png"
-                  alt="DairyPulse Cow Analytics Logo"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  alt="DairyPulse"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-contain"
                   priority
                 />
               </div>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center group-hover:text-emerald-900 transition-colors">
-                  Dairy<span className="text-emerald-600">Pulse</span>
-                </h1>
-                <p className="text-[10px] text-slate-500 font-medium tracking-tight mt-1">
-                  Farm Operations Hub
-                </p>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg font-black tracking-tight text-white leading-none">
+                    Dairy<span className="text-[#2DD4BF]">Pulse</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-stone-400 font-semibold tracking-wider uppercase mt-1">
+                  Farm Operations
+                </span>
               </div>
             </Link>
 
@@ -88,14 +95,14 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               type="button"
               onClick={onClose}
               aria-label="Close Navigation"
-              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              className="lg:hidden p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation Menu */}
-          <nav aria-label="Main Navigation" className="mt-4 px-3 space-y-1">
+          {/* Navigation Items */}
+          <nav aria-label="Sidebar Menu" className="mt-4 px-3 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -104,61 +111,49 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
-                  className={`flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm transition font-medium ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-colors duration-150 relative ${
                     isActive
-                      ? 'bg-emerald-100/70 text-emerald-800 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-[#0F766E] text-white font-bold shadow-xs'
+                      : 'text-stone-300 hover:text-white hover:bg-[#201D1B]'
                   }`}
                 >
                   <Icon
-                    className={`w-5 h-5 ${
-                      isActive ? 'text-emerald-700' : 'text-slate-500'
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                      isActive ? 'text-white' : 'text-stone-400 group-hover:text-stone-200'
                     }`}
                   />
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
+                  {isActive && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-200" />
+                  )}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Bottom Promo Leaf Card (Stitch Exact Design) */}
-        <div className="p-4">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100 via-green-100 to-emerald-200 p-4 border border-emerald-200 shadow-xs">
-            {/* Botanical decorative elements */}
-            <div className="absolute -right-4 -bottom-6 opacity-30 text-emerald-800 pointer-events-none">
-              <svg className="w-28 h-28" fill="currentColor" viewBox="0 0 100 100">
-                <path d="M50 0 C60 30 80 40 100 50 C80 60 60 70 50 100 C40 70 20 60 0 50 C20 40 40 30 50 0 Z" />
-              </svg>
-            </div>
-            <div className="relative z-10">
-              <h4 className="font-bold text-slate-900 text-sm leading-tight">
-                Pure Milk
-                <br />
-                <span className="text-emerald-800">Better Living</span>
-              </h4>
-              <p className="text-[11px] text-slate-600 font-medium mt-1.5 leading-snug">
-                Manage today for a healthier tomorrow.
-              </p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-white/80 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-2xs">
-                  Eco Dairy 100%
-                </span>
-                {/* Bottle icon */}
-                <svg
-                  className="w-6 h-6 text-emerald-700 opacity-90"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M9 3h6M10 3v2m4-2v2M8 7h8l1 3v10a2 2 0 01-2 2H9a2 2 0 01-2-2V10l1-3z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+        {/* Bottom Farm Status Panel */}
+        <div className="p-3.5 mt-4">
+          <div className="rounded-2xl bg-[#1E1C1A] border border-[#2B2825] p-3.5 relative overflow-hidden">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-teal-900/60 border border-teal-700/60 flex items-center justify-center text-teal-300 shrink-0">
+                <Building2 className="w-4 h-4" />
               </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 block">
+                  Active Plant
+                </span>
+                <span className="text-xs font-bold text-white truncate block">
+                  {activeDairy?.name || 'DairyPulse HQ'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-[#2B2825] text-[11px] text-stone-400 font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Dispatch
+              </span>
+              <span className="text-stone-400 font-mono text-[10px]">v2.4</span>
             </div>
           </div>
         </div>
@@ -166,3 +161,4 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     </>
   );
 }
+export default Sidebar;

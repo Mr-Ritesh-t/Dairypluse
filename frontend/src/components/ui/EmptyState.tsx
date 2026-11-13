@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from './Button';
 
 interface EmptyStateProps {
   title: string;
@@ -20,27 +21,24 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <div
-      className={`flex flex-col items-center justify-center p-8 text-center bg-white rounded-2xl border border-dashed border-slate-200 ${className}`}
+      className={`flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-white rounded-2xl border border-dashed border-stone-300/80 shadow-2xs ${className}`}
     >
       {icon && (
-        <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center mb-4 border border-slate-100">
+        <div className="w-12 h-12 rounded-2xl bg-[#F6F2EA] text-[#0F766E] flex items-center justify-center mb-3.5 border border-stone-200 shadow-2xs">
           {icon}
         </div>
       )}
-      <h3 className="text-base font-bold text-slate-800">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500 max-w-sm">{description}</p>
+      <h3 className="text-sm sm:text-base font-bold text-stone-900 tracking-tight">{title}</h3>
+      <p className="mt-1 text-xs sm:text-sm text-stone-500 max-w-sm font-normal">{description}</p>
       {action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="mt-4 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
-        >
-          {action.label}
-        </button>
+        <div className="mt-4">
+          <Button variant="primary" size="sm" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        </div>
       )}
     </div>
   );
 };
 
 export default EmptyState;
-

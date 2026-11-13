@@ -370,8 +370,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F8F4] relative flex flex-col justify-between overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 font-sans">
-      <PageHead title="Portal Sign In" description="Secure sign-in for DairyPulse farm owners, delivery fleet riders, and household milk customers." />
+    <div className="min-h-screen bg-[#FEFBF6] relative flex flex-col justify-between overflow-x-clip selection:bg-teal-100 selection:text-teal-900 font-sans">
+      <PageHead title="Portal Sign In | DairyPulse" description="Secure sign-in for DairyPulse farm owners, delivery fleet riders, and household milk customers." />
 
       
       {/* Desktop Background Image (Scenic pastoral view uploaded by user) */}
@@ -516,7 +516,7 @@ export default function LoginPage() {
           >
             
             {/* 3 Top Tabs: Sign In | Customer Sign Up | Register Dairy (Desktop & Tablet) */}
-            <div className="hidden sm:grid bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 grid-cols-3 gap-1 mb-6 text-xs font-semibold">
+            <div className="hidden sm:grid bg-stone-100 p-1 rounded-2xl border border-stone-200/80 grid-cols-3 gap-1 mb-6 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => {
@@ -524,10 +524,10 @@ export default function LoginPage() {
                   setErrorMessage(null);
                   setNotFoundPrompt(false);
                 }}
-                className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'signin'
-                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#0F766E] text-white shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <User className="w-3.5 h-3.5 shrink-0" />
@@ -543,10 +543,10 @@ export default function LoginPage() {
                   setCustSuccess(null);
                   refreshDairies();
                 }}
-                className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'customer'
-                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#0F766E] text-white shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5 shrink-0" />
@@ -560,10 +560,10 @@ export default function LoginPage() {
                   setErrorMessage(null);
                   setDairySuccess(null);
                 }}
-                className={`py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'dairy'
-                    ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#0F766E] text-white shadow-xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5 shrink-0" />
@@ -634,23 +634,23 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('OWNER')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'OWNER'
-                          ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
+                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'OWNER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100/70 text-emerald-700 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-100/70 text-teal-700 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
                       </div>
                       <div className="w-full min-w-0">
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Admin</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'OWNER' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                        <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Admin</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'OWNER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
                           Dairy Owner
                         </span>
                       </div>
@@ -660,23 +660,23 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('DELIVERY')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'DELIVERY'
-                          ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
+                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'DELIVERY' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-100/70 text-blue-700 flex items-center justify-center shrink-0">
-                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-sky-100/70 text-sky-700 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-sky-700" />
                       </div>
                       <div className="w-full min-w-0">
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Rider</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'DELIVERY' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                        <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Rider</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'DELIVERY' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
                           Delivery Staff
                         </span>
                       </div>
@@ -686,23 +686,23 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('CUSTOMER')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
                         selectedRole === 'CUSTOMER'
-                          ? 'border-2 border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-2xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
+                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'CUSTOMER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-100/70 text-purple-700 flex items-center justify-center shrink-0">
-                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-100/70 text-amber-800 flex items-center justify-center shrink-0">
+                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
                       </div>
                       <div className="w-full min-w-0">
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">Customer</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'CUSTOMER' ? 'text-emerald-800 font-semibold' : 'text-slate-600'}`}>
+                        <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Customer</span>
+                        <span className={`block text-xs truncate ${selectedRole === 'CUSTOMER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
                           Milk Subscriber
                         </span>
                       </div>
@@ -715,7 +715,7 @@ export default function LoginPage() {
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
                     Authentication Method
                   </label>
-                  <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 grid grid-cols-2 gap-1 text-xs font-semibold">
+                  <div className="bg-stone-100 p-1 rounded-2xl border border-stone-200/80 grid grid-cols-2 gap-1 text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => {
@@ -723,10 +723,10 @@ export default function LoginPage() {
                         setOtpSent(false);
                         setErrorMessage(null);
                       }}
-                      className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         authMode === 'password'
-                          ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#0F766E] text-white shadow-xs font-bold'
+                          : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
                       <Lock className="w-3.5 h-3.5" />
@@ -738,10 +738,10 @@ export default function LoginPage() {
                         setAuthMode('phone_otp');
                         setErrorMessage(null);
                       }}
-                      className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         authMode === 'phone_otp'
-                          ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#0F766E] text-white shadow-xs font-bold'
+                          : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
                       <Phone className="w-3.5 h-3.5" />
@@ -1004,7 +1004,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 sm:py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm shadow-emerald-700/30 hover:shadow-md transition cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 sm:py-3.5 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   <span>
                     {isSubmitting
@@ -1124,7 +1124,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleLoginRegisteredCustomer}
                       disabled={isSubmitting}
-                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                      className="w-full py-3 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                     >
                       <span>Open Customer Portal Now</span>
                       <ArrowRight className="w-4 h-4" />
@@ -1227,7 +1227,7 @@ export default function LoginPage() {
 
                         <button
                           type="submit"
-                          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                          className="w-full py-2.5 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                         >
                           <span>Next: Select Dairy Farm</span>
                           <ArrowRight className="w-4 h-4" />
@@ -1364,7 +1364,7 @@ export default function LoginPage() {
                             type="button"
                             onClick={handleStep2Next}
                             disabled={!selectedDairyName}
-                            className="w-2/3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                            className="w-2/3 py-2 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                           >
                             <span>Next: Address & Milk</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -1512,7 +1512,7 @@ export default function LoginPage() {
                           <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-2/3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                            className="w-2/3 py-2 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                           >
                             <span>{isSubmitting ? 'Registering...' : 'Complete & Subscribe'}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -1565,7 +1565,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleLoginNewDairyOwner}
                       disabled={isSubmitting}
-                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                      className="w-full py-3 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                     >
                       <span>Launch Dairy Management Dashboard</span>
                       <ArrowRight className="w-4 h-4" />
@@ -1701,7 +1701,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                      className="w-full py-3 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                     >
                       <span>{isSubmitting ? 'Registering Dairy...' : 'Register Dairy & Create Admin ID'}</span>
                       <ArrowRight className="w-4 h-4" />

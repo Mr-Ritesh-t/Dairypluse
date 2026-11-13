@@ -1,17 +1,12 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
   Milk,
   Plus,
-  History,
-  TrendingDown,
-  TrendingUp,
-  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
-  Filter,
+  AlertTriangle,
   Edit2,
   Trash2,
   X,
@@ -20,11 +15,29 @@ import {
   Layers,
   Calendar,
 } from 'lucide-react';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { Product, MilkVariant } from '@/types';
+import { Product } from '@/types';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+  ProgressBar,
+} from '@/components/ui';
 
 export default function MilkInventoryPage() {
-  const { products, movements, openModal, addProduct, updateProductPrice, deleteProduct, updateIntakeExpiry } = useDairyPulse();
+  const {
+    products,
+    movements,
+    openModal,
+    addProduct,
+    updateProductPrice,
+    deleteProduct,
+    updateIntakeExpiry,
+  } = useDairyPulse();
+
   const [filterType, setFilterType] = useState<string>('ALL');
 
   // Modal States for Variety Management
@@ -63,22 +76,22 @@ export default function MilkInventoryPage() {
     if (diffDays < 0) {
       return {
         label: `Expired (${Math.abs(diffDays)}d ago)`,
-        style: 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
+        style: 'bg-orange-50 text-orange-900 border-orange-200 font-semibold',
       };
     } else if (diffDays === 0) {
       return {
         label: 'Expires Today',
-        style: 'bg-amber-100 text-amber-800 border-amber-300 font-bold',
+        style: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
       };
     } else if (diffDays <= 2) {
       return {
         label: `${diffDays}d left (${expiryDate})`,
-        style: 'bg-amber-50 text-amber-700 border-amber-200 font-semibold',
+        style: 'bg-amber-50 text-amber-800 border-amber-200 font-semibold',
       };
     } else {
       return {
         label: `${diffDays}d left (${expiryDate})`,
-        style: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium',
+        style: 'bg-teal-50 text-teal-800 border-teal-200 font-medium',
       };
     }
   };
@@ -140,7 +153,6 @@ export default function MilkInventoryPage() {
 
     setIsSubmitting(false);
     setIsAddVarietyOpen(false);
-    // Reset form
     setVarName('');
     setVarVariant('');
     setVarSellingPrice('65');
@@ -180,249 +192,233 @@ export default function MilkInventoryPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Milk Inventory & Storage Tanks" description="Track fresh cow and buffalo milk stock, morning and evening milking batches, quality tests, and tank capacities." />
+      <PageHead
+        title="Milk Inventory & Storage Tanks"
+        description="Track fresh cow and buffalo milk stock, morning and evening milking batches, quality tests, and tank capacities."
+      />
 
-      {/* Page Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" data-purpose="page-header">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Milk Inventory & Ledger</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Track milk storage silos, manage milk varieties, set pricing, and log movements.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => openModal('logWastage')}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-          >
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span>Log Wastage</span>
-          </button>
-          <button
-            onClick={() => openModal('addStock')}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-emerald-600" />
-            <span>Add Intake Stock</span>
-          </button>
-          <button
-            onClick={() => setIsAddVarietyOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition transform active:scale-95 cursor-pointer"
-          >
-            <Layers className="w-4 h-4" />
-            <span>+ Add Milk Variety</span>
-          </button>
-        </div>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Milk Inventory & Storage Silos"
+        description="Live tank storage levels, FAT/SNF composition, pricing adjustments, and traceable stock movement ledger."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openModal('logWastage')}
+              leftIcon={<AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+            >
+              Log Wastage
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openModal('addStock')}
+              leftIcon={<Plus className="w-3.5 h-3.5 text-[#0F766E]" />}
+            >
+              Add Intake Stock
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAddVarietyOpen(true)}
+              leftIcon={<Layers className="w-3.5 h-3.5" />}
+            >
+              + Add Milk Variety
+            </Button>
+          </>
+        }
+      />
+
+      {/* ── 4 KPI Metric Cards ── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-purpose="inventory-metrics">
+        <StatCard
+          title="Total Stock"
+          value={`${totalStock.toLocaleString()} L`}
+          subtitle={`${products.length} milk varieties configured`}
+          icon={<Milk className="w-5 h-5" />}
+          variant="teal"
+          trend={{ value: 'Live Silos', isPositive: true }}
+        />
+
+        <StatCard
+          title="Intake Today"
+          value={`+${totalReceivedToday.toLocaleString()} L`}
+          subtitle="Collected from morning tankers"
+          icon={<ArrowDownRight className="w-5 h-5" />}
+          variant="blue"
+          trend={{ value: 'Inbound', isPositive: true }}
+        />
+
+        <StatCard
+          title="Dispatched"
+          value={`-${totalDispatchedToday.toLocaleString()} L`}
+          subtitle="Sent to active delivery routes"
+          icon={<ArrowUpRight className="w-5 h-5" />}
+          variant="amber"
+          trend={{ value: 'Routes', isPositive: true }}
+        />
+
+        <StatCard
+          title="Wastage / Loss"
+          value={`${totalWastageToday} L`}
+          subtitle="Handling & spillage logs"
+          icon={<AlertTriangle className="w-5 h-5" />}
+          variant="terracotta"
+          trend={{
+            value: totalWastageToday > 0 ? 'Recorded' : 'Zero',
+            isPositive: totalWastageToday === 0,
+          }}
+        />
       </section>
 
-      {/* 4 Metric KPI Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" data-purpose="inventory-metrics">
-        {/* Total Stock */}
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Total Stock</p>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-                {totalStock.toLocaleString()} L
-              </h3>
-              <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">{products.length} Varieties</p>
-            </div>
-            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Milk className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Received Today */}
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Intake Today</p>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-                +{totalReceivedToday.toLocaleString()} L
-              </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Intake batches</p>
-            </div>
-            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Dispatched Today */}
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Dispatched</p>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-                -{totalDispatchedToday.toLocaleString()} L
-              </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Active routes</p>
-            </div>
-            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-              <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Wastage */}
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Wastage / Loss</p>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1 tabular-nums">
-                {totalWastageToday} L
-              </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Handling loss</p>
-            </div>
-            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stock by Variant Grid with Price Editing & Variety Removal */}
+      {/* ── Storage Silos & Milk Varieties Cards ── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">
-              Milk Varieties & Storage Silos ({products.length})
+            <h3 className="text-sm font-bold text-stone-900 tracking-tight">
+              Storage Silos & Varieties ({products.length})
             </h3>
-            <p className="text-[11px] text-slate-400">
-              Manage variants, adjust selling and procurement prices, or remove varieties.
+            <p className="text-xs text-stone-500 font-normal">
+              Adjust live selling prices, procurement rates, or catalog listings.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setIsAddVarietyOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 transition cursor-pointer"
+            leftIcon={<Plus className="w-3.5 h-3.5 text-[#0F766E]" />}
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Variety</span>
-          </button>
+            Add Variety
+          </Button>
         </div>
 
         {products.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <Card className="text-center py-12">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#F6F2EA] text-[#0F766E] flex items-center justify-center border border-stone-200 shadow-2xs mb-3">
               <Milk className="w-6 h-6" />
             </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-800">No Milk Varieties Configured</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                Add your first milk variety (e.g. Cow Milk, Buffalo Milk) to manage inventory stock, pricing, and intake.
-              </p>
+            <h4 className="text-sm font-bold text-stone-900">No Milk Varieties Configured</h4>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1 font-normal">
+              Add your first milk variety (e.g. Cow Milk, Buffalo Milk, A2 Desi Milk) to manage inventory stock, pricing, and intake.
+            </p>
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsAddVarietyOpen(true)}
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+              >
+                + Add Milk Variety
+              </Button>
             </div>
-            <button
-              onClick={() => setIsAddVarietyOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Add Milk Variety</span>
-            </button>
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {products.map((p) => {
-            const percentage = Math.min(100, Math.round((p.availableStock / 2000) * 100));
-            return (
-              <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5 hover:border-slate-300 transition">
-                {/* Header: Title, Status, and Action Buttons */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 leading-tight">{p.name || p.variant}</h4>
-                    <span className="text-[10px] text-slate-400">{p.variant}</span>
+              const percentage = Math.min(100, Math.round((p.availableStock / 2000) * 100));
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/90 shadow-[0_1px_3px_rgba(28,25,23,0.04)] hover:border-stone-300 transition-colors space-y-3"
+                >
+                  {/* Header: Title, Status & Actions */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-stone-900 leading-tight truncate">
+                        {p.name || p.variant}
+                      </h4>
+                      <span className="text-[10px] text-stone-500 block truncate">{p.variant}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge
+                        variant={p.status === 'In Stock' ? 'success' : 'warning'}
+                        dot
+                        size="xs"
+                      >
+                        {p.status}
+                      </Badge>
+                      <button
+                        onClick={() => handleOpenEditPrice(p)}
+                        title="Change Price"
+                        className="p-1 rounded-lg text-stone-400 hover:text-[#0F766E] hover:bg-teal-50 transition-colors cursor-pointer"
+                        aria-label={`Change price for ${p.variant}`}
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingProduct(p)}
+                        title="Remove Variety"
+                        className="p-1 rounded-lg text-stone-400 hover:text-orange-700 hover:bg-orange-50 transition-colors cursor-pointer"
+                        aria-label={`Remove variety ${p.variant}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
-                        p.status === 'In Stock'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}
-                    >
-                      {p.status}
-                    </span>
+
+                  {/* Stock Level & Price */}
+                  <div className="flex items-baseline justify-between pt-1">
+                    <div>
+                      <div className="text-2xl font-black text-stone-900 tabular-nums">
+                        {p.availableStock}{' '}
+                        <span className="text-xs font-normal text-stone-400">Litres</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-black text-[#0F766E] tabular-nums">
+                        ₹{p.sellingPrice}
+                        <span className="text-[10px] font-normal text-stone-400">/L</span>
+                      </div>
+                      <div className="text-[10px] text-stone-500 tabular-nums font-medium">
+                        Cost: ₹{p.costPrice}/L
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Silo Capacity Progress Bar */}
+                  <div className="space-y-1">
+                    <ProgressBar
+                      value={percentage}
+                      variant={p.status === 'In Stock' ? 'teal' : 'amber'}
+                      size="sm"
+                    />
+                    <div className="flex justify-between text-[10px] text-stone-500 font-medium">
+                      <span>FAT: {p.fatContent}% | SNF: {p.snfContent}%</span>
+                      <span>Min: {p.lowStockThreshold}L</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Button */}
+                  <div className="pt-2 border-t border-stone-100">
                     <button
                       onClick={() => handleOpenEditPrice(p)}
-                      title="Change Price"
-                      className="p-1 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
+                      className="w-full py-1.5 px-2 bg-[#F6F2EA] hover:bg-teal-50 hover:text-teal-900 text-stone-700 text-[11px] font-semibold rounded-xl border border-stone-200/70 hover:border-teal-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingProduct(p)}
-                      title="Remove Variety"
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-3 h-3 text-[#0F766E]" />
+                      <span>Adjust Price (₹{p.sellingPrice})</span>
                     </button>
                   </div>
                 </div>
-
-                {/* Stock Level & Price */}
-                <div className="flex items-baseline justify-between pt-1">
-                  <div>
-                    <div className="text-2xl font-extrabold text-slate-900 tabular-nums">
-                      {p.availableStock} <span className="text-xs font-normal text-slate-400">Litres</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-extrabold text-emerald-700 tabular-nums">
-                      ₹{p.sellingPrice}<span className="text-[10px] font-normal text-slate-400">/L</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 tabular-nums">Cost: ₹{p.costPrice}/L</div>
-                  </div>
-                </div>
-
-                {/* Storage Silo Progress Bar */}
-                <div className="space-y-1">
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={`h-1.5 rounded-full ${
-                        p.status === 'In Stock' ? 'bg-emerald-500' : 'bg-amber-500'
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>FAT: {p.fatContent}% | SNF: {p.snfContent}%</span>
-                    <span>Min: {p.lowStockThreshold}L</span>
-                  </div>
-                </div>
-
-                {/* Quick Action Button */}
-                <div className="pt-1 border-t border-slate-100">
-                  <button
-                    onClick={() => handleOpenEditPrice(p)}
-                    className="w-full py-1.5 px-2 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-semibold rounded-xl border border-slate-200 hover:border-emerald-200 transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    <span>Change Price (₹{p.sellingPrice})</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
-      {/* Movement Ledger Table */}
-      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Auditable Inventory Movement Ledger</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Traceable movements: farm intake, dispatch runs, wastage, and calibrations.
-            </p>
-          </div>
+      {/* ── Auditable Inventory Movement Ledger ── */}
+      <Card
+        title="Auditable Movement Ledger"
+        subtitle="Traceable transactions: farm intake, morning/evening routes, wastage, and calibrations"
+        action={
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">Filter:</span>
+            <span className="text-xs font-semibold text-stone-600">Filter:</span>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+              className="px-2.5 py-1 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
+              aria-label="Filter movement ledger"
             >
               <option value="ALL">All Transactions</option>
               <option value="RECEIPT">Intake Receipts</option>
@@ -430,58 +426,60 @@ export default function MilkInventoryPage() {
               <option value="WASTAGE">Wastage Logs</option>
             </select>
           </div>
-        </div>
-
+        }
+      >
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="w-full text-left text-xs min-w-[650px]">
+          <table className="w-full text-left text-xs min-w-[650px]" aria-label="Movement Ledger Table">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
-                <th className="pb-2.5 font-medium">Timestamp</th>
-                <th className="pb-2.5 font-medium">Variant</th>
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium text-center">Quantity</th>
-                <th className="pb-2.5 font-medium">Source / Route</th>
-                <th className="pb-2.5 font-medium">Expiry / Shelf Life</th>
-                <th className="pb-2.5 font-medium">Notes & Quality</th>
+              <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Timestamp</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Variety</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Type</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-center">Quantity</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Source / Route</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Expiry / Shelf Life</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold rounded-r-lg">Notes & Quality</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {filteredMovements.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-stone-400">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <Milk className="w-8 h-8 text-slate-300" />
-                      <span className="font-semibold text-sm text-slate-600">No stock movements recorded yet</span>
-                      <span className="text-xs text-slate-400">Record a new intake using &apos;+ Add Stock Intake&apos; above</span>
+                      <Milk className="w-8 h-8 text-stone-300" />
+                      <span className="font-semibold text-sm text-stone-600">No stock movements recorded yet</span>
+                      <span className="text-xs text-stone-400">Record a new intake using &apos;+ Add Intake Stock&apos; above</span>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredMovements.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3 font-semibold text-slate-700">
+                  <tr key={m.id} className="hover:bg-stone-50/80 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-stone-800">
                       <div>{m.timestamp}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{m.date}</div>
+                      <div className="text-[10px] text-stone-500 font-normal">{m.date}</div>
                     </td>
-                    <td className="py-3 font-semibold text-slate-800">{m.productVariant}</td>
-                    <td className="py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    <td className="py-3 px-3 font-bold text-stone-900">{m.productVariant}</td>
+                    <td className="py-3 px-3">
+                      <Badge
+                        variant={
                           m.type === 'RECEIPT'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'success'
                             : m.type === 'DISPATCH'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
+                            ? 'info'
+                            : 'danger'
+                        }
+                        dot
+                        size="xs"
                       >
                         {m.type}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="py-3 text-center font-bold text-slate-800 tabular-nums">
+                    <td className="py-3 px-3 text-center font-extrabold text-stone-900 tabular-nums">
                       {m.type === 'RECEIPT' ? '+' : '-'} {m.quantity} L
                     </td>
-                    <td className="py-3 font-medium text-slate-600">{m.supplierOrBatch}</td>
-                    <td className="py-3">
+                    <td className="py-3 px-3 font-medium text-stone-700">{m.supplierOrBatch}</td>
+                    <td className="py-3 px-3">
                       {m.type === 'RECEIPT' ? (
                         m.expiryDate ? (
                           (() => {
@@ -498,7 +496,7 @@ export default function MilkInventoryPage() {
                                   type="button"
                                   onClick={() => handleOpenEditExpiry(m)}
                                   title="Change expiry date"
-                                  className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                                  className="p-1 text-stone-400 hover:text-[#0F766E] hover:bg-stone-100 rounded-md transition-colors cursor-pointer"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
@@ -509,17 +507,17 @@ export default function MilkInventoryPage() {
                           <button
                             type="button"
                             onClick={() => handleOpenEditExpiry(m)}
-                            className="text-[10px] text-slate-400 hover:text-emerald-600 font-medium underline flex items-center gap-1 cursor-pointer"
+                            className="text-[10px] text-stone-400 hover:text-[#0F766E] font-medium underline flex items-center gap-1 cursor-pointer"
                           >
                             <Calendar className="w-2.5 h-2.5" />
                             <span>+ Set Expiry</span>
                           </button>
                         )
                       ) : (
-                        <span className="text-slate-300 text-[11px]">—</span>
+                        <span className="text-stone-300 text-[11px]">—</span>
                       )}
                     </td>
-                    <td className="py-3 text-slate-500">
+                    <td className="py-3 px-3 text-stone-600">
                       {m.notes || (m.ratePerLiter ? `₹${m.ratePerLiter}/L purchase cost` : 'Standard handling')}
                     </td>
                   </tr>
@@ -528,22 +526,23 @@ export default function MilkInventoryPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </Card>
 
-      {/* ======================================================== */}
-      {/* MODAL 1: ADD NEW MILK VARIETY                            */}
-      {/* ======================================================== */}
+      {/* ── MODAL 1: ADD NEW MILK VARIETY ── */}
       {isAddVarietyOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Add New Milk Variety</h3>
-                <p className="text-[11px] text-slate-400">Add a new milk type or product to your dairy inventory</p>
+                <h3 className="text-base font-bold text-stone-900">Add New Milk Variety</h3>
+                <p className="text-[11px] text-stone-500 font-normal">
+                  Add a new milk type or product to your dairy inventory
+                </p>
               </div>
               <button
                 onClick={() => setIsAddVarietyOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -551,7 +550,7 @@ export default function MilkInventoryPage() {
 
             <form onSubmit={handleAddVarietySubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Variety Display Name *
                 </label>
                 <input
@@ -560,12 +559,12 @@ export default function MilkInventoryPage() {
                   value={varName}
                   onChange={(e) => setVarName(e.target.value)}
                   placeholder="e.g. Pure A2 Gir Cow Milk"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                  className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Short Variant Tag / SKU
                 </label>
                 <input
@@ -573,13 +572,13 @@ export default function MilkInventoryPage() {
                   value={varVariant}
                   onChange={(e) => setVarVariant(e.target.value)}
                   placeholder="e.g. Gir Cow Milk"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     Selling Price (₹/L) *
                   </label>
                   <input
@@ -589,11 +588,11 @@ export default function MilkInventoryPage() {
                     value={varSellingPrice}
                     onChange={(e) => setVarSellingPrice(e.target.value)}
                     placeholder="65"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold text-emerald-800"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden font-bold text-[#0F766E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     Cost / Intake Price (₹/L)
                   </label>
                   <input
@@ -602,14 +601,14 @@ export default function MilkInventoryPage() {
                     value={varCostPrice}
                     onChange={(e) => setVarCostPrice(e.target.value)}
                     placeholder="50"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden text-stone-700"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     FAT Content (%)
                   </label>
                   <input
@@ -618,11 +617,11 @@ export default function MilkInventoryPage() {
                     value={varFat}
                     onChange={(e) => setVarFat(e.target.value)}
                     placeholder="4.5"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     SNF Content (%)
                   </label>
                   <input
@@ -631,14 +630,14 @@ export default function MilkInventoryPage() {
                     value={varSnf}
                     onChange={(e) => setVarSnf(e.target.value)}
                     placeholder="8.5"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     Initial Stock (Litres)
                   </label>
                   <input
@@ -646,11 +645,11 @@ export default function MilkInventoryPage() {
                     value={varStock}
                     onChange={(e) => setVarStock(e.target.value)}
                     placeholder="200"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     Low Stock Alert (L)
                   </label>
                   <input
@@ -658,47 +657,52 @@ export default function MilkInventoryPage() {
                     value={varThreshold}
                     onChange={(e) => setVarThreshold(e.target.value)}
                     placeholder="50"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3.5 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
                   />
                 </div>
               </div>
 
               <div className="flex gap-2.5 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
+                  className="w-1/3"
                   onClick={() => setIsAddVarietyOpen(false)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                  variant="primary"
+                  size="md"
+                  className="w-2/3"
+                  isLoading={isSubmitting}
+                  leftIcon={<Check className="w-4 h-4" />}
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Saving...' : 'Save Milk Variety'}</span>
-                </button>
+                  Save Milk Variety
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 2: CHANGE MILK VARIETY PRICE                       */}
-      {/* ======================================================== */}
+      {/* ── MODAL 2: CHANGE MILK VARIETY PRICE ── */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Change Price</h3>
-                <p className="text-[11px] text-slate-500 font-medium">{editingProduct.name || editingProduct.variant}</p>
+                <h3 className="text-base font-bold text-stone-900">Change Price</h3>
+                <p className="text-[11px] text-stone-500 font-medium">
+                  {editingProduct.name || editingProduct.variant}
+                </p>
               </div>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -706,11 +710,11 @@ export default function MilkInventoryPage() {
 
             <form onSubmit={handleUpdatePriceSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Customer Selling Rate (₹ / Liter) *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
                     <IndianRupee className="w-4 h-4" />
                   </div>
                   <input
@@ -720,17 +724,17 @@ export default function MilkInventoryPage() {
                     value={editSellingPrice}
                     onChange={(e) => setEditSellingPrice(e.target.value)}
                     placeholder="65"
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                    className="w-full pl-9 pr-4 py-2.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-sm font-bold text-[#0F766E] focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E] transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Procurement / Cost Rate (₹ / Liter)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
                     <IndianRupee className="w-4 h-4" />
                   </div>
                   <input
@@ -739,67 +743,69 @@ export default function MilkInventoryPage() {
                     value={editCostPrice}
                     onChange={(e) => setEditCostPrice(e.target.value)}
                     placeholder="50"
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                    className="w-full pl-9 pr-4 py-2.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-sm font-medium text-stone-700 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E] transition-all"
                   />
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-[11px] text-emerald-800">
+              <div className="p-3 bg-teal-50 rounded-xl border border-teal-100 text-[11px] text-teal-800 font-medium">
                 Updated pricing takes effect for all new dispatches and daily deliveries immediately.
               </div>
 
               <div className="flex gap-2.5 pt-1">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
+                  className="w-1/3"
                   onClick={() => setEditingProduct(null)}
-                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                  variant="primary"
+                  size="md"
+                  className="w-2/3"
+                  isLoading={isSubmitting}
+                  leftIcon={<Check className="w-4 h-4" />}
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Updating...' : 'Update Price'}</span>
-                </button>
+                  Update Price
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 3: DELETE / REMOVE VARIETY CONFIRMATION            */}
-      {/* ======================================================== */}
-      {/* ======================================================== */}
-      {/* MODAL: EDIT INTAKE EXPIRY DATE                           */}
-      {/* ======================================================== */}
+      {/* ── MODAL 3: EDIT INTAKE EXPIRY DATE ── */}
       {editingMovement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center border border-teal-200">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Change Expiry Date</h3>
-                  <p className="text-[11px] text-slate-400">{editingMovement.productVariant} ({editingMovement.quantity} L)</p>
+                  <h3 className="text-sm font-bold text-stone-900">Change Expiry Date</h3>
+                  <p className="text-[11px] text-stone-500">
+                    {editingMovement.productVariant} ({editingMovement.quantity} L)
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setEditingMovement(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                aria-label="Close"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveExpiry} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Expiry / Best Before Date *
                 </label>
                 <input
@@ -807,13 +813,13 @@ export default function MilkInventoryPage() {
                   required
                   value={newExpiryInput}
                   onChange={(e) => setNewExpiryInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800"
+                  className="w-full px-3 py-2 bg-[#F6F2EA] border border-stone-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden font-semibold text-stone-800"
                 />
               </div>
 
               {/* Quick Presets */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[10px] text-slate-500 font-medium">Quick Presets:</span>
+                <span className="text-[10px] text-stone-500 font-medium">Quick Presets:</span>
                 {[
                   { label: '+3 Days', days: 3 },
                   { label: '+5 Days', days: 5 },
@@ -828,7 +834,7 @@ export default function MilkInventoryPage() {
                       key={preset.days}
                       type="button"
                       onClick={() => setNewExpiryInput(pDate)}
-                      className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-200 transition cursor-pointer"
+                      className="text-[10px] px-2 py-0.5 rounded-lg bg-[#F6F2EA] hover:bg-stone-200 text-stone-700 font-semibold border border-stone-200 transition-colors cursor-pointer"
                     >
                       {preset.label}
                     </button>
@@ -837,69 +843,78 @@ export default function MilkInventoryPage() {
               </div>
 
               <div className="flex gap-2.5 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-1/2"
                   onClick={() => setEditingMovement(null)}
-                  className="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={isUpdatingExpiry}
-                  className="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                  variant="primary"
+                  size="sm"
+                  className="w-1/2"
+                  isLoading={isUpdatingExpiry}
+                  leftIcon={<Check className="w-3.5 h-3.5" />}
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>{isUpdatingExpiry ? 'Saving...' : 'Update Expiry'}</span>
-                </button>
+                  Update Expiry
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* ── MODAL 4: DELETE VARIETY CONFIRMATION ── */}
       {deletingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-stone-200 space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#C2410C] border border-orange-200 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-slate-900">Remove Milk Variety?</h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <h3 className="text-base font-bold text-stone-900">Remove Milk Variety?</h3>
+              <p className="text-xs text-stone-500 mt-1 font-normal">
                 Are you sure you want to remove <strong>{deletingProduct.name || deletingProduct.variant}</strong> from your dairy catalog?
               </p>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 text-left space-y-1">
+            <div className="bg-[#F6F2EA] p-3 rounded-xl border border-stone-200 text-xs text-stone-600 text-left space-y-1">
               <div className="flex justify-between">
                 <span>Current Stock:</span>
-                <span className="font-semibold text-slate-800">{deletingProduct.availableStock} Litres</span>
+                <span className="font-semibold text-stone-800">{deletingProduct.availableStock} Litres</span>
               </div>
               <div className="flex justify-between">
                 <span>Selling Price:</span>
-                <span className="font-semibold text-slate-800">₹{deletingProduct.sellingPrice}/L</span>
+                <span className="font-semibold text-stone-800">₹{deletingProduct.sellingPrice}/L</span>
               </div>
             </div>
 
             <div className="flex gap-2.5 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="md"
+                className="w-1/2"
                 onClick={() => setDeletingProduct(null)}
-                className="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
+                size="md"
+                className="w-1/2"
+                isLoading={isSubmitting}
                 onClick={handleDeleteProduct}
-                disabled={isSubmitting}
-                className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                leftIcon={<Trash2 className="w-4 h-4" />}
               >
-                <Trash2 className="w-4 h-4" />
-                <span>{isSubmitting ? 'Removing...' : 'Yes, Remove'}</span>
-              </button>
+                Yes, Remove
+              </Button>
             </div>
           </div>
         </div>

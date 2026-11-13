@@ -64,7 +64,6 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
     }
 
     // 5. OWNER: Can ONLY see owner dashboard and management modules
-    // Block access to mobile portals
     if (user.role === 'OWNER') {
       if (pathname === '/mobile/delivery' || pathname === '/mobile/customer') {
         setIsRedirecting(true);
@@ -79,10 +78,10 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   // Loading or redirecting state spinner
   if (isLoading || isRedirecting) {
     return (
-      <div className="min-h-screen bg-[#F4F7FB] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-          <p className="text-sm font-semibold text-slate-700">Verifying DairyPulse Portal Access...</p>
+      <div className="min-h-screen bg-[#FEFBF6] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+          <Loader2 className="w-8 h-8 text-[#0F766E] animate-spin" />
+          <p className="text-sm font-semibold text-stone-700">Verifying DairyPulse Portal Access...</p>
         </div>
       </div>
     );
@@ -91,18 +90,18 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   // 1. Auth Page Layout (/login, /register)
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-[#F4F7FB] text-slate-800 flex flex-col overflow-x-hidden">
-        <main className="flex-1 w-full overflow-x-hidden">{children}</main>
+      <div className="min-h-screen bg-[#FEFBF6] text-stone-800 flex flex-col overflow-x-clip">
+        <main className="flex-1 w-full overflow-x-clip">{children}</main>
         <ModalContainer />
       </div>
     );
   }
 
   // 2. Delivery Boy Dashboard Layout (/mobile/delivery)
-  // Standalone mobile interface: NO Admin Sidebar, NO Admin TopNavbar
+  // Standalone mobile-first interface
   if (user?.role === 'DELIVERY') {
     return (
-      <div className="min-h-screen bg-slate-900 text-slate-800 flex flex-col justify-center items-center p-0 sm:p-4">
+      <div className="min-h-screen bg-stone-900 text-stone-800 flex flex-col justify-center items-center p-0 sm:p-4">
         <main className="w-full flex justify-center">{children}</main>
         <ModalContainer />
       </div>
@@ -110,10 +109,10 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   }
 
   // 3. Customer Dashboard Layout (/mobile/customer)
-  // Standalone mobile interface: NO Admin Sidebar, NO Admin TopNavbar
+  // Standalone mobile interface
   if (user?.role === 'CUSTOMER') {
     return (
-      <div className="min-h-screen bg-slate-900 text-slate-800 flex flex-col justify-center items-center p-0 sm:p-4">
+      <div className="min-h-screen bg-stone-900 text-stone-800 flex flex-col justify-center items-center p-0 sm:p-4">
         <main className="w-full flex justify-center">{children}</main>
         <ModalContainer />
       </div>
@@ -121,11 +120,11 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   }
 
   // 4. Owner Dashboard & Modules Layout
-  // Responsive workspace with Sidebar, TopNavbar, Mobile Bottom Nav, and ModalContainer
+  // Responsive workspace with Dark Sidebar, Clean TopNavbar, Mobile Bottom Nav, and ModalContainer
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex text-slate-800 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#FEFBF6] flex text-stone-900 w-full overflow-x-clip">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200 w-full overflow-x-hidden">
+      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200 w-full overflow-x-clip">
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 sm:pb-8">
           {children}
@@ -149,3 +148,4 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </AuthProvider>
   );
 }
+export default AppShell;

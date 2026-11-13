@@ -8,6 +8,7 @@ interface CardProps {
   className?: string;
   headerClassName?: string;
   bodyClassName?: string;
+  variant?: 'default' | 'raised' | 'sunken' | 'flush';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -18,24 +19,41 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   headerClassName = '',
   bodyClassName = '',
+  variant = 'default',
 }) => {
   const hasHeader = Boolean(title || action);
 
+  const variantStyles = {
+    default: 'bg-white border-stone-200/90 shadow-[0_1px_3px_rgba(28,25,23,0.04)]',
+    raised: 'bg-[#FFFDF9] border-stone-200 shadow-[0_4px_12px_rgba(28,25,23,0.06)]',
+    sunken: 'bg-[#F7F4EC] border-stone-200/70 shadow-none',
+    flush: 'bg-transparent border-none shadow-none',
+  };
+
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden ${className}`}>
+    <div
+      className={`rounded-2xl border transition-colors duration-150 ${variantStyles[variant]} ${className}`}
+    >
       {hasHeader && (
-        <div className={`px-6 py-4 border-b border-slate-100 flex items-center justify-between ${headerClassName}`}>
+        <div
+          className={`px-5 py-4 border-b border-stone-100 flex items-center justify-between gap-3 ${headerClassName}`}
+        >
           <div>
-            {title && <h3 className="font-bold text-slate-900">{title}</h3>}
-            {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+            {title && (
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 tracking-tight">
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="text-xs text-stone-500 font-normal mt-0.5">{subtitle}</p>
+            )}
           </div>
-          {action && <div>{action}</div>}
+          {action && <div className="shrink-0 flex items-center gap-2">{action}</div>}
         </div>
       )}
-      <div className={`p-6 ${bodyClassName}`}>{children}</div>
+      <div className={`p-4 sm:p-6 ${bodyClassName}`}>{children}</div>
     </div>
   );
 };
 
 export default Card;
-

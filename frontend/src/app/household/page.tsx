@@ -1,36 +1,37 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   Plus,
-  Pause,
-  Play,
   Calendar,
   Search,
   CheckCircle2,
-  Clock,
-  Sparkles,
   Settings2,
   Trash2,
-  AlertCircle,
   Milk,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { MilkVariant, Subscription } from '@/types';
+import { Subscription } from '@/types';
 import { FlexibleSubscriptionModal } from '@/components/subscriptions/FlexibleSubscriptionModal';
 import { AddSubscriptionModal } from '@/components/subscriptions/AddSubscriptionModal';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+  Tabs,
+} from '@/components/ui';
 
 export default function HouseholdSubscriptionsPage() {
   const {
     subscriptions,
     toggleSubscriptionPause,
     deleteSubscription,
-    addSubscription,
-    customers,
-    products,
-    activeDairy,
   } = useDairyPulse();
 
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'PAUSED'>('ALL');
@@ -64,205 +65,194 @@ export default function HouseholdSubscriptionsPage() {
     }
   };
 
+  const filterTabs = [
+    { id: 'ALL', label: 'All Plans', count: subscriptions.length },
+    { id: 'ACTIVE', label: 'Active', count: activeCount },
+    { id: 'PAUSED', label: 'Paused', count: pausedCount },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Household Subscriptions" description="Manage daily doorstep milk subscriptions, frequency schedules, morning/evening shifts, and pause dates." />
+      <PageHead
+        title="Household Subscriptions"
+        description="Manage daily doorstep milk subscriptions, frequency schedules, morning/evening shifts, and pause dates."
+      />
 
-      {/* Toast Alert */}
+      {/* Floating Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 px-4 py-3 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 bg-[#0F766E] text-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-teal-200 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Page Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Household Subscriptions</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Manage daily recurring doorstep milk subscriptions, vacation pauses, and extra milk requests.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Household Subscriptions"
+        description="Daily recurring doorstep milk subscriptions, morning/evening shifts, vacation holds, and extra milk requests."
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>New Subscription</span>
-          </button>
-        </div>
-      </section>
+            New Subscription
+          </Button>
+        }
+      />
 
-      {/* Summary KPI Cards */}
+      {/* ── Summary KPI Cards ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Subscribers</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">{activeCount}</h3>
-          <p className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-0.5 truncate">
-            {activeCount > 0 ? 'Daily morning doorstep' : 'No subscribers'}
-          </p>
-        </div>
+        <StatCard
+          title="Active Subscribers"
+          value={activeCount}
+          subtitle="Daily morning doorstep deliveries"
+          icon={<Users className="w-5 h-5" />}
+          variant="teal"
+          trend={{ value: 'Live', isPositive: true }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Committed Volume</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            {totalDailyLiters.toFixed(1)} L
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
-            {totalDailyLiters > 0 ? 'Morning & Evening' : 'No committed vol'}
-          </p>
-        </div>
+        <StatCard
+          title="Committed Volume"
+          value={`${totalDailyLiters.toFixed(1)} L`}
+          subtitle="Daily required supply quota"
+          icon={<Milk className="w-5 h-5" />}
+          variant="blue"
+          trend={{ value: 'Daily', isPositive: true }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Paused Plans</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-amber-600">
-            {pausedCount}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Vacation hold</p>
-        </div>
+        <StatCard
+          title="Paused Plans"
+          value={pausedCount}
+          subtitle="Temporary vacation holds"
+          icon={<Calendar className="w-5 h-5" />}
+          variant="amber"
+          trend={{
+            value: pausedCount > 0 ? `${pausedCount} On Hold` : '0 On Hold',
+            isPositive: pausedCount === 0,
+          }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">Extra Requests</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums text-blue-600">
-            {subscriptions.filter((s: any) => s.isExtraOrder || s.extraLitres).length}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">Festival add-ons</p>
-        </div>
+        <StatCard
+          title="Extra Requests"
+          value={subscriptions.filter((s: any) => s.isExtraOrder || s.extraLitres).length}
+          subtitle="Special festival add-ons"
+          icon={<Sparkles className="w-5 h-5" />}
+          variant="terracotta"
+        />
       </section>
 
-      {/* Subscriptions Table */}
-      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                filter === 'ALL' ? 'bg-emerald-100 text-emerald-800' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              All Plans ({subscriptions.length})
-            </button>
-            <button
-              onClick={() => setFilter('ACTIVE')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                filter === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Active ({activeCount})
-            </button>
-            <button
-              onClick={() => setFilter('PAUSED')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                filter === 'PAUSED' ? 'bg-amber-100 text-amber-800' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Paused ({pausedCount})
-            </button>
-          </div>
-
-          <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search subscriber..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
+      {/* ── Subscriptions Table Card ── */}
+      <Card
+        title="Active Subscription Directory"
+        subtitle="Customer plans, milk variants, daily quotas, and delivery schedules"
+        headerClassName="flex-col sm:flex-row items-start sm:items-center gap-3"
+        action={
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <Tabs
+              tabs={filterTabs}
+              activeTab={filter}
+              onChange={(id) => setFilter(id as any)}
+              variant="pill"
+              size="sm"
             />
+            <div className="relative w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Search subscriber..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs text-stone-800 placeholder:text-stone-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0F766E]"
+                aria-label="Search subscriber"
+              />
+            </div>
           </div>
-        </div>
-
+        }
+      >
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="w-full text-left text-xs min-w-[650px]">
+          <table className="w-full text-left text-xs min-w-[650px]" aria-label="Subscriptions Table">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
-                <th className="pb-2.5 font-medium">Customer / Household</th>
-                <th className="pb-2.5 font-medium">Milk Variant</th>
-                <th className="pb-2.5 font-medium text-center">Daily Quota</th>
-                <th className="pb-2.5 font-medium">Delivery Slot</th>
-                <th className="pb-2.5 font-medium">Rate</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium text-right">Actions</th>
+              <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Customer / Household</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Milk Variety</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-center">Daily Quota</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Delivery Slot</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Rate</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Status</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {filteredSubs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <td colSpan={7} className="py-12 text-center text-stone-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-2xl bg-[#F6F2EA] text-[#0F766E] flex items-center justify-center border border-stone-200">
                         <Milk className="w-6 h-6" />
                       </div>
-                      <div>
-                        <span className="font-bold text-sm text-slate-700 block">No household subscriptions found</span>
-                        <span className="text-xs text-slate-400 mt-0.5 block">
-                          Start a recurring doorstep delivery plan for any household customer
-                        </span>
+                      <span className="font-bold text-sm text-stone-800">No household subscriptions found</span>
+                      <span className="text-xs text-stone-500 font-normal">
+                        Start a recurring doorstep delivery plan for any household customer
+                      </span>
+                      <div className="mt-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setIsAddModalOpen(true)}
+                          leftIcon={<Plus className="w-3.5 h-3.5" />}
+                        >
+                          + Add Household Subscription
+                        </Button>
                       </div>
-                      <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="mt-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>+ Add Household Subscription</span>
-                      </button>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredSubs.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 font-semibold text-slate-800">
-                      <div>{sub.customerName}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">Active since {sub.startDate}</div>
+                  <tr key={sub.id} className="hover:bg-stone-50/80 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-stone-800">
+                      <div className="font-bold text-stone-900">{sub.customerName}</div>
+                      <div className="text-[10px] text-stone-500 font-normal">Active since {sub.startDate}</div>
                     </td>
-                    <td className="py-3.5 font-medium text-slate-700">{sub.productVariant}</td>
-                    <td className="py-3.5 text-center font-bold text-slate-900 tabular-nums">
-                      {sub.quantityLiters} Liters
+                    <td className="py-3 px-3 font-medium text-stone-700">{sub.productVariant}</td>
+                    <td className="py-3 px-3 text-center font-extrabold text-stone-900 tabular-nums">
+                      {sub.quantityLiters} Litres
                     </td>
-                    <td className="py-3.5 text-slate-600">{sub.timeSlot}</td>
-                    <td className="py-3.5 font-semibold text-slate-800">₹{sub.unitPrice}/L</td>
-                    <td className="py-3.5">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                          sub.status === 'Active'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}
+                    <td className="py-3 px-3 text-stone-600">{sub.timeSlot}</td>
+                    <td className="py-3 px-3 font-bold text-stone-800 tabular-nums">₹{sub.unitPrice}/L</td>
+                    <td className="py-3 px-3">
+                      <Badge
+                        variant={sub.status === 'Active' ? 'success' : 'warning'}
+                        dot
+                        size="xs"
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            sub.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'
-                          }`}
-                        ></span>
                         {sub.status}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="py-3.5 text-right">
+                    <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setSelectedSubForManage(sub)}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition cursor-pointer flex items-center gap-1"
+                          leftIcon={<Settings2 className="w-3 h-3 text-stone-500" />}
                         >
-                          <Settings2 className="w-3 h-3 text-slate-500" />
-                          <span>Manage</span>
-                        </button>
-                        <button
+                          Manage
+                        </Button>
+                        <Button
+                          variant={sub.status === 'Active' ? 'secondary' : 'outline'}
+                          size="sm"
                           onClick={() => toggleSubscriptionPause(sub.id)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
-                            sub.status === 'Active'
-                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-700'
-                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                          }`}
                         >
                           {sub.status === 'Active' ? 'Pause' : 'Resume'}
-                        </button>
+                        </Button>
                         <button
                           onClick={() => handleDeleteSubscription(sub.id, sub.customerName)}
                           title="Delete subscription"
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                          className="p-1.5 text-stone-400 hover:text-orange-700 rounded-lg hover:bg-orange-50 transition-colors cursor-pointer"
+                          aria-label={`Delete subscription for ${sub.customerName}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -274,7 +264,7 @@ export default function HouseholdSubscriptionsPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </Card>
 
       {/* Add Subscription Modal */}
       <AddSubscriptionModal

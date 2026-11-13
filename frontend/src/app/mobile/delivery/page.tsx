@@ -46,6 +46,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useOfflineDeliverySync } from '@/lib/offlineSync';
 import { calculateRouteProgress } from '@/lib/calculations/delivery';
 import { Badge } from '@/components/ui/Badge';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 export default function DeliveryPartnerMobileApp() {
   const {
@@ -329,26 +330,29 @@ export default function DeliveryPartnerMobileApp() {
   };
 
   return (
-    <div className="py-2 flex justify-center w-full min-h-screen bg-slate-100">
-      <PageHead title="Rider Delivery Dispatch" description="Live mobile doorstep delivery run, turn-by-turn navigation, and digital proof of delivery." />
+    <div className="py-2 sm:py-6 flex justify-center w-full min-h-screen bg-[#FEFBF6] overflow-x-clip">
+      <PageHead
+        title="Rider Delivery Dispatch | DairyPulse"
+        description="Live mobile doorstep delivery run, turn-by-turn navigation, and digital proof of delivery."
+      />
 
-      <div className="w-full max-w-md min-h-[92vh] bg-slate-50 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative pb-16">
+      <div className="w-full max-w-md min-h-[92vh] bg-white flex flex-col font-sans rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden relative pb-16">
         
         {/* ================= TOP HEADER BAR ================= */}
-        <div className="bg-emerald-800 text-white p-4 pt-5 sticky top-0 z-30 shadow-md">
-          {/* Main Bar: Logo, Title, Dairy Badge, and Logout */}
+        <div className="bg-[#0F766E] text-white p-4 pt-5 sticky top-0 z-30 shadow-md">
+          {/* Main Bar: Logo, Title, Duty status, and Logout */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               {user?.role === 'OWNER' && (
                 <a
                   href="/delivery"
                   title="Return to Owner Delivery Management"
-                  className="p-1 rounded-lg hover:bg-emerald-700 transition"
+                  className="p-1 rounded-lg hover:bg-teal-800 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </a>
               )}
-              <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-xs">
                 <Image
                   src="/logo.png"
                   alt="DairyPulse Logo"
@@ -360,48 +364,36 @@ export default function DeliveryPartnerMobileApp() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-extrabold text-sm leading-tight tracking-tight">DairyPulse Rider</h1>
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                      isOnDuty ? 'bg-emerald-400/20 text-emerald-200' : 'bg-slate-500/30 text-slate-300'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full mr-1 ${
-                        isOnDuty ? 'bg-emerald-300 animate-pulse' : 'bg-slate-400'
-                      }`}
-                    />
+                  <Badge variant={isOnDuty ? 'emerald' : 'neutral'} dot size="xs">
                     {isOnDuty ? 'ON DUTY' : 'OFF DUTY'}
-                  </span>
+                  </Badge>
                 </div>
-                {/* Rider Name & Role */}
-                <p className="text-[11px] text-emerald-200 font-medium">
+                <p className="text-[11px] text-teal-100 font-medium mt-0.5 truncate max-w-[180px]">
                   {user?.name || matchedStaff?.name || 'Rahul Deshmukh'} • {user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
-              {/* Quick Profile Tab Button */}
               <button
                 onClick={() => setNavTab(navTab === 'PROFILE' ? 'DELIVERIES' : 'PROFILE')}
                 title="View Rider Profile & Dairy Details"
-                className={`p-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                className={`p-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
                   navTab === 'PROFILE'
-                    ? 'bg-white text-emerald-900 shadow-sm'
-                    : 'bg-emerald-700/80 hover:bg-emerald-700 text-white'
+                    ? 'bg-white text-teal-900 shadow-xs'
+                    : 'bg-teal-800/80 hover:bg-teal-800 text-white'
                 }`}
               >
                 <User className="w-4 h-4" />
               </button>
 
-              {/* Logout Button */}
               <button
                 onClick={() => {
                   logout();
                   window.location.href = '/login';
                 }}
                 title="Sign Out"
-                className="p-1.5 rounded-xl bg-emerald-900/80 hover:bg-emerald-950 text-white transition"
+                className="p-1.5 rounded-xl bg-teal-900/80 hover:bg-teal-950 text-white transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -411,21 +403,18 @@ export default function DeliveryPartnerMobileApp() {
           {/* DAIRY AFFILIATION BANNER */}
           <div
             onClick={() => setNavTab('PROFILE')}
-            className="cursor-pointer bg-emerald-900/70 hover:bg-emerald-900/90 transition-colors rounded-xl p-2.5 mb-2.5 flex items-center justify-between border border-emerald-700/60 shadow-xs"
+            className="cursor-pointer bg-teal-900/80 hover:bg-teal-900 transition-colors rounded-xl p-2.5 mb-2.5 flex items-center justify-between border border-teal-700/60 shadow-xs"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-700 flex items-center justify-center shrink-0 text-emerald-100">
-                <Building2 className="w-4 h-4 text-emerald-300" />
+              <div className="w-7 h-7 rounded-lg bg-teal-800 flex items-center justify-center shrink-0 text-teal-100">
+                <Building2 className="w-4 h-4 text-teal-300" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-300">
                     Affiliated Dairy Farm
                   </span>
-                  <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-emerald-500/30 text-emerald-100 px-1.5 py-0.2 rounded">
-                    <ShieldCheck className="w-2.5 h-2.5" />
-                    Verified
-                  </span>
+                  <Badge variant="teal" size="xs">Verified</Badge>
                 </div>
                 <h2 className="text-xs font-bold text-white truncate">
                   {matchedDairy.name}
@@ -433,50 +422,50 @@ export default function DeliveryPartnerMobileApp() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 text-[10px] text-emerald-200 font-semibold shrink-0 pl-2">
+            <div className="flex items-center gap-1 text-[10px] text-teal-200 font-semibold shrink-0 pl-2">
               <span>View Dairy</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </div>
 
           {/* QUICK METRICS STRIP: Drops, Liters, Cash, Rating */}
-          <div className="grid grid-cols-4 gap-1.5 bg-emerald-950/40 p-2 rounded-xl text-center">
+          <div className="grid grid-cols-4 gap-1.5 bg-teal-950/40 p-2 rounded-xl text-center">
             <div className="p-1">
-              <span className="text-[10px] block text-emerald-300 font-medium">Drops</span>
-              <span className="text-xs font-extrabold text-white">
+              <span className="text-[10px] block text-teal-300 font-medium">Drops</span>
+              <span className="text-xs font-extrabold text-white tabular-nums">
                 {completedStops.length}/{totalStopsCount}
               </span>
             </div>
-            <div className="p-1 border-l border-emerald-800/60">
-              <span className="text-[10px] block text-emerald-300 font-medium">Liters</span>
-              <span className="text-xs font-extrabold text-emerald-200">
+            <div className="p-1 border-l border-teal-800/60">
+              <span className="text-[10px] block text-teal-300 font-medium">Liters</span>
+              <span className="text-xs font-extrabold text-teal-200 tabular-nums">
                 {totalLitersDelivered}L
               </span>
             </div>
-            <div className="p-1 border-l border-emerald-800/60">
-              <span className="text-[10px] block text-emerald-300 font-medium">Cash</span>
-              <span className="text-xs font-extrabold text-amber-300">
+            <div className="p-1 border-l border-teal-800/60">
+              <span className="text-[10px] block text-teal-300 font-medium">Cash</span>
+              <span className="text-xs font-extrabold text-amber-300 tabular-nums">
                 ₹{totalCashCollectedToday}
               </span>
             </div>
-            <div className="p-1 border-l border-emerald-800/60">
-              <span className="text-[10px] block text-emerald-300 font-medium">Rating</span>
-              <span className="text-xs font-extrabold text-amber-200 inline-flex items-center justify-center gap-0.5">
+            <div className="p-1 border-l border-teal-800/60">
+              <span className="text-[10px] block text-teal-300 font-medium">Rating</span>
+              <span className="text-xs font-extrabold text-amber-200 inline-flex items-center justify-center gap-0.5 tabular-nums">
                 <Star className="w-3 h-3 fill-amber-300 text-amber-300 inline" />
                 {riderRating}
               </span>
             </div>
           </div>
 
-          {/* VIEW SWITCHER TABS: Deliveries vs Shift Stats vs Profile */}
-          <div className="grid grid-cols-3 gap-1 bg-emerald-950/60 p-1 rounded-xl mt-2.5 text-xs font-bold text-center">
+          {/* VIEW SWITCHER TABS */}
+          <div className="grid grid-cols-3 gap-1 bg-teal-950/60 p-1 rounded-xl mt-2.5 text-xs font-bold text-center">
             <button
               data-tab="deliveries"
               onClick={() => setNavTab('DELIVERIES')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 navTab === 'DELIVERIES'
-                  ? 'bg-white text-emerald-900 shadow-xs'
-                  : 'text-emerald-200 hover:text-white'
+                  ? 'bg-white text-teal-900 shadow-xs'
+                  : 'text-teal-200 hover:text-white'
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
@@ -485,10 +474,10 @@ export default function DeliveryPartnerMobileApp() {
             <button
               data-tab="stats"
               onClick={() => setNavTab('STATS')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 navTab === 'STATS'
-                  ? 'bg-white text-emerald-900 shadow-xs'
-                  : 'text-emerald-200 hover:text-white'
+                  ? 'bg-white text-teal-900 shadow-xs'
+                  : 'text-teal-200 hover:text-white'
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5" />
@@ -497,10 +486,10 @@ export default function DeliveryPartnerMobileApp() {
             <button
               data-tab="profile"
               onClick={() => setNavTab('PROFILE')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 ${
+              className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 navTab === 'PROFILE'
-                  ? 'bg-white text-emerald-900 shadow-xs'
-                  : 'text-emerald-200 hover:text-white'
+                  ? 'bg-white text-teal-900 shadow-xs'
+                  : 'text-teal-200 hover:text-white'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -511,12 +500,12 @@ export default function DeliveryPartnerMobileApp() {
 
         {/* ================= FLOATING TOAST NOTIFICATION ================= */}
         {syncToast && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-50 bg-slate-900 text-white text-xs p-3 rounded-2xl shadow-2xl flex items-center justify-between border border-emerald-500/40">
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-50 bg-stone-900 text-white text-xs p-3 rounded-2xl shadow-2xl flex items-center justify-between border border-teal-500/40">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+              <Sparkles className="w-4 h-4 text-teal-400 shrink-0" />
               <span className="font-semibold">{syncToast}</span>
             </div>
-            <button onClick={() => setSyncToast(null)} className="text-slate-400 hover:text-white font-bold ml-2">
+            <button onClick={() => setSyncToast(null)} className="text-stone-400 hover:text-white font-bold ml-2">
               ✕
             </button>
           </div>
@@ -527,10 +516,9 @@ export default function DeliveryPartnerMobileApp() {
         {/* 1. DELIVERIES TAB */}
         {navTab === 'DELIVERIES' && (
           <div className="flex-1 p-3.5 space-y-3 overflow-y-auto">
-            {/* ================= MORNING ATTENDANCE & DAIRY PICKUP CHECKLIST ================= */}
+            {/* Morning Attendance & Dairy Pickup Checklist */}
             {!riderShiftStatus?.attendanceMarked ? (
-              // STEP 1: ATTENDANCE CHECK-IN CARD
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-4 shadow-sm space-y-3">
+              <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
@@ -540,7 +528,7 @@ export default function DeliveryPartnerMobileApp() {
                       <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
                         Step 1: Daily Check-in
                       </span>
-                      <h3 className="font-extrabold text-sm text-slate-900 mt-0.5">
+                      <h3 className="font-extrabold text-sm text-stone-900 mt-0.5">
                         Mark Morning Attendance
                       </h3>
                     </div>
@@ -550,80 +538,78 @@ export default function DeliveryPartnerMobileApp() {
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-stone-600 leading-relaxed">
                   Good Morning, <strong>{riderName}</strong>! Please mark your daily shift attendance at <strong>{matchedDairy.name}</strong> before picking up your milk crates and starting your route.
                 </p>
 
                 <button
                   onClick={handleMarkAttendance}
                   disabled={isCheckingIn}
-                  className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="w-full py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Check className="w-4 h-4" />
                   <span>{isCheckingIn ? 'Marking Attendance...' : 'Mark Present for Morning Shift'}</span>
                 </button>
               </div>
             ) : !riderShiftStatus?.pickupConfirmed ? (
-              // STEP 2: DAIRY HUB MILK PICKUP CONFIRMATION CARD
-              <div className="bg-blue-50/80 border-2 border-blue-300 rounded-2xl p-4 shadow-xs space-y-3">
+              <div className="bg-sky-50/80 border-2 border-sky-300 rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                    <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold">
                       <Milk className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full">
                         Step 2: Milk Loadout
                       </span>
-                      <h3 className="font-extrabold text-sm text-slate-900 mt-0.5">
+                      <h3 className="font-extrabold text-sm text-stone-900 mt-0.5">
                         Confirm Dairy Milk Pickup
                       </h3>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span className="text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-teal-600" />
                     <span>Attended ({riderShiftStatus?.checkInTime || '05:30 AM'})</span>
                   </span>
                 </div>
 
-                <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1.5 text-xs">
-                  <div className="flex justify-between items-center text-slate-600">
+                <div className="bg-white p-3 rounded-xl border border-sky-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center text-stone-600">
                     <span>Dairy Hub Location:</span>
-                    <strong className="text-slate-900">{matchedDairy.name}</strong>
+                    <strong className="text-stone-900">{matchedDairy.name}</strong>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-stone-600">
                     <span>Assigned Route Volume:</span>
-                    <strong className="text-emerald-700 text-sm font-black">{totalLitersAssigned} Liters</strong>
+                    <strong className="text-teal-800 text-sm font-black tabular-nums">{totalLitersAssigned} Liters</strong>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-stone-600">
                     <span>Estimated Crates:</span>
-                    <strong className="text-blue-700 font-bold">{cratesCount} Crates ({totalStopsCount} stops)</strong>
+                    <strong className="text-sky-700 font-bold tabular-nums">{cratesCount} Crates ({totalStopsCount} stops)</strong>
                   </div>
-                  <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                  <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 flex items-center justify-between">
                     <span>Route Area:</span>
-                    <span className="text-slate-800 font-semibold">{user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}</span>
+                    <span className="text-stone-800 font-semibold">{user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={handleConfirmPickup}
                   disabled={isConfirmingPickup}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Box className="w-4 h-4" />
                   <span>{isConfirmingPickup ? 'Confirming Pickup...' : 'Confirm Milk Picked Up & Start Route 🚀'}</span>
                 </button>
               </div>
             ) : isAllStopsDelivered && !riderShiftStatus?.shiftCompleted ? (
-              // STEP 3A: ALL DELIVERIES COMPLETED - CLAIM DAILY SALARY
-              <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-2xl p-4 shadow-lg space-y-3 animate-in fade-in">
+              <div className="bg-gradient-to-br from-teal-700 to-teal-900 text-white rounded-2xl p-4 shadow-lg space-y-3 animate-in fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
                       <Award className="w-5 h-5 text-amber-300" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-100 bg-white/10 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-100 bg-white/10 px-2 py-0.5 rounded-full">
                         All Deliveries Complete 🎉
                       </span>
                       <h3 className="font-extrabold text-sm text-white mt-0.5">
@@ -631,21 +617,21 @@ export default function DeliveryPartnerMobileApp() {
                       </h3>
                     </div>
                   </div>
-                  <span className="text-xs font-black bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl shadow-xs">
+                  <span className="text-xs font-black bg-amber-400 text-stone-950 px-2.5 py-1 rounded-xl shadow-xs tabular-nums">
                     +₹{dailySalaryRate}
                   </span>
                 </div>
 
-                <p className="text-xs text-emerald-50 leading-relaxed">
+                <p className="text-xs text-teal-50 leading-relaxed">
                   Excellent work, <strong>{riderName}</strong>! All <strong>{totalLitersDelivered} Liters</strong> across <strong>{completedStops.length} customer stops</strong> have been successfully delivered. Click below to close your shift and credit today&apos;s daily wage to your account balance.
                 </p>
 
                 <button
                   onClick={handleCompleteShiftAndClaimSalary}
                   disabled={isCompletingShift}
-                  className="w-full py-3 bg-white hover:bg-slate-100 text-emerald-950 font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="w-full py-3 bg-white hover:bg-stone-100 text-teal-950 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
                   <span>
                     {isCompletingShift
                       ? 'Crediting Daily Salary...'
@@ -654,56 +640,44 @@ export default function DeliveryPartnerMobileApp() {
                 </button>
               </div>
             ) : riderShiftStatus?.shiftCompleted ? (
-              // STEP 3B: SHIFT COMPLETED & SALARY CREDITED
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
+              <div className="bg-teal-50/70 border-2 border-teal-300 rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-xs">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-black text-slate-900">Shift Finished & Milk Delivered</span>
-                      <span className="text-[9px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-black text-stone-900">Shift Finished & Milk Delivered</span>
+                      <span className="text-[9px] font-extrabold bg-[#0F766E] text-white px-2 py-0.5 rounded-full tabular-nums">
                         ₹{riderShiftStatus.dailySalaryEarned || dailySalaryRate} CREDITED
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-600 mt-0.5 truncate">
-                      Completed at {riderShiftStatus.shiftCompletedTime || currentTimeString} • Daily wage added to your pending balance (Owner can pay)
+                    <p className="text-[10px] text-stone-600 mt-0.5 truncate">
+                      Completed at {riderShiftStatus.shiftCompletedTime || currentTimeString} • Daily wage added to your pending balance
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 border ${
-                    riderShiftStatus.payoutStatus === 'PAID'
-                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                      : 'bg-amber-100 text-amber-800 border-amber-300'
-                  }`}
-                >
+                <Badge variant={riderShiftStatus.payoutStatus === 'PAID' ? 'success' : 'amber'} size="xs">
                   {riderShiftStatus.payoutStatus === 'PAID' ? 'PAID ✓' : 'PAYOUT PENDING'}
-                </span>
+                </Badge>
               </div>
             ) : (
-              // STEP 3C: ROUTE ACTIVE & RUNNING
-              <div className="bg-white border border-emerald-200 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
+              <div className="bg-white border border-teal-200 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-black text-slate-900">Morning Shift Dispatched</span>
-                      <span className="text-[9px] font-extrabold bg-emerald-600 text-white px-1.5 py-0.2 rounded">
-                        ROUTE ACTIVE
-                      </span>
+                      <span className="text-xs font-black text-stone-900">Morning Shift Dispatched</span>
+                      <Badge variant="teal" size="xs">ROUTE ACTIVE</Badge>
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                      Checked in: {riderShiftStatus?.checkInTime} • Picked Up: {riderShiftStatus?.pickupLiters || totalLitersAssigned}L at {riderShiftStatus?.pickupTime || '06:00 AM'} from {matchedDairy.name}
+                    <p className="text-[10px] text-stone-500 mt-0.5 truncate">
+                      Checked in: {riderShiftStatus?.checkInTime} • Picked Up: {riderShiftStatus?.pickupLiters || totalLitersAssigned}L at {riderShiftStatus?.pickupTime || '06:00 AM'}
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0">
-                  Ready
-                </span>
+                <Badge variant="neutral" size="xs">Ready</Badge>
               </div>
             )}
 
@@ -711,8 +685,8 @@ export default function DeliveryPartnerMobileApp() {
             <div
               className={`p-2.5 rounded-2xl flex items-center justify-between transition-colors border ${
                 !isOnline
-                  ? 'bg-amber-500/10 border-amber-400/40 text-amber-900'
-                  : 'bg-emerald-50 border-emerald-200/80 text-emerald-900'
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-teal-50/70 border-teal-200/80 text-teal-900'
               }`}
             >
               <div className="flex items-center gap-2 text-xs">
@@ -728,10 +702,10 @@ export default function DeliveryPartnerMobileApp() {
                   </>
                 ) : (
                   <>
-                    <Wifi className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <Wifi className="w-4 h-4 text-teal-700 shrink-0" />
                     <div>
-                      <span className="font-bold block text-xs text-emerald-950">Cloud Connected</span>
-                      <span className="text-[10px] text-emerald-700">
+                      <span className="font-bold block text-xs text-teal-950">Cloud Connected</span>
+                      <span className="text-[10px] text-teal-700">
                         {pendingCount > 0 ? `${pendingCount} stops pending sync` : 'Live synchronized to dairy farm'}
                       </span>
                     </div>
@@ -744,18 +718,17 @@ export default function DeliveryPartnerMobileApp() {
                   <button
                     onClick={handleManualSyncNow}
                     disabled={isSyncing}
-                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-xs transition"
+                    className="px-2.5 py-1 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-xs transition-colors"
                   >
                     <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
                     <span>Sync ({pendingCount})</span>
                   </button>
                 )}
 
-                {/* Simulated Offline Toggle */}
                 <button
                   onClick={toggleSimulatedOffline}
                   title="Toggle simulated network disconnection for offline delivery testing"
-                  className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-[10px] font-bold transition"
+                  className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-[10px] font-bold transition-colors cursor-pointer"
                 >
                   {isSimulatedOffline ? 'Go Online' : 'Simulate Offline'}
                 </button>
@@ -763,46 +736,41 @@ export default function DeliveryPartnerMobileApp() {
             </div>
 
             {/* Route Progress Bar */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-              <div className="flex justify-between text-xs font-bold text-slate-800">
+            <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs space-y-2">
+              <div className="flex justify-between text-xs font-bold text-stone-800">
                 <span className="flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                  <Navigation className="w-3.5 h-3.5 text-teal-700" />
                   <span>Route Run Progress</span>
                 </span>
-                <span className="tabular-nums text-emerald-700">
+                <span className="tabular-nums text-teal-800 font-extrabold">
                   {completedStops.length} of {totalStopsCount} Stops ({progressPercent}%)
                 </span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
-                <div
-                  className="bg-emerald-600 h-2.5 rounded-full transition-[width] duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                <span>Total Route Volume: <strong className="text-slate-800">{totalLitersAssigned} Liters</strong></span>
-                <span>Remaining: <strong className="text-amber-600">{totalLitersPending} Liters</strong></span>
+              <ProgressBar value={progressPercent} size="sm" variant={progressPercent === 100 ? 'green' : 'teal'} />
+              <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                <span>Total Route Volume: <strong className="text-stone-800 tabular-nums">{totalLitersAssigned} Liters</strong></span>
+                <span>Remaining: <strong className="text-amber-700 tabular-nums">{totalLitersPending} Liters</strong></span>
               </div>
             </div>
 
             {/* Pending vs Delivered sub-tabs */}
-            <div className="grid grid-cols-2 gap-1.5 bg-slate-200/80 p-1 rounded-xl text-xs font-bold text-center">
+            <div className="grid grid-cols-2 gap-1.5 bg-stone-200/70 p-1 rounded-xl text-xs font-bold text-center">
               <button
                 onClick={() => setActiveTab('PENDING')}
-                className={`py-1.5 rounded-lg transition ${
+                className={`py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeTab === 'PENDING'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-teal-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 Pending Deliveries ({pendingStops.length})
               </button>
               <button
                 onClick={() => setActiveTab('COMPLETED')}
-                className={`py-1.5 rounded-lg transition ${
+                className={`py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeTab === 'COMPLETED'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-teal-900 shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 Delivered Completed ({completedStops.length})
@@ -825,55 +793,53 @@ export default function DeliveryPartnerMobileApp() {
                     return (
                       <div
                         key={stop.id}
-                        className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 transition-colors hover:border-emerald-300"
+                        className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3 transition-colors hover:border-teal-300"
                       >
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
+                              <span className="bg-stone-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
                                 Stop #{stop.sequenceOrder || index + 1}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-500 tracking-wider">
+                              <span className="text-[10px] font-bold text-stone-500 tracking-wider">
                                 ETA: {estTimeString} • {stop.slot}
                               </span>
                               {isStopQueued && (
-                                <span className="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                  Queued Offline
-                                </span>
+                                <Badge variant="amber" size="xs">Queued Offline</Badge>
                               )}
                             </div>
-                            <h3 className="font-bold text-base text-slate-900 leading-snug">{stop.customerName}</h3>
+                            <h3 className="font-bold text-base text-stone-900 leading-snug">{stop.customerName}</h3>
                           </div>
-                          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-extrabold text-xs rounded-xl shrink-0">
+                          <Badge variant="teal" size="sm">
                             {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
-                          </span>
+                          </Badge>
                         </div>
 
                         <div className="space-y-1.5">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {stop.flatOrUnit && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-bold">
-                                <Home className="w-3 h-3 text-blue-600" /> Door: {stop.flatOrUnit}
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-800 border border-sky-200 rounded-md text-[10px] font-bold">
+                                <Home className="w-3 h-3 text-sky-600" /> Door: {stop.flatOrUnit}
                               </span>
                             )}
                             {stop.societyOrLandmark && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[10px] font-bold">
-                                <Building2 className="w-3 h-3 text-slate-600" /> Society: {stop.societyOrLandmark}
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-100 text-stone-700 border border-stone-200 rounded-md text-[10px] font-bold">
+                                <Building2 className="w-3 h-3 text-stone-600" /> Society: {stop.societyOrLandmark}
                               </span>
                             )}
                             {stop.isExtraOrder && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold">
-                                <Sparkles className="w-3 h-3 text-amber-600" /> Extra Order
-                              </span>
+                              <Badge variant="amber" size="xs">
+                                <Sparkles className="w-3 h-3 mr-0.5" /> Extra Order
+                              </Badge>
                             )}
                           </div>
-                          <div className="text-xs text-slate-600 flex items-start gap-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <div className="text-xs text-stone-600 flex items-start gap-1.5 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                            <MapPin className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
                             <div>
                               <span>{stop.address}</span>
                               {stop.landmark && (
-                                <span className="block text-[11px] text-slate-500 font-medium mt-0.5">
-                                  <MapPin className="inline w-3 h-3 text-emerald-600 mr-0.5" />Landmark: {stop.landmark}
+                                <span className="block text-[11px] text-stone-500 font-medium mt-0.5">
+                                  Landmark: {stop.landmark}
                                 </span>
                               )}
                             </div>
@@ -881,16 +847,16 @@ export default function DeliveryPartnerMobileApp() {
                         </div>
 
                         {stop.notes && (
-                          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium flex items-center gap-1">
+                          <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium flex items-center gap-1">
                             <FileText className="w-3 h-3 text-amber-600 shrink-0" /> Note: {stop.notes}
                           </p>
                         )}
 
                         {/* Cash Collection Input */}
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/80">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-700 font-semibold flex items-center gap-1.5">
-                              <Receipt className="w-3.5 h-3.5 text-purple-600" />
+                            <span className="text-stone-700 font-semibold flex items-center gap-1.5">
+                              <Receipt className="w-3.5 h-3.5 text-teal-700" />
                               <span>Cash Collected (₹):</span>
                             </span>
                             <input
@@ -904,23 +870,23 @@ export default function DeliveryPartnerMobileApp() {
                                   parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="w-24 px-2.5 py-1 text-right font-bold text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-slate-900"
+                              className="w-24 px-2.5 py-1 text-right font-bold text-xs bg-white border border-stone-300 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-600 text-stone-900 tabular-nums"
                             />
                           </div>
                         </div>
 
                         {/* Exact Doorstep GPS Navigation */}
                         {stop.latitude && stop.longitude && (
-                          <div className="flex items-center justify-between px-2.5 py-1.5 bg-blue-50/90 border border-blue-200 rounded-xl text-[11px] text-blue-900 font-medium">
+                          <div className="flex items-center justify-between px-2.5 py-1.5 bg-sky-50 border border-sky-200 rounded-xl text-[11px] text-sky-900 font-medium">
                             <div className="flex items-center gap-1.5">
-                              <Compass className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <Compass className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                               <span>Exact GPS Doorstep Pinned</span>
                             </div>
                             <a
                               href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-bold text-blue-700 hover:text-blue-900 underline flex items-center gap-0.5"
+                              className="font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-0.5"
                             >
                               <span>Navigate</span>
                               <Navigation className="w-3 h-3" />
@@ -932,9 +898,9 @@ export default function DeliveryPartnerMobileApp() {
                         <div className="grid grid-cols-4 gap-1.5 pt-0.5">
                           <a
                             href={`tel:${stop.customerPhone}`}
-                            className="flex items-center justify-center gap-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                            className="flex items-center justify-center gap-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors"
                           >
-                            <Phone className="w-3.5 h-3.5 text-slate-600" />
+                            <Phone className="w-3.5 h-3.5 text-stone-600" />
                             <span>Call</span>
                           </a>
                           <a
@@ -945,21 +911,21 @@ export default function DeliveryPartnerMobileApp() {
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition"
+                            className="flex items-center justify-center gap-1 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl text-xs font-bold transition-colors"
                             title={stop.latitude ? `Navigate to pinned coordinates (${stop.latitude}, ${stop.longitude})` : 'Search address in Google Maps'}
                           >
-                            <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                            <Navigation className="w-3.5 h-3.5 text-sky-600" />
                             <span>{stop.latitude ? 'GPS' : 'Map'}</span>
                           </a>
                           <button
                             onClick={() => handleFail(stop.id)}
-                            className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                            className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                           >
                             Failed
                           </button>
                           <button
                             onClick={() => handleDeliver(stop.id)}
-                            className="flex items-center justify-center gap-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition cursor-pointer active:scale-95"
+                            className="flex items-center justify-center gap-1 py-2 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer active:scale-95"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Done</span>
@@ -969,22 +935,22 @@ export default function DeliveryPartnerMobileApp() {
                     );
                   })
                 ) : (
-                  <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-6 space-y-3 shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <div className="text-center py-12 bg-white rounded-2xl border border-stone-200 p-6 space-y-3 shadow-xs">
+                    <div className="w-14 h-14 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 flex items-center justify-center mx-auto">
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
-                    <h3 className="font-extrabold text-slate-900 text-lg">All Route Deliveries Complete!</h3>
-                    <p className="text-xs text-slate-600 max-w-xs mx-auto">
+                    <h3 className="font-extrabold text-stone-900 text-lg">All Route Deliveries Complete!</h3>
+                    <p className="text-xs text-stone-600 max-w-xs mx-auto">
                       Great job! You have completed all assigned stops for {matchedDairy.name}.
                     </p>
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 space-y-1">
-                      <div className="font-bold">Total Delivered Today: {totalLitersDelivered} Liters</div>
-                      <div>Cash Collected: ₹{totalCashCollectedToday}</div>
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs text-stone-800 space-y-1">
+                      <div className="font-bold tabular-nums">Total Delivered Today: {totalLitersDelivered} Liters</div>
+                      <div className="tabular-nums">Cash Collected: ₹{totalCashCollectedToday}</div>
                     </div>
                     {pendingCount > 0 && (
                       <button
                         onClick={handleManualSyncNow}
-                        className="mt-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition"
+                        className="mt-2 px-5 py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
                       >
                         Sync {pendingCount} Pending Stops Now
                       </button>
@@ -996,34 +962,32 @@ export default function DeliveryPartnerMobileApp() {
                   completedStops.map((stop) => (
                     <div
                       key={stop.id}
-                      className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs opacity-95 space-y-2"
+                      className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs opacity-95 space-y-2"
                     >
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-1.5 mb-1">
-                            <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                              ✓ Delivered
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-medium">
+                            <Badge variant="success" size="xs">✓ Delivered</Badge>
+                            <span className="text-[10px] text-stone-500 font-medium tabular-nums">
                               Stop #{stop.sequenceOrder}
                             </span>
                           </div>
-                          <h4 className="font-bold text-sm text-slate-900">{stop.customerName}</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">{stop.address}</p>
+                          <h4 className="font-bold text-sm text-stone-900">{stop.customerName}</h4>
+                          <p className="text-xs text-stone-500 mt-0.5">{stop.address}</p>
                           {stop.notes && (
-                            <p className="text-[10px] text-emerald-700 mt-1 bg-emerald-50 p-1.5 rounded-lg">
+                            <p className="text-[10px] text-teal-800 mt-1 bg-teal-50 p-1.5 rounded-lg border border-teal-200/50">
                               {stop.notes}
                             </p>
                           )}
                         </div>
-                        <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg shrink-0">
+                        <Badge variant="teal" size="sm">
                           {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 p-6 text-slate-500 text-xs">
+                  <div className="text-center py-10 bg-white rounded-2xl border border-stone-200 p-6 text-stone-500 text-xs">
                     No stops marked as delivered yet today.
                   </div>
                 )
@@ -1035,140 +999,140 @@ export default function DeliveryPartnerMobileApp() {
         {/* 2. STATS & PERFORMANCE VIEW */}
         {navTab === 'STATS' && (
           <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto">
-            {/* Rider Wallet & Daily Salary Earnings Card */}
-            <div className="bg-gradient-to-br from-slate-900 to-emerald-950 text-white rounded-3xl p-4 sm:p-5 shadow-lg space-y-3">
+            {/* Rider Wallet Card */}
+            <div className="bg-stone-900 text-white rounded-3xl p-4 sm:p-5 shadow-lg space-y-3 border border-stone-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
-                    <IndianRupee className="w-4 h-4 text-emerald-400" />
+                  <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                    <IndianRupee className="w-4 h-4 text-teal-400" />
                   </div>
                   <div>
                     <h4 className="font-extrabold text-sm text-white">Rider Wallet & Salary</h4>
-                    <p className="text-[10px] text-emerald-300">Daily wage managed by {matchedDairy.name}</p>
+                    <p className="text-[10px] text-stone-400">Daily wage managed by {matchedDairy.name}</p>
                   </div>
                 </div>
-                <span
-                  className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                <Badge
+                  variant={
                     (matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0) > 0
-                      ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
-                      : 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40'
-                  }`}
+                      ? 'amber'
+                      : 'success'
+                  }
+                  size="xs"
                 >
                   {(matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0) > 0
                     ? 'Payout Pending'
                     : 'All Settled ✓'}
-                </span>
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
                 <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
-                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Daily Wage Rate</span>
-                  <span className="text-base font-black text-white mt-0.5 block">₹{dailySalaryRate}/day</span>
-                  <span className="text-[9px] text-emerald-300">Owner set</span>
+                  <span className="text-[10px] text-stone-400 uppercase font-semibold block">Daily Wage Rate</span>
+                  <span className="text-base font-black text-white mt-0.5 block tabular-nums">₹{dailySalaryRate}/day</span>
+                  <span className="text-[9px] text-teal-300">Owner set</span>
                 </div>
 
                 <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
-                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Today&apos;s Shift</span>
-                  <span className="text-base font-black text-amber-300 mt-0.5 block">
+                  <span className="text-[10px] text-stone-400 uppercase font-semibold block">Today&apos;s Shift</span>
+                  <span className="text-base font-black text-amber-300 mt-0.5 block tabular-nums">
                     ₹{riderShiftStatus?.shiftCompleted ? (riderShiftStatus.dailySalaryEarned || dailySalaryRate) : 0}
                   </span>
-                  <span className="text-[9px] text-slate-300">
+                  <span className="text-[9px] text-stone-300">
                     {riderShiftStatus?.shiftCompleted ? '✓ Credited' : isAllStopsDelivered ? 'Ready to Claim' : 'In Progress'}
                   </span>
                 </div>
 
                 <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
-                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Pending Payout</span>
-                  <span className="text-base font-black text-rose-300 mt-0.5 block">
+                  <span className="text-[10px] text-stone-400 uppercase font-semibold block">Pending Payout</span>
+                  <span className="text-base font-black text-rose-300 mt-0.5 block tabular-nums">
                     ₹{matchedStaff?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0}
                   </span>
                   <span className="text-[9px] text-rose-200">Owner to pay</span>
                 </div>
 
                 <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-xs">
-                  <span className="text-[10px] text-slate-300 uppercase font-semibold block">Total Paid</span>
-                  <span className="text-base font-black text-emerald-300 mt-0.5 block">
+                  <span className="text-[10px] text-stone-400 uppercase font-semibold block">Total Paid</span>
+                  <span className="text-base font-black text-teal-300 mt-0.5 block tabular-nums">
                     ₹{matchedStaff?.totalSalaryPaid ?? riderShiftStatus?.totalSalaryPaid ?? 0}
                   </span>
-                  <span className="text-[9px] text-emerald-200">Received to date</span>
+                  <span className="text-[9px] text-teal-200">Received to date</span>
                 </div>
               </div>
             </div>
 
             {/* Shift Performance Summary */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+            <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Today's Delivery Shift</h3>
-                  <p className="text-[11px] text-slate-500">Live stats for {matchedDairy.name}</p>
+                  <h3 className="font-extrabold text-sm text-stone-900">Today's Delivery Shift</h3>
+                  <p className="text-[11px] text-stone-500">Live stats for {matchedDairy.name}</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
-                  Active Shift
-                </span>
+                <Badge variant="teal" size="xs">Active Shift</Badge>
               </div>
 
-              {/* 4 Large Highlight Cards */}
+              {/* 4 Cards */}
               <div className="grid grid-cols-2 gap-2.5 pt-1">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3">
+                  <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">
                     Stops Completed
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-black text-emerald-950">{completedStops.length}</span>
-                    <span className="text-xs font-bold text-emerald-600">/ {totalStopsCount}</span>
+                    <span className="text-2xl font-black text-stone-900 tabular-nums">{completedStops.length}</span>
+                    <span className="text-xs font-bold text-teal-700 tabular-nums">/ {totalStopsCount}</span>
                   </div>
-                  <div className="w-full bg-emerald-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div className="bg-emerald-600 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }} />
+                  <div className="mt-2">
+                    <ProgressBar value={progressPercent} size="sm" variant={progressPercent === 100 ? 'green' : 'teal'} />
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 mt-1 block">
+                  <span className="text-[10px] font-semibold text-teal-800 mt-1 block">
                     {progressPercent}% route finished
                   </span>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3">
-                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
+                <div className="bg-sky-50/70 border border-sky-200/80 rounded-2xl p-3">
+                  <span className="text-[10px] font-bold text-sky-800 uppercase tracking-wider block">
                     Volume Delivered
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-black text-blue-950">{totalLitersDelivered}</span>
-                    <span className="text-xs font-bold text-blue-600">L / {totalLitersAssigned}L</span>
+                    <span className="text-2xl font-black text-stone-900 tabular-nums">{totalLitersDelivered}</span>
+                    <span className="text-xs font-bold text-sky-700 tabular-nums">L / {totalLitersAssigned}L</span>
                   </div>
-                  <div className="w-full bg-blue-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-1.5 rounded-full"
-                      style={{ width: `${totalLitersAssigned ? (totalLitersDelivered / totalLitersAssigned) * 100 : 0}%` }}
+                  <div className="mt-2">
+                    <ProgressBar
+                      value={totalLitersAssigned ? Math.round((totalLitersDelivered / totalLitersAssigned) * 100) : 0}
+                      size="sm"
+                      variant="sky"
                     />
                   </div>
-                  <span className="text-[10px] font-semibold text-blue-700 mt-1 block">
+                  <span className="text-[10px] font-semibold text-sky-800 mt-1 block tabular-nums">
                     {totalLitersPending} L remaining
                   </span>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3">
-                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
+                <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3">
+                  <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
                     Cash in Hand
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-black text-amber-950">₹{totalCashCollectedToday}</span>
+                    <span className="text-2xl font-black text-stone-900 tabular-nums">₹{totalCashCollectedToday}</span>
                   </div>
                   <span className="text-[10px] text-amber-800 mt-1.5 block">
                     Collected at doorsteps today
                   </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
-                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3">
+                  <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider block">
                     Partner Rating
                   </span>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-2xl font-black text-slate-900">{riderRating}</span>
+                    <span className="text-2xl font-black text-stone-900 tabular-nums">{riderRating}</span>
                     <div className="flex text-amber-400">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 mt-1.5 block">
+                  <span className="text-[10px] text-stone-500 mt-1.5 block">
                     {driverReviews.length > 0 ? `${driverReviews.length} customer ratings` : '5-star certified'}
                   </span>
                 </div>
@@ -1176,107 +1140,107 @@ export default function DeliveryPartnerMobileApp() {
             </div>
 
             {/* Milk Volume Breakdown by Variant */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5">
-              <h4 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                <Milk className="w-4 h-4 text-emerald-600" />
+            <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-2.5">
+              <h4 className="font-extrabold text-xs text-stone-900 flex items-center gap-1.5">
+                <Milk className="w-4 h-4 text-teal-700" />
                 <span>Today's Milk Variety Distribution</span>
               </h4>
               <div className="space-y-2 pt-1">
                 {Object.entries(variantBreakdown).map(([variant, data]) => (
                   <div
                     key={variant}
-                    className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100"
+                    className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl border border-stone-100"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-teal-600" />
                       <div>
-                        <span className="text-xs font-bold text-slate-800 block">{variant}</span>
-                        <span className="text-[10px] text-slate-500">{data.stops} drop-offs</span>
+                        <span className="text-xs font-bold text-stone-800 block">{variant}</span>
+                        <span className="text-[10px] text-stone-500 tabular-nums">{data.stops} drop-offs</span>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-lg">
+                    <Badge variant="teal" size="sm">
                       {data.liters} Liters
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Lifetime Rider Achievements */}
-            <div className="bg-gradient-to-br from-slate-900 to-emerald-950 text-white rounded-2xl p-4 shadow-sm space-y-3">
+            {/* Lifetime Achievements */}
+            <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-xs space-y-3 border border-stone-800">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-400" />
                 <h4 className="font-extrabold text-sm">Lifetime Rider Achievements</h4>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center pt-1">
                 <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-xs">
-                  <span className="text-base font-black text-amber-300 block">{lifetimeDeliveries}+</span>
-                  <span className="text-[9px] text-emerald-200 uppercase font-semibold">Total Drops</span>
+                  <span className="text-base font-black text-amber-300 block tabular-nums">{lifetimeDeliveries}+</span>
+                  <span className="text-[9px] text-teal-200 uppercase font-semibold">Total Drops</span>
                 </div>
                 <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-xs">
-                  <span className="text-base font-black text-emerald-300 block">98.8%</span>
-                  <span className="text-[9px] text-emerald-200 uppercase font-semibold">On-Time</span>
+                  <span className="text-base font-black text-teal-300 block tabular-nums">98.8%</span>
+                  <span className="text-[9px] text-teal-200 uppercase font-semibold">On-Time</span>
                 </div>
                 <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-xs">
-                  <span className="text-base font-black text-white block">100%</span>
-                  <span className="text-[9px] text-emerald-200 uppercase font-semibold">Freshness</span>
+                  <span className="text-base font-black text-white block tabular-nums">100%</span>
+                  <span className="text-[9px] text-teal-200 uppercase font-semibold">Freshness</span>
                 </div>
               </div>
             </div>
 
             {/* Customer Reviews for Driver */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5">
+            <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                <h4 className="font-extrabold text-xs text-stone-900 flex items-center gap-1.5">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
                   <span>Recent Customer Compliments</span>
                 </h4>
-                <span className="text-[10px] font-bold text-slate-500">Verified Doorstep</span>
+                <Badge variant="teal" size="xs">Verified Doorstep</Badge>
               </div>
 
               <div className="space-y-2 pt-1">
                 {driverReviews.length > 0 ? (
                   driverReviews.slice(0, 3).map((rev, i) => (
-                    <div key={i} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                    <div key={i} className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-xs space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-800">{rev.customerName}</span>
+                        <span className="font-bold text-stone-800">{rev.customerName}</span>
                         <div className="flex text-amber-400">
                           {[...Array(rev.rating || 5)].map((_, j) => (
                             <Star key={j} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                           ))}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-600 italic">
-                        "{rev.feedback || 'Always on time and leaves milk safely in pouch!'}"
+                      <p className="text-[11px] text-stone-600 italic">
+                        &ldquo;{rev.feedback || 'Always on time and leaves milk safely in pouch!'}&rdquo;
                       </p>
                     </div>
                   ))
                 ) : (
                   <>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-xs space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-800">Priya Kulkarni</span>
+                        <span className="font-bold text-stone-800">Priya Kulkarni</span>
                         <div className="flex text-amber-400">
                           {[...Array(5)].map((_, j) => (
                             <Star key={j} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                           ))}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-600 italic">
-                        "Extremely punctual delivery every morning at 6:30 AM sharp. Very polite and handles milk bottles with care."
+                      <p className="text-[11px] text-stone-600 italic">
+                        &ldquo;Extremely punctual delivery every morning at 6:30 AM sharp. Very polite and handles milk bottles with care.&rdquo;
                       </p>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-100 text-xs space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-800">Amit Verma</span>
+                        <span className="font-bold text-stone-800">Amit Verma</span>
                         <div className="flex text-amber-400">
                           {[...Array(5)].map((_, j) => (
                             <Star key={j} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                           ))}
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-600 italic">
-                        "Great service! Even during rainy days milk is always sealed and dry."
+                      <p className="text-[11px] text-stone-600 italic">
+                        &ldquo;Great service! Even during rainy days milk is always sealed and dry.&rdquo;
                       </p>
                     </div>
                   </>
@@ -1289,16 +1253,14 @@ export default function DeliveryPartnerMobileApp() {
         {/* 3. PROFILE & DAIRY AFFILIATION VIEW */}
         {navTab === 'PROFILE' && (
           <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto">
-            {/* DAIRY AFFILIATION CARD */}
-            <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-3">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
-              
+            {/* Dairy Affiliation Card */}
+            <div className="bg-stone-900 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-3 border border-stone-800">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                  <ShieldCheck className="w-3 h-3 text-emerald-300" />
+                <Badge variant="teal" size="xs">
+                  <ShieldCheck className="w-3 h-3 mr-1" />
                   Your Affiliated Dairy
-                </span>
-                <span className="text-[10px] font-bold text-emerald-300">
+                </Badge>
+                <span className="text-[10px] font-bold text-teal-300">
                   {matchedDairy.city || 'Pune, MH'}
                 </span>
               </div>
@@ -1307,71 +1269,67 @@ export default function DeliveryPartnerMobileApp() {
                 <h2 className="text-xl font-black text-white tracking-tight">
                   {matchedDairy.name}
                 </h2>
-                <p className="text-xs text-emerald-200 mt-1 flex items-start gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-300 shrink-0 mt-0.5" />
+                <p className="text-xs text-stone-300 mt-1 flex items-start gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
                   <span>{matchedDairy.address || 'Green Valley Milk District, Pune'}</span>
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-emerald-700/60 flex items-center justify-between text-xs">
+              <div className="pt-2 border-t border-stone-800 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] text-emerald-300 font-semibold block">Farm Manager / Owner</span>
+                  <span className="text-[10px] text-stone-400 font-semibold block">Farm Manager / Owner</span>
                   <span className="font-bold text-white">{matchedDairy.owner_name || matchedDairy.ownerName || 'Suresh Patil'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`tel:${matchedDairy.phone || '+919822012345'}`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-extrabold text-xs rounded-xl shadow-xs transition"
-                  >
-                    <PhoneCall className="w-3.5 h-3.5" />
-                    <span>Call Hub</span>
-                  </a>
-                </div>
+                <a
+                  href={`tel:${matchedDairy.phone || '+919822012345'}`}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors"
+                >
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  <span>Call Hub</span>
+                </a>
               </div>
             </div>
 
-            {/* TODAY'S ATTENDANCE & DAIRY PICKUP LOG */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3.5">
+            {/* Today's Attendance & Pickup Log */}
+            <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-xs space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                    <Clock className="w-4 h-4 text-emerald-600" />
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                    <Clock className="w-4 h-4 text-teal-700" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-slate-900">Today's Morning Shift Status</h4>
-                    <p className="text-[11px] text-slate-500">
+                    <h4 className="font-extrabold text-sm text-stone-900">Today's Morning Shift Status</h4>
+                    <p className="text-[11px] text-stone-500">
                       {new Date().toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
-                <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                  riderShiftStatus?.attendanceMarked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                }`}>
+                <Badge variant={riderShiftStatus?.attendanceMarked ? 'success' : 'amber'} size="xs">
                   {riderShiftStatus?.attendanceMarked ? 'Present 🟢' : 'Pending Check-in'}
-                </span>
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-semibold text-slate-500 block">Morning Check-in</span>
-                  <span className="font-extrabold text-slate-900 text-sm block">
+                <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-stone-500 block">Morning Check-in</span>
+                  <span className="font-extrabold text-stone-900 text-sm block tabular-nums">
                     {riderShiftStatus?.checkInTime || 'Pending'}
                   </span>
                   <span className={`text-[10px] font-semibold flex items-center gap-1 ${
-                    riderShiftStatus?.attendanceMarked ? 'text-emerald-700' : 'text-amber-700'
+                    riderShiftStatus?.attendanceMarked ? 'text-teal-800' : 'text-amber-800'
                   }`}>
                     <CheckCircle2 className="w-3 h-3" />
                     <span>{riderShiftStatus?.attendanceMarked ? 'Attendance Marked' : 'Not Checked In'}</span>
                   </span>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-semibold text-slate-500 block">Dairy Hub Pickup</span>
-                  <span className="font-extrabold text-slate-900 text-sm block">
+                <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-stone-500 block">Dairy Hub Pickup</span>
+                  <span className="font-extrabold text-stone-900 text-sm block">
                     {riderShiftStatus?.pickupConfirmed ? (riderShiftStatus.pickupTime || 'Done') : 'Pending'}
                   </span>
                   <span className={`text-[10px] font-semibold flex items-center gap-1 ${
-                    riderShiftStatus?.pickupConfirmed ? 'text-blue-700' : 'text-slate-500'
+                    riderShiftStatus?.pickupConfirmed ? 'text-sky-800' : 'text-stone-500'
                   }`}>
                     <Box className="w-3 h-3" />
                     <span>
@@ -1382,30 +1340,30 @@ export default function DeliveryPartnerMobileApp() {
                   </span>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-semibold text-slate-500 block">Deliveries Run</span>
-                  <span className="font-extrabold text-slate-900 text-sm block">
+                <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-stone-500 block">Deliveries Run</span>
+                  <span className="font-extrabold text-stone-900 text-sm block tabular-nums">
                     {completedStops.length} / {totalStopsCount} Stops
                   </span>
                   <span className={`text-[10px] font-semibold flex items-center gap-1 ${
-                    isAllStopsDelivered ? 'text-emerald-700' : 'text-amber-700'
+                    isAllStopsDelivered ? 'text-teal-800' : 'text-amber-800'
                   }`}>
                     <Truck className="w-3 h-3" />
                     <span>{isAllStopsDelivered ? '100% Completed' : `${progressPercent}% Finished`}</span>
                   </span>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-semibold text-slate-500 block">Today's Daily Wage</span>
-                  <span className="font-extrabold text-emerald-800 text-sm block">
+                <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 space-y-1">
+                  <span className="text-[10px] font-semibold text-stone-500 block">Today's Daily Wage</span>
+                  <span className="font-extrabold text-teal-800 text-sm block tabular-nums">
                     ₹{dailySalaryRate}/day
                   </span>
                   <span className={`text-[10px] font-semibold flex items-center gap-1 ${
                     riderShiftStatus?.shiftCompleted
                       ? riderShiftStatus.payoutStatus === 'PAID'
-                        ? 'text-emerald-700 font-bold'
-                        : 'text-amber-700 font-bold'
-                      : 'text-slate-500'
+                        ? 'text-teal-800 font-bold'
+                        : 'text-amber-800 font-bold'
+                      : 'text-stone-500'
                   }`}>
                     <IndianRupee className="w-3 h-3" />
                     <span>
@@ -1428,7 +1386,7 @@ export default function DeliveryPartnerMobileApp() {
                     <button
                       onClick={handleMarkAttendance}
                       disabled={isCheckingIn}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                      className="w-full py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
                       {isCheckingIn ? 'Marking...' : 'Mark Present for Morning Shift'}
                     </button>
@@ -1437,7 +1395,7 @@ export default function DeliveryPartnerMobileApp() {
                     <button
                       onClick={handleConfirmPickup}
                       disabled={isConfirmingPickup}
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                      className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
                       {isConfirmingPickup ? 'Confirming...' : 'Confirm Milk Pickup from Dairy'}
                     </button>
@@ -1449,7 +1407,7 @@ export default function DeliveryPartnerMobileApp() {
                       <button
                         onClick={handleCompleteShiftAndClaimSalary}
                         disabled={isCompletingShift}
-                        className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Award className="w-4 h-4 text-amber-300" />
                         <span>{isCompletingShift ? 'Crediting...' : `Complete Shift & Claim ₹${dailySalaryRate} 💰`}</span>
@@ -1459,26 +1417,26 @@ export default function DeliveryPartnerMobileApp() {
               )}
             </div>
 
-            {/* RECENT SALARY PAYOUT RECEIPTS CARD */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            {/* Payout Receipts */}
+            <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
-                    <Receipt className="w-4 h-4 text-purple-600" />
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                    <Receipt className="w-4 h-4 text-teal-700" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-slate-900">Salary Payout Receipts</h4>
-                    <p className="text-[10px] text-slate-500">Payments made by {matchedDairy.name}</p>
+                    <h4 className="font-extrabold text-sm text-stone-900">Salary Payout Receipts</h4>
+                    <p className="text-[10px] text-stone-500">Payments made by {matchedDairy.name}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400">
+                <Badge variant="neutral" size="xs">
                   {salaryPayments.filter(
                     (p) =>
                       p.staffId === matchedStaff?.id ||
                       (riderName && p.staffName && p.staffName.toLowerCase().includes(riderName.toLowerCase()))
                   ).length}{' '}
                   Settled
-                </span>
+                </Badge>
               </div>
 
               {(() => {
@@ -1490,9 +1448,9 @@ export default function DeliveryPartnerMobileApp() {
 
                 if (myPayments.length === 0) {
                   return (
-                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center space-y-1">
-                      <p className="text-xs font-semibold text-slate-700">No payout receipts yet</p>
-                      <p className="text-[10px] text-slate-400">
+                    <div className="p-4 bg-stone-50 border border-dashed border-stone-200 rounded-2xl text-center space-y-1">
+                      <p className="text-xs font-semibold text-stone-700">No payout receipts yet</p>
+                      <p className="text-[10px] text-stone-400">
                         When the dairy owner settles your pending shift salary via UPI or Cash, transaction receipts will appear here.
                       </p>
                     </div>
@@ -1504,23 +1462,23 @@ export default function DeliveryPartnerMobileApp() {
                     {myPayments.map((p) => (
                       <div
                         key={p.id}
-                        className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-emerald-50/50 transition"
+                        className="p-3 bg-stone-50 rounded-2xl border border-stone-100 flex items-center justify-between text-xs hover:bg-teal-50/50 transition-colors"
                       >
                         <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                            <span>₹{p.amount}</span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">
+                          <div className="flex items-center gap-1.5 font-bold text-stone-900">
+                            <span className="tabular-nums">₹{p.amount}</span>
+                            <Badge variant="teal" size="xs">
                               {p.paymentMode}
-                            </span>
+                            </Badge>
                           </div>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[10px] text-stone-500">
                             {p.paymentDate} • Ref: {p.referenceId || 'N/A'}
                           </p>
-                          {p.notes && <p className="text-[10px] text-slate-600 italic">&ldquo;{p.notes}&rdquo;</p>}
+                          {p.notes && <p className="text-[10px] text-stone-600 italic">&ldquo;{p.notes}&rdquo;</p>}
                         </div>
-                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        <Badge variant="success" size="xs">
                           Paid ✓
-                        </span>
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -1528,46 +1486,46 @@ export default function DeliveryPartnerMobileApp() {
               })()}
             </div>
 
-            {/* RIDER PROFILE & IDENTITY CARD */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Rider Identity Card */}
+            <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-xs space-y-4">
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-700 text-white font-black text-2xl flex items-center justify-center shadow-md">
+                  <div className="w-16 h-16 rounded-2xl bg-teal-800 text-white font-black text-2xl flex items-center justify-center shadow-xs">
                     {(user?.name || matchedStaff?.name || 'R')[0]}
                   </div>
                   <span
                     className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                      isOnDuty ? 'bg-emerald-500' : 'bg-slate-400'
+                      isOnDuty ? 'bg-emerald-500' : 'bg-stone-400'
                     }`}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h3 className="font-extrabold text-base text-slate-900 truncate">
+                    <h3 className="font-extrabold text-base text-stone-900 truncate">
                       {user?.name || matchedStaff?.name || 'Rahul Deshmukh'}
                     </h3>
                   </div>
-                  <p className="text-xs font-bold text-emerald-700">Official Delivery Partner</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs font-bold text-teal-800">Official Delivery Partner</p>
+                  <p className="text-[11px] text-stone-500">
                     Staff ID: #{matchedStaff?.id || user?.id || 'RDR-2024'}
                   </p>
                 </div>
               </div>
 
               {/* Duty Toggle Card */}
-              <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center justify-between">
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-extrabold text-slate-900 block">Duty Status</span>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-xs font-extrabold text-stone-900 block">Duty Status</span>
+                  <span className="text-[11px] text-stone-500">
                     {isOnDuty ? 'Receiving deliveries & tracking live' : 'Offline / On Break'}
                   </span>
                 </div>
                 <button
                   onClick={toggleDutyStatus}
-                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition shadow-xs ${
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer ${
                     isOnDuty
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-slate-300 hover:bg-slate-400 text-slate-800'
+                      ? 'bg-[#0F766E] hover:bg-[#0D6560] text-white'
+                      : 'bg-stone-300 hover:bg-stone-400 text-stone-800'
                   }`}
                 >
                   <Power className="w-3.5 h-3.5" />
@@ -1577,60 +1535,60 @@ export default function DeliveryPartnerMobileApp() {
 
               {/* Rider Identity Breakdown */}
               <div className="space-y-2.5 pt-1 text-xs">
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-stone-400" />
                     <span>Registered Phone</span>
                   </span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-stone-800 font-mono">
                     {user?.phone || matchedStaff?.phone || '+91 98765 43210'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-stone-400" />
                     <span>Email Address</span>
                   </span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-stone-800">
                     {user?.email || matchedStaff?.email || 'rider@dairypulse.in'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Navigation className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Navigation className="w-3.5 h-3.5 text-stone-400" />
                     <span>Assigned Route & Area</span>
                   </span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-stone-800">
                     {user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Morning Express Route'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-stone-400" />
                     <span>Shift Slot</span>
                   </span>
-                  <span className="font-bold text-slate-800">Morning (5:30 AM - 8:30 AM)</span>
+                  <span className="font-bold text-stone-800">Morning (5:30 AM - 8:30 AM)</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-stone-400" />
                     <span>Joining Date</span>
                   </span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-stone-800">
                     {matchedStaff?.joiningDate || '15 Jan 2024'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                  <span className="text-slate-500 flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center justify-between p-2.5 bg-stone-50 rounded-xl">
+                  <span className="text-stone-500 flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5 text-stone-400" />
                     <span>Vehicle & Crate</span>
                   </span>
-                  <span className="font-bold text-slate-800">Two-Wheeler + Chiller Bag</span>
+                  <span className="font-bold text-stone-800">Two-Wheeler + Chiller Bag</span>
                 </div>
               </div>
 
@@ -1642,7 +1600,7 @@ export default function DeliveryPartnerMobileApp() {
                 </div>
                 <a
                   href={`tel:${matchedDairy.phone || '+919822012345'}`}
-                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-xs"
                 >
                   <PhoneCall className="w-3 h-3" />
                   <span>Call Dispatch</span>
@@ -1655,7 +1613,7 @@ export default function DeliveryPartnerMobileApp() {
                   logout();
                   window.location.href = '/login';
                 }}
-                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-rose-700 font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-rose-700 font-extrabold text-xs rounded-2xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out of Rider Account</span>
@@ -1665,18 +1623,18 @@ export default function DeliveryPartnerMobileApp() {
         )}
 
         {/* ================= BOTTOM APP NAVIGATION BAR ================= */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex items-center justify-around z-30 shadow-lg">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-stone-200/90 px-4 py-2 flex items-center justify-around z-30 shadow-lg">
           <button
             data-bottom-tab="deliveries"
             onClick={() => setNavTab('DELIVERIES')}
-            className={`flex flex-col items-center gap-1 transition ${
-              navTab === 'DELIVERIES' ? 'text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
+            className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+              navTab === 'DELIVERIES' ? 'text-teal-800 font-bold' : 'text-stone-400 hover:text-stone-600 font-medium'
             }`}
           >
             <div className="relative">
               <Truck className="w-5 h-5" />
               {pendingStops.length > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-emerald-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#0F766E] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center tabular-nums">
                   {pendingStops.length}
                 </span>
               )}
@@ -1687,8 +1645,8 @@ export default function DeliveryPartnerMobileApp() {
           <button
             data-bottom-tab="stats"
             onClick={() => setNavTab('STATS')}
-            className={`flex flex-col items-center gap-1 transition ${
-              navTab === 'STATS' ? 'text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
+            className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+              navTab === 'STATS' ? 'text-teal-800 font-bold' : 'text-stone-400 hover:text-stone-600 font-medium'
             }`}
           >
             <TrendingUp className="w-5 h-5" />
@@ -1698,8 +1656,8 @@ export default function DeliveryPartnerMobileApp() {
           <button
             data-bottom-tab="profile"
             onClick={() => setNavTab('PROFILE')}
-            className={`flex flex-col items-center gap-1 transition ${
-              navTab === 'PROFILE' ? 'text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-600 font-medium'
+            className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+              navTab === 'PROFILE' ? 'text-teal-800 font-bold' : 'text-stone-400 hover:text-stone-600 font-medium'
             }`}
           >
             <User className="w-5 h-5" />

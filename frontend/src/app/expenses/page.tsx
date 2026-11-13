@@ -1,16 +1,23 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
   Receipt,
   Plus,
   DollarSign,
-  TrendingDown,
   Calendar,
-  Filter,
+  Layers,
+  ArrowDownRight,
 } from 'lucide-react';
+import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import {
+  Card,
+  StatCard,
+  Badge,
+  Button,
+  PageHeader,
+} from '@/components/ui';
 
 export default function ExpensesPage() {
   const { expenses, openModal } = useDairyPulse();
@@ -23,69 +30,85 @@ export default function ExpensesPage() {
     return e.category === selectedCategory;
   });
 
+  const getCategoryBadgeVariant = (category: string) => {
+    switch (category) {
+      case 'Cattle Feed':
+        return 'amber';
+      case 'Fuel & Transport':
+        return 'info';
+      case 'Cold Storage Electricity':
+        return 'teal';
+      case 'Packaging Pouches':
+        return 'success';
+      default:
+        return 'neutral';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHead title="Farm Expenses Ledger" description="Record operating expenses for cattle feed, fodder, veterinary care, diesel, packaging, and maintenance." />
+      <PageHead
+        title="Farm Expenses Ledger"
+        description="Record operating expenses for cattle feed, fodder, veterinary care, diesel, packaging, and maintenance."
+      />
 
-      {/* Page Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Expense Management</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Log farm operational expenses, cattle feed procurement, logistics, utilities, and packaging.
-          </p>
-        </div>
-        <button
-          onClick={() => openModal('addExpense')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Record New Expense</span>
-        </button>
-      </section>
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Farm Operating Expenses"
+        description="Log farm operating costs, cattle feed procurement, logistics, cold storage electricity, and packaging supplies."
+        actions={
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => openModal('addExpense')}
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+          >
+            Record Expense
+          </Button>
+        }
+      />
 
-      {/* KPI Cards */}
+      {/* ── KPI Cards ── */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Total Monthly Expenses</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            ₹{totalExpense.toLocaleString()}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Across operational categories</p>
-        </div>
+        <StatCard
+          title="Monthly Operating Costs"
+          value={`₹${totalExpense.toLocaleString()}`}
+          subtitle="Across all logged farm categories"
+          icon={<Receipt className="w-5 h-5" />}
+          variant="terracotta"
+          trend={{ value: 'Cost', isPositive: false }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Logged Entries</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            {expenses.length}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
-            {expenses.length === 1 ? '1 active transaction' : `${expenses.length} active transactions`}
-          </p>
-        </div>
+        <StatCard
+          title="Logged Transactions"
+          value={expenses.length}
+          subtitle={expenses.length === 1 ? '1 active expense entry' : `${expenses.length} active expense entries`}
+          icon={<Layers className="w-5 h-5" />}
+          variant="teal"
+          trend={{ value: 'Ledger', isPositive: true }}
+        />
 
-        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500">Active Categories</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums">
-            {new Set(expenses.map((e) => e.category)).size}
-          </h3>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Feed, utilities, fuel & logistics</p>
-        </div>
+        <StatCard
+          title="Cost Categories"
+          value={new Set(expenses.map((e) => e.category)).size}
+          subtitle="Feed, utilities, fuel & logistics"
+          icon={<ArrowDownRight className="w-5 h-5" />}
+          variant="amber"
+        />
       </section>
 
-      {/* Expenses Table */}
-      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Recorded Expense Transactions</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Categorized accounting log for P&L tracking</p>
-          </div>
+      {/* ── Expenses Ledger Table ── */}
+      <Card
+        title="Expense Register"
+        subtitle="Audited ledger for farm P&L calculations and cost control"
+        action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">Category:</span>
+            <span className="text-xs font-semibold text-stone-600">Category:</span>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700"
+              className="px-2.5 py-1 bg-[#F6F2EA] border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 focus:ring-2 focus:ring-[#0F766E] focus:outline-hidden"
+              aria-label="Filter expense category"
             >
               <option value="ALL">All Categories</option>
               <option value="Cattle Feed">Cattle Feed</option>
@@ -94,43 +117,46 @@ export default function ExpensesPage() {
               <option value="Packaging Pouches">Packaging Pouches</option>
             </select>
           </div>
-        </div>
-
+        }
+      >
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="w-full text-left text-xs min-w-[650px]">
+          <table className="w-full text-left text-xs min-w-[650px]" aria-label="Expenses Table">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
-                <th className="pb-2.5 font-medium">Date</th>
-                <th className="pb-2.5 font-medium">Category</th>
-                <th className="pb-2.5 font-medium">Vendor / Payee</th>
-                <th className="pb-2.5 font-medium">Payment Mode</th>
-                <th className="pb-2.5 font-medium">Notes & Invoice Ref</th>
-                <th className="pb-2.5 font-medium text-right">Amount (₹)</th>
+              <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">Date</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Category</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Vendor / Payee</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Payment Mode</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold">Notes & Ref</th>
+                <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">Amount (₹)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-stone-100">
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-stone-400">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <span className="font-semibold text-sm text-slate-600">No operational expenses logged yet</span>
-                      <span className="text-xs text-slate-400">Click &apos;+ Record Expense&apos; above to log feed, fuel, or packaging costs</span>
+                      <Receipt className="w-8 h-8 text-stone-300" />
+                      <span className="font-bold text-sm text-stone-800">No operational expenses logged yet</span>
+                      <span className="text-xs text-stone-500 font-normal">
+                        Click &apos;Record Expense&apos; above to log feed, fuel, or packaging costs
+                      </span>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredExpenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 font-semibold text-slate-700">{exp.date}</td>
-                    <td className="py-3.5">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-800">
+                  <tr key={exp.id} className="hover:bg-stone-50/80 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-stone-700">{exp.date}</td>
+                    <td className="py-3 px-3">
+                      <Badge variant={getCategoryBadgeVariant(exp.category) as any} size="xs">
                         {exp.category}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="py-3.5 font-semibold text-slate-900">{exp.vendor}</td>
-                    <td className="py-3.5 text-slate-600">{exp.paymentMethod}</td>
-                    <td className="py-3.5 text-slate-500">{exp.notes || '—'}</td>
-                    <td className="py-3.5 text-right font-extrabold text-slate-900 tabular-nums">
+                    <td className="py-3 px-3 font-bold text-stone-900">{exp.vendor}</td>
+                    <td className="py-3 px-3 text-stone-600 font-medium">{exp.paymentMethod}</td>
+                    <td className="py-3 px-3 text-stone-500">{exp.notes || '—'}</td>
+                    <td className="py-3 px-3 text-right font-black text-stone-900 tabular-nums">
                       ₹{exp.amount.toLocaleString()}
                     </td>
                   </tr>
@@ -139,7 +165,7 @@ export default function ExpensesPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </Card>
     </div>
   );
 }
