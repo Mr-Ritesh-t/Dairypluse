@@ -40,6 +40,8 @@ import {
   Check,
   Home,
   FileText,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
@@ -515,484 +517,713 @@ export default function DeliveryPartnerMobileApp() {
 
         {/* 1. DELIVERIES TAB */}
         {navTab === 'DELIVERIES' && (
-          <div className="flex-1 p-3.5 space-y-3 overflow-y-auto">
-            {/* Morning Attendance & Dairy Pickup Checklist */}
+          <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto">
             {!riderShiftStatus?.attendanceMarked ? (
-              <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
-                      <Sun className="w-5 h-5 text-white" />
+              /* ================= STEP 1: MORNING ATTENDANCE AT DAIRY ================= */
+              <div className="space-y-3">
+                <div className="bg-amber-50/90 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                        <Sun className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full">
+                          Step 1 of 3: Daily Check-in
+                        </span>
+                        <h3 className="font-extrabold text-base text-stone-900 mt-0.5">
+                          Mark Morning Attendance
+                        </h3>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">
-                        Step 1: Daily Check-in
-                      </span>
-                      <h3 className="font-extrabold text-sm text-stone-900 mt-0.5">
-                        Mark Morning Attendance
-                      </h3>
+                    <span className="text-xs font-black text-amber-800 bg-white px-2.5 py-1 rounded-xl border border-amber-200 shadow-2xs tabular-nums">
+                      {currentTimeString}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    Good Morning, <strong>{riderName}</strong>! Please arrive at your dairy hub and record your morning attendance check-in before picking up milk crates and accessing route stops.
+                  </p>
+
+                  {/* Dairy Hub Location Card */}
+                  <div className="p-3 bg-white rounded-2xl border border-amber-200/80 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-amber-700 shrink-0" />
+                        <div>
+                          <h4 className="text-xs font-bold text-stone-900">{matchedDairy.name}</h4>
+                          <p className="text-[11px] text-stone-500">
+                            Manager: {matchedDairy.ownerName || matchedDairy.owner_name || 'Farm Operations'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="teal" size="xs">Assigned Hub</Badge>
+                    </div>
+
+                    <p className="text-[11px] text-stone-600 flex items-start gap-1.5 pt-1 border-t border-stone-100">
+                      <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                      <span>{matchedDairy.address || 'Survey No. 42, Green Valley Dairy Farm Road, Baner, Pune'}</span>
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`tel:${matchedDairy.phone || '+91 98220 12345'}`}
+                        className="py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-stone-600" />
+                        <span>Call Dairy</span>
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${matchedDairy.name}, ${matchedDairy.address || matchedDairy.city || 'Pune'}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-1.5 px-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Navigate</span>
+                      </a>
                     </div>
                   </div>
-                  <span className="text-xs font-black text-amber-700 bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs tabular-nums">
-                    {currentTimeString}
-                  </span>
+
+                  {/* Check-in CTA Button */}
+                  <button
+                    onClick={handleMarkAttendance}
+                    disabled={isCheckingIn}
+                    className="w-full py-3 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isCheckingIn ? 'Marking Attendance...' : 'Mark Present for Morning Shift'}</span>
+                  </button>
                 </div>
 
-                <p className="text-xs text-stone-600 leading-relaxed">
-                  Good Morning, <strong>{riderName}</strong>! Please mark your daily shift attendance at <strong>{matchedDairy.name}</strong> before picking up your milk crates and starting your route.
-                </p>
-
-                <button
-                  onClick={handleMarkAttendance}
-                  disabled={isCheckingIn}
-                  className="w-full py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{isCheckingIn ? 'Marking Attendance...' : 'Mark Present for Morning Shift'}</span>
-                </button>
+                {/* Locked Preview Card */}
+                <div className="p-3.5 bg-stone-100/80 rounded-2xl border border-stone-200 text-center space-y-1">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600">
+                    <Lock className="w-3.5 h-3.5 text-stone-500" />
+                    <span>Next: Milk Crates Pickup & Loadout Manifest</span>
+                  </div>
+                  <p className="text-[11px] text-stone-500">
+                    Milk variety breakdown and customer deliveries unlock upon check-in.
+                  </p>
+                </div>
               </div>
             ) : !riderShiftStatus?.pickupConfirmed ? (
-              <div className="bg-sky-50/80 border-2 border-sky-300 rounded-2xl p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold">
-                      <Milk className="w-5 h-5 text-white" />
+              /* ================= STEP 2: STAGE 1 - DAIRY LOCATION & MILK MANIFEST GATE ================= */
+              <div className="space-y-3.5">
+                {/* Step Header Banner */}
+                <div className="bg-sky-50/90 border-2 border-sky-300 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-bold shadow-xs">
+                        <Milk className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-sky-900 bg-sky-200/80 px-2.5 py-0.5 rounded-full">
+                          Step 2 of 3: Milk Pickup
+                        </span>
+                        <h3 className="font-extrabold text-base text-stone-900 mt-0.5">
+                          Collect Milk from Dairy Farm
+                        </h3>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-xs font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full">
-                        Step 2: Milk Loadout
-                      </span>
-                      <h3 className="font-extrabold text-sm text-stone-900 mt-0.5">
-                        Confirm Dairy Milk Pickup
-                      </h3>
+                    <Badge variant="teal" size="xs">
+                      Attended {riderShiftStatus?.checkInTime || '05:30 AM'}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    Please visit the dairy pickup point below, count and inspect your assigned milk crates and bottles. Confirm your pickup to unlock your customer route.
+                  </p>
+
+                  {/* 1. Dairy Farm Hub Location Card */}
+                  <div className="p-3.5 bg-white rounded-2xl border border-sky-200/90 space-y-2.5 shadow-2xs">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-stone-900">{matchedDairy.name}</h4>
+                          <p className="text-[11px] text-stone-500 font-medium">
+                            Manager: {matchedDairy.ownerName || matchedDairy.owner_name || 'Farm Operations'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="info" size="xs">Pickup Location</Badge>
+                    </div>
+
+                    <div className="text-[11px] text-stone-600 flex items-start gap-1.5 pt-1.5 border-t border-stone-100">
+                      <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
+                      <span>{matchedDairy.address || 'Survey No. 42, Green Valley Dairy Farm Road, Baner, Pune'}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`tel:${matchedDairy.phone || '+91 98220 12345'}`}
+                        className="py-2 px-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-stone-600" />
+                        <span>Call Dairy</span>
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${matchedDairy.name}, ${matchedDairy.address || matchedDairy.city || 'Pune'}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2 px-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Directions</span>
+                      </a>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-teal-600" />
-                    <span>Attended ({riderShiftStatus?.checkInTime || '05:30 AM'})</span>
-                  </span>
-                </div>
 
-                <div className="bg-white p-3 rounded-xl border border-sky-100 space-y-1.5 text-xs">
-                  <div className="flex justify-between items-center text-stone-600">
-                    <span>Dairy Hub Location:</span>
-                    <strong className="text-stone-900">{matchedDairy.name}</strong>
-                  </div>
-                  <div className="flex justify-between items-center text-stone-600">
-                    <span>Assigned Route Volume:</span>
-                    <strong className="text-teal-800 text-sm font-black tabular-nums">{totalLitersAssigned} Liters</strong>
-                  </div>
-                  <div className="flex justify-between items-center text-stone-600">
-                    <span>Estimated Crates:</span>
-                    <strong className="text-sky-700 font-bold tabular-nums">{cratesCount} Crates ({totalStopsCount} stops)</strong>
-                  </div>
-                  <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 flex items-center justify-between">
-                    <span>Route Area:</span>
-                    <span className="text-stone-800 font-semibold">{user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleConfirmPickup}
-                  disabled={isConfirmingPickup}
-                  className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                >
-                  <Box className="w-4 h-4" />
-                  <span>{isConfirmingPickup ? 'Confirming Pickup...' : 'Confirm Milk Picked Up & Start Route 🚀'}</span>
-                </button>
-              </div>
-            ) : isAllStopsDelivered && !riderShiftStatus?.shiftCompleted ? (
-              <div className="bg-gradient-to-br from-teal-700 to-teal-900 text-white rounded-2xl p-4 shadow-lg space-y-3 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
-                      <Award className="w-5 h-5 text-amber-300" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-teal-100 bg-white/10 px-2 py-0.5 rounded-full">
-                        All Deliveries Complete 🎉
-                      </span>
-                      <h3 className="font-extrabold text-sm text-white mt-0.5">
-                        Claim Today's Salary
-                      </h3>
-                    </div>
-                  </div>
-                  <span className="text-xs font-black bg-amber-400 text-stone-950 px-2.5 py-1 rounded-xl shadow-xs tabular-nums">
-                    +₹{dailySalaryRate}
-                  </span>
-                </div>
-
-                <p className="text-xs text-teal-50 leading-relaxed">
-                  Excellent work, <strong>{riderName}</strong>! All <strong>{totalLitersDelivered} Liters</strong> across <strong>{completedStops.length} customer stops</strong> have been successfully delivered. Click below to close your shift and credit today&apos;s daily wage to your account balance.
-                </p>
-
-                <button
-                  onClick={handleCompleteShiftAndClaimSalary}
-                  disabled={isCompletingShift}
-                  className="w-full py-3 bg-white hover:bg-stone-100 text-teal-950 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
-                  <span>
-                    {isCompletingShift
-                      ? 'Crediting Daily Salary...'
-                      : `Complete Shift & Add ₹${dailySalaryRate} to Account 💰`}
-                  </span>
-                </button>
-              </div>
-            ) : riderShiftStatus?.shiftCompleted ? (
-              <div className="bg-teal-50/70 border-2 border-teal-300 rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-black text-stone-900">Shift Finished & Milk Delivered</span>
-                      <span className="text-[9px] font-extrabold bg-[#0F766E] text-white px-2 py-0.5 rounded-full tabular-nums">
-                        ₹{riderShiftStatus.dailySalaryEarned || dailySalaryRate} CREDITED
+                  {/* 2. Milk Loadout Manifest: Total Liters, Crates & Variant Breakdown */}
+                  <div className="p-3.5 bg-white rounded-2xl border border-sky-200/90 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Box className="w-4 h-4 text-sky-700" />
+                        <h4 className="text-xs font-black text-stone-900 uppercase tracking-wider">
+                          Milk Loadout Manifest
+                        </h4>
+                      </div>
+                      <span className="text-[11px] font-black text-sky-800 bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-200 tabular-nums">
+                        {cratesCount} Crates Total
                       </span>
                     </div>
-                    <p className="text-[10px] text-stone-600 mt-0.5 truncate">
-                      Completed at {riderShiftStatus.shiftCompletedTime || currentTimeString} • Daily wage added to your pending balance
+
+                    {/* Big Numbers Row */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 bg-teal-50/70 border border-teal-200/80 rounded-xl">
+                        <span className="text-[10px] text-teal-800 font-bold block uppercase">Total Volume</span>
+                        <span className="text-base font-black text-teal-950 tabular-nums">{totalLitersAssigned} L</span>
+                      </div>
+                      <div className="p-2 bg-sky-50/70 border border-sky-200/80 rounded-xl">
+                        <span className="text-[10px] text-sky-800 font-bold block uppercase">Crates Count</span>
+                        <span className="text-base font-black text-sky-950 tabular-nums">{cratesCount}</span>
+                      </div>
+                      <div className="p-2 bg-amber-50/70 border border-amber-200/80 rounded-xl">
+                        <span className="text-[10px] text-amber-800 font-bold block uppercase">Total Drops</span>
+                        <span className="text-base font-black text-amber-950 tabular-nums">{myDeliveries.length}</span>
+                      </div>
+                    </div>
+
+                    {/* Exact Milk Variant Breakdown: Which milk and how much */}
+                    <div className="space-y-2 pt-1 border-t border-stone-100">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500 block">
+                        Milk Variety Breakdown (Inspect Each Crate):
+                      </span>
+                      {Object.keys(variantBreakdown).length > 0 ? (
+                        Object.entries(variantBreakdown).map(([variant, data]) => {
+                          const isBuffalo = variant.toLowerCase().includes('buffalo');
+                          const isCow = variant.toLowerCase().includes('cow') && !variant.toLowerCase().includes('gir');
+                          const isA2 = variant.toLowerCase().includes('a2') || variant.toLowerCase().includes('gir');
+                          const dotColor = isBuffalo ? 'bg-amber-600' : isA2 ? 'bg-purple-600' : 'bg-teal-600';
+                          const badgeStyle = isBuffalo
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : isA2
+                            ? 'bg-purple-100 text-purple-900 border-purple-300'
+                            : 'bg-teal-100 text-teal-900 border-teal-300';
+                          const percent = totalLitersAssigned > 0 ? Math.round((data.liters / totalLitersAssigned) * 100) : 0;
+                          const variantCrates = Math.max(1, Math.ceil(data.liters / 12));
+
+                          return (
+                            <div key={variant} className="p-2.5 bg-stone-50 border border-stone-200/80 rounded-xl space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-2.5 h-2.5 rounded-full ${dotColor} shrink-0`} />
+                                  <span className="text-xs font-bold text-stone-900">{variant}</span>
+                                </div>
+                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${badgeStyle} tabular-nums`}>
+                                  {data.liters} Liters
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                                <span>~{variantCrates} Crate{variantCrates > 1 ? 's' : ''} ({data.liters} bottles/pouches)</span>
+                                <span className="font-bold text-stone-700 tabular-nums">{percent}% of load</span>
+                              </div>
+                              <div className="w-full bg-stone-200 rounded-full h-1 overflow-hidden">
+                                <div className={`h-full ${dotColor} rounded-full`} style={{ width: `${percent}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-xs text-stone-600">
+                          Cow Milk: {totalLitersAssigned} Liters ({cratesCount} crates)
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Freshness & Dispatch Checklist */}
+                    <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/70 text-[11px] text-stone-600 space-y-1">
+                      <div className="flex items-center gap-1.5 text-stone-700 font-semibold">
+                        <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
+                        <span>Pre-Dispatch Freshness Checklist:</span>
+                      </div>
+                      <p className="text-[10px] text-stone-500 pl-5">
+                        ✓ Insulated temperature below 4°C verified<br />
+                        ✓ Tamper-evident caps sealed and intact<br />
+                        ✓ Crates loaded sequentially in delivery vehicle
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. Locked Customer Deliveries Gate Banner */}
+                  <div className="p-4 bg-stone-900 text-white rounded-2xl shadow-md space-y-2 border border-stone-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-white/10 text-amber-300 flex items-center justify-center shrink-0">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-white">Customer Doorstep Drops Locked</h4>
+                        <p className="text-[10px] text-stone-400">Security & Sequence Protection</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-stone-300 leading-relaxed">
+                      Customer names, phone numbers, and doorstep addresses will <strong>unlock immediately</strong> once you confirm milk pickup from {matchedDairy.name} above.
                     </p>
+                    <div className="p-2 bg-stone-800/80 rounded-xl text-[10px] text-stone-400 flex items-center justify-between">
+                      <span>Area: {user?.assignedAreaOrRoute || matchedStaff?.assignedArea || 'Baner Route'}</span>
+                      <span className="text-amber-300 font-bold">{myDeliveries.length} Customer Drops Waiting</span>
+                    </div>
                   </div>
+
+                  {/* 4. Action Button: Confirm Milk Picked Up */}
+                  <button
+                    onClick={handleConfirmPickup}
+                    disabled={isConfirmingPickup}
+                    className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Box className="w-4 h-4" />
+                    <span>{isConfirmingPickup ? 'Confirming Pickup...' : 'Confirm Milk Picked Up & Start Route 🚀'}</span>
+                  </button>
                 </div>
-                <Badge variant={riderShiftStatus.payoutStatus === 'PAID' ? 'success' : 'amber'} size="xs">
-                  {riderShiftStatus.payoutStatus === 'PAID' ? 'PAID ✓' : 'PAYOUT PENDING'}
-                </Badge>
               </div>
             ) : (
-              <div className="bg-white border border-teal-200 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-black text-stone-900">Morning Shift Dispatched</span>
-                      <Badge variant="teal" size="xs">ROUTE ACTIVE</Badge>
-                    </div>
-                    <p className="text-[10px] text-stone-500 mt-0.5 truncate">
-                      Checked in: {riderShiftStatus?.checkInTime} • Picked Up: {riderShiftStatus?.pickupLiters || totalLitersAssigned}L at {riderShiftStatus?.pickupTime || '06:00 AM'}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="neutral" size="xs">Ready</Badge>
-              </div>
-            )}
-
-            {/* Network & Offline Status Banner */}
-            <div
-              className={`p-2.5 rounded-2xl flex items-center justify-between transition-colors border ${
-                !isOnline
-                  ? 'bg-amber-50 border-amber-300 text-amber-900'
-                  : 'bg-teal-50/70 border-teal-200/80 text-teal-900'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-xs">
-                {!isOnline ? (
-                  <>
-                    <WifiOff className="w-4 h-4 text-amber-600 animate-pulse shrink-0" />
-                    <div>
-                      <span className="font-extrabold block text-xs text-amber-950">Offline Sync Active</span>
-                      <span className="text-[10px] text-amber-800">
-                        {pendingCount} stop{pendingCount !== 1 ? 's' : ''} saved locally
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Wifi className="w-4 h-4 text-teal-700 shrink-0" />
-                    <div>
-                      <span className="font-bold block text-xs text-teal-950">Cloud Connected</span>
-                      <span className="text-[10px] text-teal-700">
-                        {pendingCount > 0 ? `${pendingCount} stops pending sync` : 'Live synchronized to dairy farm'}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {pendingCount > 0 && isOnline && (
-                  <button
-                    onClick={handleManualSyncNow}
-                    disabled={isSyncing}
-                    className="px-2.5 py-1 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-xs transition-colors"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span>Sync ({pendingCount})</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={toggleSimulatedOffline}
-                  title="Toggle simulated network disconnection for offline delivery testing"
-                  className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-[10px] font-bold transition-colors cursor-pointer"
-                >
-                  {isSimulatedOffline ? 'Go Online' : 'Simulate Offline'}
-                </button>
-              </div>
-            </div>
-
-            {/* Route Progress Bar */}
-            <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs space-y-2">
-              <div className="flex justify-between text-xs font-bold text-stone-800">
-                <span className="flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5 text-teal-700" />
-                  <span>Route Run Progress</span>
-                </span>
-                <span className="tabular-nums text-teal-800 font-extrabold">
-                  {completedStops.length} of {totalStopsCount} Stops ({progressPercent}%)
-                </span>
-              </div>
-              <ProgressBar value={progressPercent} size="sm" variant={progressPercent === 100 ? 'green' : 'teal'} />
-              <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium">
-                <span>Total Route Volume: <strong className="text-stone-800 tabular-nums">{totalLitersAssigned} Liters</strong></span>
-                <span>Remaining: <strong className="text-amber-700 tabular-nums">{totalLitersPending} Liters</strong></span>
-              </div>
-            </div>
-
-            {/* Pending vs Delivered sub-tabs */}
-            <div className="grid grid-cols-2 gap-1.5 bg-stone-200/70 p-1 rounded-xl text-xs font-bold text-center">
-              <button
-                onClick={() => setActiveTab('PENDING')}
-                className={`py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'PENDING'
-                    ? 'bg-white text-teal-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                Pending Deliveries ({pendingStops.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('COMPLETED')}
-                className={`py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'COMPLETED'
-                    ? 'bg-white text-teal-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                Delivered Completed ({completedStops.length})
-              </button>
-            </div>
-
-            {/* Stops List */}
-            <div className="space-y-3">
-              {activeTab === 'PENDING' ? (
-                pendingStops.length > 0 ? (
-                  pendingStops.map((stop, index) => {
-                    const estimatedMinutes = 45 + index * 8;
-                    const estHour = Math.floor(estimatedMinutes / 60) + 5;
-                    const estMin = estimatedMinutes % 60;
-                    const estTimeString = `0${estHour}:${estMin < 10 ? '0' : ''}${estMin} AM`;
-
-                    const formData = getStopForm(stop.id);
-                    const isStopQueued = pendingQueue.some((q) => q.delivery_id === stop.id);
-
-                    return (
-                      <div
-                        key={stop.id}
-                        className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3 transition-colors hover:border-teal-300"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="bg-stone-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
-                                Stop #{stop.sequenceOrder || index + 1}
-                              </span>
-                              <span className="text-[10px] font-bold text-stone-500 tracking-wider">
-                                ETA: {estTimeString} • {stop.slot}
-                              </span>
-                              {isStopQueued && (
-                                <Badge variant="amber" size="xs">Queued Offline</Badge>
-                              )}
-                            </div>
-                            <h3 className="font-bold text-base text-stone-900 leading-snug">{stop.customerName}</h3>
-                          </div>
-                          <Badge variant="teal" size="sm">
-                            {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
-                          </Badge>
+              /* ================= STEP 3: STAGE 2 & 3 - ACTIVE DELIVERY DISPATCH & SHIFT COMPLETION ================= */
+              <div className="space-y-3">
+                {/* 1. Status / Completion Banners */}
+                {isAllStopsDelivered && !riderShiftStatus?.shiftCompleted ? (
+                  /* Shift Completion & Claim Daily Wage Card */
+                  <div className="bg-gradient-to-br from-teal-700 to-teal-950 text-white rounded-3xl p-5 shadow-xl space-y-3.5 border border-teal-600 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center font-bold shadow-inner">
+                          <Award className="w-6 h-6 text-amber-300" />
                         </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {stop.flatOrUnit && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-800 border border-sky-200 rounded-md text-[10px] font-bold">
-                                <Home className="w-3 h-3 text-sky-600" /> Door: {stop.flatOrUnit}
-                              </span>
-                            )}
-                            {stop.societyOrLandmark && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-100 text-stone-700 border border-stone-200 rounded-md text-[10px] font-bold">
-                                <Building2 className="w-3 h-3 text-stone-600" /> Society: {stop.societyOrLandmark}
-                              </span>
-                            )}
-                            {stop.isExtraOrder && (
-                              <Badge variant="amber" size="xs">
-                                <Sparkles className="w-3 h-3 mr-0.5" /> Extra Order
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-stone-600 flex items-start gap-1.5 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
-                            <MapPin className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
-                            <div>
-                              <span>{stop.address}</span>
-                              {stop.landmark && (
-                                <span className="block text-[11px] text-stone-500 font-medium mt-0.5">
-                                  Landmark: {stop.landmark}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {stop.notes && (
-                          <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium flex items-center gap-1">
-                            <FileText className="w-3 h-3 text-amber-600 shrink-0" /> Note: {stop.notes}
-                          </p>
-                        )}
-
-                        {/* Cash Collection Input */}
-                        <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/80">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-stone-700 font-semibold flex items-center gap-1.5">
-                              <Receipt className="w-3.5 h-3.5 text-teal-700" />
-                              <span>Cash Collected (₹):</span>
-                            </span>
-                            <input
-                              type="number"
-                              placeholder="0.00"
-                              value={formData.cash || ''}
-                              onChange={(e) =>
-                                updateStopForm(
-                                  stop.id,
-                                  'cash',
-                                  parseFloat(e.target.value) || 0
-                                )
-                              }
-                              className="w-24 px-2.5 py-1 text-right font-bold text-xs bg-white border border-stone-300 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-600 text-stone-900 tabular-nums"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Exact Doorstep GPS Navigation */}
-                        {stop.latitude && stop.longitude && (
-                          <div className="flex items-center justify-between px-2.5 py-1.5 bg-sky-50 border border-sky-200 rounded-xl text-[11px] text-sky-900 font-medium">
-                            <div className="flex items-center gap-1.5">
-                              <Compass className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                              <span>Exact GPS Doorstep Pinned</span>
-                            </div>
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-0.5"
-                            >
-                              <span>Navigate</span>
-                              <Navigation className="w-3 h-3" />
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Actions: Call, Directions, Failed, Done */}
-                        <div className="grid grid-cols-4 gap-1.5 pt-0.5">
-                          <a
-                            href={`tel:${stop.customerPhone}`}
-                            className="flex items-center justify-center gap-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors"
-                          >
-                            <Phone className="w-3.5 h-3.5 text-stone-600" />
-                            <span>Call</span>
-                          </a>
-                          <a
-                            href={
-                              stop.latitude && stop.longitude
-                                ? `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`
-                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl text-xs font-bold transition-colors"
-                            title={stop.latitude ? `Navigate to pinned coordinates (${stop.latitude}, ${stop.longitude})` : 'Search address in Google Maps'}
-                          >
-                            <Navigation className="w-3.5 h-3.5 text-sky-600" />
-                            <span>{stop.latitude ? 'GPS' : 'Map'}</span>
-                          </a>
-                          <button
-                            onClick={() => handleFail(stop.id)}
-                            className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                          >
-                            Failed
-                          </button>
-                          <button
-                            onClick={() => handleDeliver(stop.id)}
-                            className="flex items-center justify-center gap-1 py-2 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer active:scale-95"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Done</span>
-                          </button>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-teal-200 bg-white/10 px-2.5 py-0.5 rounded-full">
+                            All Deliveries Complete 🎉
+                          </span>
+                          <h3 className="font-black text-base text-white mt-0.5">
+                            Complete Shift & Claim Wage
+                          </h3>
                         </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-2xl border border-stone-200 p-6 space-y-3 shadow-xs">
-                    <div className="w-14 h-14 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="w-8 h-8" />
+                      <div className="text-right">
+                        <span className="text-[10px] block text-teal-200 font-semibold uppercase">Daily Salary</span>
+                        <span className="text-lg font-black text-amber-300 tabular-nums">
+                          +₹{dailySalaryRate}
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="font-extrabold text-stone-900 text-lg">All Route Deliveries Complete!</h3>
-                    <p className="text-xs text-stone-600 max-w-xs mx-auto">
-                      Great job! You have completed all assigned stops for {matchedDairy.name}.
+
+                    <p className="text-xs text-teal-100 leading-relaxed">
+                      Excellent work, <strong>{riderName}</strong>! All <strong>{totalLitersDelivered} Liters</strong> across <strong>{completedStops.length} customer stops</strong> have been successfully delivered. Click below to close your shift and add today&apos;s daily wage to your Earnings wallet.
                     </p>
-                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs text-stone-800 space-y-1">
-                      <div className="font-bold tabular-nums">Total Delivered Today: {totalLitersDelivered} Liters</div>
-                      <div className="tabular-nums">Cash Collected: ₹{totalCashCollectedToday}</div>
+
+                    <div className="p-3 bg-teal-900/60 rounded-2xl border border-teal-500/30 text-xs flex items-center justify-between">
+                      <span className="text-teal-200">Will be credited to:</span>
+                      <span className="font-black text-white">Pending Salary Account</span>
                     </div>
-                    {pendingCount > 0 && (
-                      <button
-                        onClick={handleManualSyncNow}
-                        className="mt-2 px-5 py-2.5 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                      >
-                        Sync {pendingCount} Pending Stops Now
-                      </button>
+
+                    <button
+                      onClick={handleCompleteShiftAndClaimSalary}
+                      disabled={isCompletingShift}
+                      className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-stone-950" />
+                      <span>
+                        {isCompletingShift
+                          ? 'Crediting Daily Salary...'
+                          : `Complete Shift & Add ₹${dailySalaryRate} to Earnings 💰`}
+                      </span>
+                    </button>
+                  </div>
+                ) : riderShiftStatus?.shiftCompleted ? (
+                  /* Shift Completed Badge */
+                  <div className="bg-teal-50/80 border-2 border-teal-400 rounded-3xl p-4 shadow-xs space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-2xl bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-black text-stone-900">Shift Finished & Wage Credited</span>
+                            <span className="text-[10px] font-black bg-[#0F766E] text-white px-2 py-0.5 rounded-full tabular-nums">
+                              +₹{riderShiftStatus.dailySalaryEarned || dailySalaryRate} CREDITED
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-600 mt-0.5">
+                            Closed at {riderShiftStatus.shiftCompletedTime || currentTimeString} • Daily wage added to your pending earnings
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={riderShiftStatus.payoutStatus === 'PAID' ? 'success' : 'amber'} size="xs">
+                        {riderShiftStatus.payoutStatus === 'PAID' ? 'PAID ✓' : 'PAYOUT PENDING'}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
+                  /* Active Route Banner with Pickup Info */
+                  <div className="bg-white border border-teal-200/90 rounded-2xl p-3 shadow-2xs flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-black text-stone-900">Morning Route Active</span>
+                          <Badge variant="teal" size="xs">DISPATCHED</Badge>
+                        </div>
+                        <p className="text-[10px] text-stone-500 mt-0.5 truncate">
+                          Picked up {riderShiftStatus?.pickupLiters || totalLitersAssigned}L at {riderShiftStatus?.pickupTime || '06:00 AM'} from {matchedDairy.name}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-extrabold text-teal-800 bg-teal-50 px-2 py-1 rounded-lg border border-teal-200 tabular-nums">
+                      {pendingStops.length} stops left
+                    </span>
+                  </div>
+                )}
+
+                {/* 2. Network & Offline Status Banner */}
+                <div
+                  className={`p-2.5 rounded-2xl flex items-center justify-between transition-colors border ${
+                    !isOnline
+                      ? 'bg-amber-50 border-amber-300 text-amber-900'
+                      : 'bg-teal-50/70 border-teal-200/80 text-teal-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-xs">
+                    {!isOnline ? (
+                      <>
+                        <WifiOff className="w-4 h-4 text-amber-600 animate-pulse shrink-0" />
+                        <div>
+                          <span className="font-extrabold block text-xs text-amber-950">Offline Sync Active</span>
+                          <span className="text-[10px] text-amber-800">
+                            {pendingCount} stop{pendingCount !== 1 ? 's' : ''} saved locally
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Wifi className="w-4 h-4 text-teal-700 shrink-0" />
+                        <div>
+                          <span className="font-bold block text-xs text-teal-950">Cloud Connected</span>
+                          <span className="text-[10px] text-teal-700">
+                            {pendingCount > 0 ? `${pendingCount} stops pending sync` : 'Live synchronized to dairy farm'}
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
-                )
-              ) : (
-                completedStops.length > 0 ? (
-                  completedStops.map((stop) => (
-                    <div
-                      key={stop.id}
-                      className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs opacity-95 space-y-2"
+
+                  <div className="flex items-center gap-1.5">
+                    {pendingCount > 0 && isOnline && (
+                      <button
+                        onClick={handleManualSyncNow}
+                        disabled={isSyncing}
+                        className="px-2.5 py-1 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-xs transition-colors"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                        <span>Sync ({pendingCount})</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={toggleSimulatedOffline}
+                      title="Toggle simulated network disconnection for offline delivery testing"
+                      className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-[10px] font-bold transition-colors cursor-pointer"
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Badge variant="success" size="xs">✓ Delivered</Badge>
-                            <span className="text-[10px] text-stone-500 font-medium tabular-nums">
-                              Stop #{stop.sequenceOrder}
-                            </span>
-                          </div>
-                          <h4 className="font-bold text-sm text-stone-900">{stop.customerName}</h4>
-                          <p className="text-xs text-stone-500 mt-0.5">{stop.address}</p>
-                          {stop.notes && (
-                            <p className="text-[10px] text-teal-800 mt-1 bg-teal-50 p-1.5 rounded-lg border border-teal-200/50">
-                              {stop.notes}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="teal" size="sm">
-                          {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 bg-white rounded-2xl border border-stone-200 p-6 text-stone-500 text-xs">
-                    No stops marked as delivered yet today.
+                      {isSimulatedOffline ? 'Go Online' : 'Simulate Offline'}
+                    </button>
                   </div>
-                )
-              )}
-            </div>
+                </div>
+
+                {/* 3. Route Progress Bar */}
+                <div className="bg-white p-3.5 rounded-2xl border border-stone-200/80 shadow-xs space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-stone-800">
+                    <span className="flex items-center gap-1.5">
+                      <Navigation className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Route Run Progress</span>
+                    </span>
+                    <span className="tabular-nums text-teal-800 font-extrabold">
+                      {completedStops.length} of {totalStopsCount} Stops ({progressPercent}%)
+                    </span>
+                  </div>
+                  <ProgressBar value={progressPercent} size="sm" variant={progressPercent === 100 ? 'green' : 'teal'} />
+                  <div className="flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                    <span>Total Route Volume: <strong className="text-stone-800 tabular-nums">{totalLitersAssigned} Liters</strong></span>
+                    <span>Remaining: <strong className="text-amber-700 tabular-nums">{totalLitersPending} Liters</strong></span>
+                  </div>
+                </div>
+
+                {/* 4. Pending vs Delivered Sub-Tabs */}
+                <div className="grid grid-cols-2 gap-1.5 bg-stone-200/70 p-1 rounded-xl text-xs font-bold text-center">
+                  <button
+                    onClick={() => setActiveTab('PENDING')}
+                    className={`py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeTab === 'PENDING'
+                        ? 'bg-white text-teal-900 shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Pending Deliveries ({pendingStops.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('COMPLETED')}
+                    className={`py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeTab === 'COMPLETED'
+                        ? 'bg-white text-teal-900 shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    Delivered Completed ({completedStops.length})
+                  </button>
+                </div>
+
+                {/* 5. Unlocked Customer Stops List */}
+                <div className="space-y-3">
+                  {activeTab === 'PENDING' ? (
+                    pendingStops.length > 0 ? (
+                      pendingStops.map((stop, index) => {
+                        const estimatedMinutes = 45 + index * 8;
+                        const estHour = Math.floor(estimatedMinutes / 60) + 5;
+                        const estMin = estimatedMinutes % 60;
+                        const estTimeString = `0${estHour}:${estMin < 10 ? '0' : ''}${estMin} AM`;
+
+                        const formData = getStopForm(stop.id);
+                        const isStopQueued = pendingQueue.some((q) => q.delivery_id === stop.id);
+
+                        return (
+                          <div
+                            key={stop.id}
+                            className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3 transition-colors hover:border-teal-300"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                  <span className="bg-stone-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
+                                    Stop #{stop.sequenceOrder || index + 1}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-stone-500 tracking-wider">
+                                    ETA: {estTimeString} • {stop.slot}
+                                  </span>
+                                  {isStopQueued && (
+                                    <Badge variant="amber" size="xs">Queued Offline</Badge>
+                                  )}
+                                </div>
+                                <h3 className="font-bold text-base text-stone-900 leading-snug">{stop.customerName}</h3>
+                              </div>
+                              <Badge variant="teal" size="sm">
+                                {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {stop.flatOrUnit && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-800 border border-sky-200 rounded-md text-[10px] font-bold">
+                                    <Home className="w-3 h-3 text-sky-600" /> Door: {stop.flatOrUnit}
+                                  </span>
+                                )}
+                                {stop.societyOrLandmark && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-100 text-stone-700 border border-stone-200 rounded-md text-[10px] font-bold">
+                                    <Building2 className="w-3 h-3 text-stone-600" /> Society: {stop.societyOrLandmark}
+                                  </span>
+                                )}
+                                {stop.isExtraOrder && (
+                                  <Badge variant="amber" size="xs">
+                                    <Sparkles className="w-3 h-3 mr-0.5" /> Extra Order
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-stone-600 flex items-start gap-1.5 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                                <MapPin className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
+                                <div>
+                                  <span>{stop.address}</span>
+                                  {stop.landmark && (
+                                    <span className="block text-[11px] text-stone-500 font-medium mt-0.5">
+                                      Landmark: {stop.landmark}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {stop.notes && (
+                              <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl font-medium flex items-center gap-1">
+                                <FileText className="w-3 h-3 text-amber-600 shrink-0" /> Note: {stop.notes}
+                              </p>
+                            )}
+
+                            {/* Cash Collection Input */}
+                            <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/80">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-stone-700 font-semibold flex items-center gap-1.5">
+                                  <Receipt className="w-3.5 h-3.5 text-teal-700" />
+                                  <span>Cash Collected (₹):</span>
+                                </span>
+                                <input
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={formData.cash || ''}
+                                  onChange={(e) =>
+                                    updateStopForm(
+                                      stop.id,
+                                      'cash',
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-24 px-2.5 py-1 text-right font-bold text-xs bg-white border border-stone-300 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-600 text-stone-900 tabular-nums"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Exact Doorstep GPS Navigation */}
+                            {stop.latitude && stop.longitude && (
+                              <div className="flex items-center justify-between px-2.5 py-1.5 bg-sky-50 border border-sky-200 rounded-xl text-[11px] text-sky-900 font-medium">
+                                <div className="flex items-center gap-1.5">
+                                  <Compass className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                                  <span>Exact GPS Doorstep Pinned</span>
+                                </div>
+                                <a
+                                  href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-0.5"
+                                >
+                                  <span>Navigate</span>
+                                  <Navigation className="w-3 h-3" />
+                                </a>
+                              </div>
+                            )}
+
+                            {/* Actions: Call, Directions, Failed, Done */}
+                            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                              <a
+                                href={`tel:${stop.customerPhone}`}
+                                className="flex items-center justify-center gap-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors"
+                              >
+                                <Phone className="w-3.5 h-3.5 text-stone-600" />
+                                <span>Call</span>
+                              </a>
+                              <a
+                                href={
+                                  stop.latitude && stop.longitude
+                                    ? `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-1 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl text-xs font-bold transition-colors"
+                                title={stop.latitude ? `Navigate to pinned coordinates (${stop.latitude}, ${stop.longitude})` : 'Search address in Google Maps'}
+                              >
+                                <Navigation className="w-3.5 h-3.5 text-sky-600" />
+                                <span>{stop.latitude ? 'GPS' : 'Map'}</span>
+                              </a>
+                              <button
+                                onClick={() => handleFail(stop.id)}
+                                className="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                              >
+                                Failed
+                              </button>
+                              <button
+                                onClick={() => handleDeliver(stop.id)}
+                                className="flex items-center justify-center gap-1 py-2 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer active:scale-95"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Done</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-10 bg-white rounded-3xl border border-stone-200 p-6 space-y-3.5 shadow-xs">
+                        <div className="w-14 h-14 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 flex items-center justify-center mx-auto">
+                          <CheckCircle2 className="w-8 h-8" />
+                        </div>
+                        <h3 className="font-extrabold text-stone-900 text-lg">All Route Deliveries Complete!</h3>
+                        <p className="text-xs text-stone-600 max-w-xs mx-auto">
+                          Great job! You have completed all assigned doorstep drops for {matchedDairy.name}.
+                        </p>
+                        <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-800 space-y-1">
+                          <div className="font-bold tabular-nums">Total Delivered Today: {totalLitersDelivered} Liters</div>
+                          <div className="tabular-nums">Cash Collected: ₹{totalCashCollectedToday}</div>
+                        </div>
+
+                        {!riderShiftStatus?.shiftCompleted && (
+                          <button
+                            onClick={handleCompleteShiftAndClaimSalary}
+                            disabled={isCompletingShift}
+                            className="w-full py-3.5 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                          >
+                            <Award className="w-4 h-4 text-amber-300" />
+                            <span>{isCompletingShift ? 'Crediting Daily Salary...' : `Complete Shift & Claim Daily Wage (₹${dailySalaryRate}) 💰`}</span>
+                          </button>
+                        )}
+
+                        {pendingCount > 0 && (
+                          <button
+                            onClick={handleManualSyncNow}
+                            className="mt-2 px-5 py-2.5 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                          >
+                            Sync {pendingCount} Pending Stops Now
+                          </button>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    completedStops.length > 0 ? (
+                      completedStops.map((stop) => (
+                        <div
+                          key={stop.id}
+                          className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs opacity-95 space-y-2"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <Badge variant="success" size="xs">✓ Delivered</Badge>
+                                <span className="text-[10px] text-stone-500 font-medium tabular-nums">
+                                  Stop #{stop.sequenceOrder}
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-sm text-stone-900">{stop.customerName}</h4>
+                              <p className="text-xs text-stone-500 mt-0.5">{stop.address}</p>
+                              {stop.notes && (
+                                <p className="text-[10px] text-teal-800 mt-1 bg-teal-50 p-1.5 rounded-lg border border-teal-200/50">
+                                  {stop.notes}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="teal" size="sm">
+                              {stop.quantityLiters} L {stop.productVariant.split(' ')[0]}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-10 bg-white rounded-2xl border border-stone-200 p-6 text-stone-500 text-xs">
+                        No stops marked as delivered yet today.
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

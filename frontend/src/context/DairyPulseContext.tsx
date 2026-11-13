@@ -1823,10 +1823,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     const todayStr = new Date().toISOString().split('T')[0];
     const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     const riderName = user?.name || riderShiftStatus?.staffName || 'Rahul Deshmukh';
-    const riderMember = staff.find((s) => s.name.toLowerCase() === riderName.toLowerCase() || s.id === user?.id);
-    const wage = riderMember?.dailySalary ?? 500;
+    const riderPhoneClean = (user?.phone || '').replace(/\D/g, '').slice(-10);
+    const riderMember = staff.find((s) => {
+      if (user?.id && s.id === user.id) return true;
+      if (riderPhoneClean && s.phone && s.phone.replace(/\D/g, '').slice(-10) === riderPhoneClean) return true;
+      if (riderName && s.name && s.name.trim().toLowerCase() === riderName.trim().toLowerCase()) return true;
+      return false;
+    });
+    const wage = riderMember?.dailySalary ?? riderShiftStatus?.dailySalaryRate ?? 500;
 
     // 1. Optimistic shift update
+    const currentPending = riderMember?.pendingSalary ?? riderShiftStatus?.pendingSalary ?? 0;
+    const newPending = currentPending + wage;
     const updatedStatus: RiderShiftStatus = {
       ...(riderShiftStatus || {
         attendanceMarked: true,
@@ -1847,14 +1855,14 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       salaryCredited: true,
       payoutStatus: 'PENDING',
       dailySalaryRate: wage,
-      pendingSalary: (riderMember?.pendingSalary || 0) + wage,
+      pendingSalary: newPending,
     };
     setRiderShiftStatus(updatedStatus);
 
     if (riderMember) {
       setStaff((prev) => {
         const updated = prev.map((s) =>
-          s.id === riderMember.id ? { ...s, pendingSalary: (s.pendingSalary || 0) + wage } : s
+          s.id === riderMember.id ? { ...s, pendingSalary: newPending } : s
         );
         if (typeof window !== 'undefined') {
           try {
@@ -1888,6 +1896,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
           prev.map((s) => (s.id === riderMember.id ? { ...s, pendingSalary: res.pendingSalary } : s))
         );
       }
+      refreshSalaryData();
     }
     return true;
   };
