@@ -1,6 +1,19 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -39,8 +52,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased min-h-screen bg-[#FEFBF6] text-stone-900 selection:bg-teal-100 selection:text-teal-900" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-[#FEFBF6] text-stone-900 selection:bg-teal-100 selection:text-teal-900 font-sans" suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>
