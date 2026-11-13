@@ -147,7 +147,11 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#FEFBF6] flex text-stone-900 w-full overflow-x-clip">
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={() => {
+          if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+            setSidebarOpen(false);
+          }
+        }}
         onToggle={handleToggleSidebar}
       />
       <div

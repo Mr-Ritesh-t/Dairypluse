@@ -48,6 +48,13 @@ export function Sidebar({
   const pathname = usePathname();
   const { activeDairy } = useDairyPulse();
 
+  const handleNavClick = () => {
+    // Only close the drawer on mobile viewports (< 1024px); on desktop, preserve the user's open or closed state
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onClose?.();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -76,7 +83,7 @@ export function Sidebar({
           >
             <Link
               href="/"
-              onClick={onClose}
+              onClick={handleNavClick}
               className={`flex items-center group cursor-pointer focus:outline-hidden ${
                 isOpen ? 'gap-3 min-w-0' : 'justify-center'
               }`}
@@ -135,7 +142,7 @@ export function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={onClose}
+                  onClick={handleNavClick}
                   title={item.label}
                   className={`group flex items-center rounded-xl transition-all duration-150 relative cursor-pointer ${
                     isOpen
