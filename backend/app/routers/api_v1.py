@@ -422,6 +422,22 @@ def get_customer(customer_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
 
+@api_router.get("/customers/{customer_id}/delivery-history", response_model=List[DeliveryTaskResponse])
+def get_customer_delivery_history(customer_id: str, db: Session = Depends(get_db)):
+    """Retrieve full delivery history for a specific customer."""
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    query = db.query(DeliveryTask)
+    if customer:
+        query = query.filter(
+            or_(
+                DeliveryTask.customer_name.ilike(customer.name.strip()),
+                DeliveryTask.customer_phone == customer.phone
+            )
+        )
+    else:
+        query = query.filter(DeliveryTask.id == customer_id)
+    return query.order_by(DeliveryTask.delivery_date.desc(), DeliveryTask.id.desc()).all()
+
 @api_router.post("/customers", response_model=CustomerResponse)
 def create_customer(cust: CustomerCreate, db: Session = Depends(get_db)):
     new_cust = Customer(**cust.model_dump())

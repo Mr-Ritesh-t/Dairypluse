@@ -104,7 +104,7 @@ export interface DeliveryTask {
   quantityLiters: number;
   slot: 'Morning' | 'Evening' | (string & {});
   assignedRider: string;
-  status: 'Pending' | 'Assigned' | 'Out for Delivery' | 'In Progress' | 'Delivered' | 'Failed';
+  status: 'Pending' | 'Assigned' | 'Out for Delivery' | 'In Progress' | 'Delivered' | 'Failed' | 'Skipped';
   sequenceOrder?: number;
   deliveryDate?: string;
   isExtraOrder?: boolean;
