@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Milk, Plus, Minus, CheckCircle2, Clock, Calendar, AlertCircle, Truck } from 'lucide-react';
 import { Customer, MilkVariant } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import { useToast } from '@/context/ToastContext';
 
 interface AddMilkModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface AddMilkModalProps {
 
 export function AddMilkModal({ isOpen, onClose, customer, onSuccess }: AddMilkModalProps) {
   const { products, addDeliveryTask, updateCustomer } = useDairyPulse();
+  const { showSuccess, showError } = useToast();
   
   const [variant, setVariant] = useState<MilkVariant>('Cow Milk');
   const [quantity, setQuantity] = useState<number>(1.0);
@@ -73,10 +75,12 @@ export function AddMilkModal({ isOpen, onClose, customer, onSuccess }: AddMilkMo
         paymentOption === 'ADD_TO_DUES' ? `Remaining dues: ₹${updatedBalance}.` : 'Paid on the spot.'
       }`;
 
+      showSuccess(msg);
       if (onSuccess) onSuccess(msg);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add milk to customer', err);
+      showError(err?.message || 'Failed to record extra milk delivery. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -125,6 +126,8 @@ export default function ShopOrdersPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Commercial Shop Orders" description="Manage B2B commercial dairy orders for sweets shops, bakeries, tea stalls, and wholesale distributors." />
+
       {/* Page Header */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -364,7 +367,7 @@ export default function ShopOrdersPage() {
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[11px]">Phone:</span>
-                      <span className="font-semibold text-slate-800">{selectedOrder.phone}</span>
+                      <a href={`tel:${selectedOrder.phone}`} className="font-semibold text-emerald-700 hover:underline flex items-center gap-1">{selectedOrder.phone}</a>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-slate-600">

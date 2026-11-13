@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -60,6 +61,8 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900/95 backdrop-blur-md text-white p-3 rounded-xl shadow-xl border border-slate-800 text-xs space-y-1.5 min-w-[170px]">
+      <PageHead title="Reports & Analytics" description="Executive reporting on dairy profitability, spoilage rates, revenue trends, and delivery fulfillment." />
+
         <p className="font-bold text-slate-300 text-[11px] pb-1 border-b border-slate-800">{label}</p>
         {payload.map((entry: any, index: number) => {
           const isCurrency =

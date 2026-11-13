@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -165,6 +166,8 @@ export default function RoutesManagementPage() {
 
   return (
     <div className="space-y-6 pb-12">
+      <PageHead title="Route Planning & Optimization" description="Visual route builder, doorstep sequence mapping, and driver capacity allocation." />
+
       {/* Toast Notification Banner */}
       {actionNotice && (
         <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-emerald-500/50 animate-in fade-in slide-in-from-top-4">
@@ -608,7 +611,7 @@ export default function RoutesManagementPage() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-xs text-slate-900 truncate">{cust.name}</span>
-                                <span className="text-[10px] text-slate-400 font-mono">({cust.phone})</span>
+                                (<a href={`tel:${cust.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-emerald-600 font-mono text-[10px] text-slate-500">{cust.phone}</a>)
                               </div>
                               <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
                                 <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-400" />

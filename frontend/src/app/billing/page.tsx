@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -34,6 +35,8 @@ export default function BillingPaymentsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Billing & Invoices" description="Automated monthly customer billing, WhatsApp invoice delivery, payment tracking, and ledger reconciliation." />
+
       {/* Page Header */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

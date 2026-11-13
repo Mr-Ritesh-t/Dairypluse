@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { DairyPulseProvider } from '@/context/DairyPulseContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ToastProvider } from '@/context/ToastContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNavbar } from '@/components/layout/TopNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { Footer } from '@/components/layout/Footer';
 import { ModalContainer } from '@/components/modals/ModalContainer';
 import { NewCustomerOwnerAlert } from '@/components/notifications/NewCustomerOwnerAlert';
 import { Loader2 } from 'lucide-react';
@@ -122,13 +124,14 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
   // 4. Owner Dashboard & Modules Layout
   // Responsive workspace with Sidebar, TopNavbar, Mobile Bottom Nav, and ModalContainer
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex text-slate-800">
+    <div className="min-h-screen bg-[#F4F7FB] flex text-slate-800 w-full overflow-x-hidden">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200">
+      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 transition-all duration-200 w-full overflow-x-hidden">
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 sm:pb-8">
           {children}
         </main>
+        <Footer />
       </div>
       <MobileBottomNav onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <ModalContainer />
@@ -140,9 +143,11 @@ function RoleGuardedShell({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DairyPulseProvider>
-        <RoleGuardedShell>{children}</RoleGuardedShell>
-      </DairyPulseProvider>
+      <ToastProvider>
+        <DairyPulseProvider>
+          <RoleGuardedShell>{children}</RoleGuardedShell>
+        </DairyPulseProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

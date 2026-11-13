@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -65,6 +66,8 @@ export default function HouseholdSubscriptionsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Household Subscriptions" description="Manage daily doorstep milk subscriptions, frequency schedules, morning/evening shifts, and pause dates." />
+
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-20 right-6 z-50 px-4 py-3 bg-emerald-600 text-white font-semibold text-xs rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-top-2 duration-200">

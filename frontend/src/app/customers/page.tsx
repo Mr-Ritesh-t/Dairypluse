@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -155,6 +156,8 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Customer Directory" description="Complete customer roster, doorstep GPS coordinates, active subscriptions, and account balances." />
+
       {/* Toast Notification Alert */}
       {toastMessage && (
         <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl shadow-xs text-xs font-semibold animate-in slide-in-from-top-2">
@@ -365,7 +368,7 @@ export default function CustomersPage() {
                       >
                         <td className="py-3.5 font-semibold text-slate-800">
                           <div className="text-xs font-bold text-slate-900">{c.name}</div>
-                          <div className="text-[10px] text-slate-500 font-normal">{c.address} • {c.phone}</div>
+                          <div className="text-[10px] text-slate-500 font-normal">{c.address} • <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-emerald-700 font-medium">{c.phone}</a></div>
                         </td>
 
                         <td className="py-3.5">
@@ -713,7 +716,7 @@ export default function CustomersPage() {
                 {selectedCust.email && (
                   <div className="flex items-center gap-2 text-slate-600">
                     <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{selectedCust.email}</span>
+                    <a href={`mailto:${selectedCust.email}`} className="font-semibold text-slate-800 hover:underline hover:text-emerald-700">{selectedCust.email}</a>
                   </div>
                 )}
                 <div className="flex items-start gap-2 text-slate-600">

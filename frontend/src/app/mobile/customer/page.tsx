@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -272,6 +273,8 @@ export default function CustomerSelfServiceApp() {
 
   return (
     <div className="py-2 flex justify-center w-full">
+      <PageHead title="Customer Milk Portal" description="Track daily morning milk delivery, skip or pause subscriptions, request extra bottles, and pay monthly bills." />
+
       <div className="w-full max-w-md min-h-[85vh] bg-slate-100 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative">
         {/* Mobile Top Header */}
         <div className="bg-emerald-700 text-white p-5 pt-6 sticky top-0 z-30 shadow-md">

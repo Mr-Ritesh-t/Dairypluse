@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, DollarSign, CheckCircle2, CreditCard, Wallet, Smartphone, Banknote } from 'lucide-react';
 import { Customer } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import { useToast } from '@/context/ToastContext';
 
 interface CollectPaymentModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CollectPaymentModalProps {
 
 export function CollectPaymentModal({ isOpen, onClose, customer, onSuccess }: CollectPaymentModalProps) {
   const { updateCustomer, invoices, recordPayment } = useDairyPulse();
+  const { showSuccess, showError } = useToast();
   const currentDue = customer.balance > 0 ? customer.balance : 0;
   
   const [amount, setAmount] = useState<number>(currentDue);
@@ -44,10 +46,12 @@ export function CollectPaymentModal({ isOpen, onClose, customer, onSuccess }: Co
       const remainingText = newBalance > 0 ? `Remaining dues: ₹${newBalance}` : 'All dues fully cleared (₹0)!';
       const msg = `Successfully recorded ₹${amount} payment via ${paymentMode} for ${customer.name}. ${remainingText}`;
       
+      showSuccess(msg);
       if (onSuccess) onSuccess(msg);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to collect payment', err);
+      showError(err?.message || 'Failed to record customer payment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

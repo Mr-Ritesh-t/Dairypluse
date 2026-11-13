@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -24,6 +25,8 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Farm Expenses Ledger" description="Record operating expenses for cattle feed, fodder, veterinary care, diesel, packaging, and maintenance." />
+
       {/* Page Header */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

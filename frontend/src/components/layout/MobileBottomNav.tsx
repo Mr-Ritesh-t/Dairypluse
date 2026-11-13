@@ -47,8 +47,10 @@ export function MobileBottomNav({
 
   // Additional modules in More sheet
   const moreModules = [
+    { label: 'Customer Directory', href: '/customers', icon: Users, color: 'text-indigo-700 bg-indigo-50' },
     { label: 'Household Subscriptions', href: '/household', icon: Users, color: 'text-emerald-700 bg-emerald-50' },
     { label: 'Commercial Shop Orders', href: '/orders', icon: ShoppingBag, color: 'text-purple-700 bg-purple-50' },
+    { label: 'Delivery Route Studio', href: '/routes', icon: MapPin, color: 'text-sky-700 bg-sky-50' },
     { label: 'Staff & Delivery Crew', href: '/staff', icon: Briefcase, color: 'text-blue-700 bg-blue-50' },
     { label: 'Billing & Invoices', href: '/billing', icon: CreditCard, color: 'text-amber-700 bg-amber-50' },
     { label: 'Farm Expenses', href: '/expenses', icon: Receipt, color: 'text-rose-700 bg-rose-50' },

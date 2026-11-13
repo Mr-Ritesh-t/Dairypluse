@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
@@ -329,6 +330,8 @@ export default function DeliveryPartnerMobileApp() {
 
   return (
     <div className="py-2 flex justify-center w-full min-h-screen bg-slate-100">
+      <PageHead title="Rider Delivery Dispatch" description="Live mobile doorstep delivery run, turn-by-turn navigation, and digital proof of delivery." />
+
       <div className="w-full max-w-md min-h-[92vh] bg-slate-50 flex flex-col font-sans rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative pb-16">
         
         {/* ================= TOP HEADER BAR ================= */}

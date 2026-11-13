@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import {
   Menu,
   Search,
@@ -38,16 +40,31 @@ export function TopNavbar({ onToggleSidebar }: { onToggleSidebar: () => void }) 
       className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 shadow-2xs gap-4 sm:gap-6 lg:gap-8"
       data-purpose="top-navbar"
     >
-      {/* Left side: Hamburger & Search */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl mr-3 sm:mr-6">
+      {/* Left side: Hamburger, Mobile Clickable Logo & Search */}
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-xl mr-2 sm:mr-6">
         <button
           aria-label="Toggle Navigation"
           onClick={onToggleSidebar}
-          className="lg:hidden text-slate-600 hover:text-slate-900 focus:outline-hidden p-2 rounded-lg hover:bg-slate-100"
+          className="lg:hidden text-slate-600 hover:text-slate-900 focus:outline-hidden p-2 rounded-lg hover:bg-slate-100 cursor-pointer shrink-0"
           type="button"
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Clickable brand logo on mobile */}
+        <Link
+          href="/"
+          className="lg:hidden flex items-center gap-1.5 shrink-0 focus:outline-hidden group"
+          title="Return to DairyPulse Dashboard"
+        >
+          <Image
+            src="/icon.png"
+            alt="DairyPulse"
+            width={28}
+            height={28}
+            className="w-7 h-7 object-contain group-hover:scale-105 transition-transform"
+          />
+        </Link>
 
         {/* Search Bar */}
         <div className="relative w-full">

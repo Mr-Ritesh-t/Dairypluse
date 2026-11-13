@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -370,6 +371,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F8F4] relative flex flex-col justify-between overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-900 font-sans">
+      <PageHead title="Portal Sign In" description="Secure sign-in for DairyPulse farm owners, delivery fleet riders, and household milk customers." />
+
       
       {/* Desktop Background Image (Scenic pastoral view uploaded by user) */}
       <div className="hidden lg:block fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -1109,7 +1112,7 @@ export default function LoginPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Login Mobile Phone:</span>
-                        <span className="font-mono font-bold text-slate-900">{custSuccess.phone}</span>
+                        <a href={`tel:${custSuccess.phone}`} className="font-mono font-bold text-emerald-700 hover:underline">{custSuccess.phone}</a>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Subscription Status:</span>
@@ -1548,7 +1551,7 @@ export default function LoginPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Login ID / Email:</span>
-                        <span className="font-mono font-bold text-slate-900">{dairySuccess.email}</span>
+                        <a href={`mailto:${dairySuccess.email}`} className="font-mono font-bold text-emerald-700 hover:underline">{dairySuccess.email}</a>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Plant GPS:</span>

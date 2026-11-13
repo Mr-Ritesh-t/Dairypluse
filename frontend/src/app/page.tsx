@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -53,6 +54,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Operations Dashboard" description="Real-time overview of daily milk collection, stock levels, delivery fleet dispatch, and active subscriptions." />
+
       <section
         className="pastoral-banner rounded-3xl border border-emerald-100/90 shadow-xs relative px-4 sm:px-8 py-5 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between min-h-[175px] overflow-hidden gap-5 sm:gap-6"
         data-purpose="hero-banner"

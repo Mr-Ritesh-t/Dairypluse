@@ -22,11 +22,24 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: #F8FAFC;
   color: #1E293B;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Ensure smooth touch scrolling on mobile tables */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Tabular figures for dense financial and milk quantity numbers */

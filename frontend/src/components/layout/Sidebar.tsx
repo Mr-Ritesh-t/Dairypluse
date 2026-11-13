@@ -17,6 +17,7 @@ import {
   BarChart3,
   X,
   Building2,
+  MapPin,
 } from 'lucide-react';
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { label: 'Household Subscriptions', href: '/household', icon: Users },
   { label: 'Shop Orders', href: '/orders', icon: ShoppingBag },
   { label: 'Delivery Management', href: '/delivery', icon: Truck },
+  { label: 'Delivery Routes', href: '/routes', icon: MapPin },
   { label: 'Customers', href: '/customers', icon: UserCheck },
   { label: 'Billing & Payments', href: '/billing', icon: CreditCard },
   { label: 'Staff Management', href: '/staff', icon: Briefcase },
@@ -55,26 +57,31 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <div>
           {/* Brand Logo & Title */}
           <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-slate-100 lg:border-none">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden">
+            <Link
+              href="/"
+              onClick={onClose}
+              className="flex items-center gap-3 group cursor-pointer focus:outline-hidden"
+              title="Return to DairyPulse Dashboard"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center p-1 shadow-xs border border-slate-200/90 shrink-0 overflow-hidden group-hover:border-emerald-300 transition">
                 <Image
                   src="/logo.png"
                   alt="DairyPulse Cow Analytics Logo"
                   width={40}
                   height={40}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                   priority
                 />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none flex items-center group-hover:text-emerald-900 transition-colors">
                   Dairy<span className="text-emerald-600">Pulse</span>
                 </h1>
                 <p className="text-[10px] text-slate-500 font-medium tracking-tight mt-1">
                   Farm Operations Hub
                 </p>
               </div>
-            </div>
+            </Link>
 
             {/* Mobile close button */}
             <button

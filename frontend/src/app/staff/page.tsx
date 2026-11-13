@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -280,6 +281,8 @@ export default function StaffManagementPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Staff & Delivery Fleet" description="Manage farm employees, delivery riders, daily attendance, commission rates, and salary payouts." />
+
       {/* Toast / Banner Notification */}
       {actionMessage && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs animate-in slide-in-from-top-2 duration-150">
@@ -829,7 +832,7 @@ export default function StaffManagementPage() {
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
                         <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span className="truncate">{selectedStaff.email || `${selectedStaff.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`}</span>
+                        <a href={`mailto:${selectedStaff.email || `${selectedStaff.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`}`} className="truncate hover:underline hover:text-emerald-700">{selectedStaff.email || `${selectedStaff.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`}</a>
                       </span>
                       <button
                         type="button"
@@ -846,7 +849,7 @@ export default function StaffManagementPage() {
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="font-mono font-bold text-slate-800 flex items-center gap-1.5">
                         <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>{selectedStaff.phone}</span>
+                        <a href={`tel:${selectedStaff.phone}`} className="hover:underline hover:text-emerald-700">{selectedStaff.phone}</a>
                       </span>
                       <button
                         type="button"
@@ -1048,7 +1051,7 @@ export default function StaffManagementPage() {
                   <div>
                     <div className="text-[11px] font-bold text-slate-800">
                       Rider Mobile Login ID:{' '}
-                      <span className="font-mono text-emerald-700 font-bold">{selectedStaff.phone}</span>
+                      <a href={`tel:${selectedStaff.phone}`} className="font-mono text-emerald-700 font-bold hover:underline">{selectedStaff.phone}</a>
                     </div>
                     <div className="text-[10px] text-slate-500">
                       Rider can log directly into <span className="font-mono text-blue-700">/mobile/delivery</span> using this phone.

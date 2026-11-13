@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState } from 'react';
 import {
@@ -179,6 +180,8 @@ export default function MilkInventoryPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Milk Inventory & Storage Tanks" description="Track fresh cow and buffalo milk stock, morning and evening milking batches, quality tests, and tank capacities." />
+
       {/* Page Header */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" data-purpose="page-header">
         <div>

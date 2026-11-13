@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar, Bell } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { MilkVariant } from '@/types';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
@@ -27,6 +28,7 @@ export function ModalContainer() {
     routes,
   } = useDairyPulse();
   const { user, updateUser } = useAuth();
+  const { showSuccess, showError } = useToast();
 
   // Expiry date helper: default to +5 days from today
   const getDaysFromNow = (days: number) => {
@@ -169,9 +171,11 @@ export function ModalContainer() {
           phone: profileDairyPhone,
         });
       }
+      showSuccess('Dairy farm profile updated successfully');
       closeModal();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating dairy:', err);
+      showError(err?.message || 'Failed to update dairy profile. Please try again.');
     } finally {
       setIsSavingDairy(false);
     }
@@ -294,6 +298,7 @@ export function ModalContainer() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   addStockReceipt(stockVariant, parseFloat(stockQty) || 0, supplier, parseFloat(rate) || 0, stockNotes, stockExpiryDate);
+                  showSuccess(`Added ${stockQty} L of ${stockVariant} to inventory`);
                   closeModal();
                 }}
                 className="space-y-4"
@@ -606,6 +611,7 @@ export function ModalContainer() {
                   activeSubscriptionsCount: custType === 'HOUSEHOLD' ? 1 : 0,
                   status: 'Active',
                 });
+                showSuccess(`Customer ${custName} registered successfully`);
                 closeModal();
                 setCustName('');
                 setCustPhone('');
@@ -816,6 +822,7 @@ export function ModalContainer() {
                   paymentMethod: expMethod,
                   notes: expNotes,
                 });
+                showSuccess(`Logged expense of ₹${expAmount} (${expCategory})`);
                 closeModal();
               }}
               className="space-y-4"
@@ -928,6 +935,7 @@ export function ModalContainer() {
                     },
                   ],
                 });
+                showSuccess(`Commercial shop order for ${orderShopName} placed successfully`);
                 closeModal();
               }}
               className="space-y-4"
@@ -1082,6 +1090,7 @@ export function ModalContainer() {
               onSubmit={(e) => {
                 e.preventDefault();
                 recordWastage(wastageVariant, parseFloat(wastageQty) || 0, wastageReason);
+                showSuccess('Logged ' + wastageQty + ' L milk loss/spoilage');
                 closeModal();
               }}
               className="space-y-4"

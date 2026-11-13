@@ -1,4 +1,5 @@
 'use client';
+import { PageHead } from '@/components/common/PageHead';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -333,6 +334,8 @@ export default function DeliveryManagementPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
+      <PageHead title="Delivery Dispatch & Routes" description="Live morning and evening delivery run status, driver assigned routes, vehicle capacity loads, and doorstep proof." />
+
       {/* Notice Alert */}
       {actionNotice && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-xs animate-in slide-in-from-top-2">
@@ -1573,7 +1576,7 @@ export default function DeliveryManagementPage() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-xs text-slate-900 truncate">{cust.name}</span>
-                                <span className="text-[10px] text-slate-400 font-mono">({cust.phone})</span>
+                                (<a href={`tel:${cust.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-emerald-600 font-mono text-[10px] text-slate-500">{cust.phone}</a>)
                               </div>
                               <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
                                 <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-400" />
