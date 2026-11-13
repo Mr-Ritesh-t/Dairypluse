@@ -19,6 +19,7 @@ import {
 import { Customer, MilkVariant, StaffMember } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useToast } from '@/context/ToastContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AddMilkModalProps {
   isOpen: boolean;
@@ -111,8 +112,6 @@ export function AddMilkModal({ isOpen, onClose, customer, onSuccess }: AddMilkMo
       setIsSubmitting(false);
     }
   }, [isOpen, customer, customerSub, defaultRider]);
-
-  if (!isOpen || !customer) return null;
 
   // Available variants from inventory or standard fallback
   const availableVariants: { variant: MilkVariant; price: number }[] =
@@ -209,9 +208,23 @@ export function AddMilkModal({ isOpen, onClose, customer, onSuccess }: AddMilkMo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
+    <AnimatePresence>
+      {isOpen && customer && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+          >
+            {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-gradient-to-r from-teal-800 to-teal-900 text-white shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
@@ -505,7 +518,9 @@ export function AddMilkModal({ isOpen, onClose, customer, onSuccess }: AddMilkMo
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 }

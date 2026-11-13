@@ -5,6 +5,7 @@ import { X, DollarSign, CheckCircle2, CreditCard, Wallet, Smartphone, Banknote }
 import { Customer } from '@/types';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useToast } from '@/context/ToastContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface CollectPaymentModalProps {
   isOpen: boolean;
@@ -22,8 +23,6 @@ export function CollectPaymentModal({ isOpen, onClose, customer, onSuccess }: Co
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'CASH' | 'BANK_TRANSFER'>('UPI');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +57,23 @@ export function CollectPaymentModal({ isOpen, onClose, customer, onSuccess }: Co
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
-        {/* Header */}
+    <AnimatePresence>
+      {isOpen && customer && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden"
+          >
+            {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-700 text-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
@@ -201,7 +214,9 @@ export function CollectPaymentModal({ isOpen, onClose, customer, onSuccess }: Co
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 }

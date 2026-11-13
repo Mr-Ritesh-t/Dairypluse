@@ -22,6 +22,7 @@ import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { Card, StatCard, Badge, Button, ProgressBar } from '@/components/ui';
+import { motion } from 'motion/react';
 
 export default function DashboardPage() {
   const { products, deliveries, subscriptions, shopOrders, invoices, openModal } = useDairyPulse();
@@ -129,50 +130,59 @@ export default function DashboardPage() {
 
       {/* ── 2. KPI Metrics Grid ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-purpose="metrics-row">
-        <StatCard
-          title="Today's Sales"
-          value={`₹${todaySales.toLocaleString()}`}
-          subtitle={`${shopOrders.length + subscriptions.length} active order streams`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          variant="teal"
-          trend={{ value: 'Live', isPositive: true }}
-        />
-
-        <StatCard
-          title="Milk in Stock"
-          value={`${totalStockLitres.toLocaleString()} L`}
-          subtitle="Across active chilling tanks"
-          icon={<Droplets className="w-5 h-5" />}
-          variant="blue"
-          trend={{
-            value: totalStockLitres > 0 ? 'Optimal' : 'Low',
-            isPositive: totalStockLitres > 0,
-          }}
-        />
-
-        <StatCard
-          title="Deliveries Today"
-          value={`${deliveredCount} / ${totalDeliveries}`}
-          subtitle={`${totalDeliveries - deliveredCount} stops remaining`}
-          icon={<Truck className="w-5 h-5" />}
-          variant="amber"
-          trend={{
-            value: `${deliveryPercentage}%`,
-            isPositive: deliveryPercentage >= 50,
-          }}
-        />
-
-        <StatCard
-          title="Pending Dues"
-          value={`₹${pendingPayments.toLocaleString()}`}
-          subtitle={`${invoices.filter((i) => i.status !== 'Paid').length} pending accounts`}
-          icon={<Wallet className="w-5 h-5" />}
-          variant="terracotta"
-          trend={{
-            value: pendingPayments > 0 ? 'Collect' : 'Clear',
-            isPositive: pendingPayments === 0,
-          }}
-        />
+        {[
+          {
+            title: "Today's Sales",
+            value: `₹${todaySales.toLocaleString()}`,
+            subtitle: `${shopOrders.length + subscriptions.length} active order streams`,
+            icon: <TrendingUp className="w-5 h-5" />,
+            variant: 'teal' as const,
+            trend: { value: 'Live', isPositive: true },
+          },
+          {
+            title: 'Milk in Stock',
+            value: `${totalStockLitres.toLocaleString()} L`,
+            subtitle: 'Across active chilling tanks',
+            icon: <Droplets className="w-5 h-5" />,
+            variant: 'blue' as const,
+            trend: {
+              value: totalStockLitres > 0 ? 'Optimal' : 'Low',
+              isPositive: totalStockLitres > 0,
+            },
+          },
+          {
+            title: 'Deliveries Today',
+            value: `${deliveredCount} / ${totalDeliveries}`,
+            subtitle: `${totalDeliveries - deliveredCount} stops remaining`,
+            icon: <Truck className="w-5 h-5" />,
+            variant: 'amber' as const,
+            trend: {
+              value: `${deliveryPercentage}%`,
+              isPositive: deliveryPercentage >= 50,
+            },
+          },
+          {
+            title: 'Pending Dues',
+            value: `₹${pendingPayments.toLocaleString()}`,
+            subtitle: `${invoices.filter((i) => i.status !== 'Paid').length} pending accounts`,
+            icon: <Wallet className="w-5 h-5" />,
+            variant: 'terracotta' as const,
+            trend: {
+              value: pendingPayments > 0 ? 'Collect' : 'Clear',
+              isPositive: pendingPayments === 0,
+            },
+          },
+        ].map((card, i) => (
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350, delay: i * 0.05 }}
+            whileHover={{ y: -3 }}
+          >
+            <StatCard {...card} />
+          </motion.div>
+        ))}
       </section>
 
       {/* ── 3. Milk Inventory Overview Table ── */}
@@ -392,9 +402,11 @@ export default function DashboardPage() {
 
       {/* ── 5. Quick Farm Action Bar ── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 pt-2" data-purpose="quick-actions">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => openModal('addStock')}
-          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -404,11 +416,13 @@ export default function DashboardPage() {
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Add Milk Stock</h4>
             <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Incoming tank batch</p>
           </div>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => openModal('addCustomer')}
-          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-sky-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-sky-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 text-[#0369A1] border border-sky-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -418,11 +432,13 @@ export default function DashboardPage() {
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Add Customer</h4>
             <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Household / retail</p>
           </div>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => openModal('generateBill')}
-          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
+          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -432,20 +448,25 @@ export default function DashboardPage() {
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Generate Bill</h4>
             <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Create customer invoice</p>
           </div>
-        </button>
+        </motion.button>
 
-        <Link
-          href="/delivery"
-          className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-all duration-150 group text-left cursor-pointer"
+        <motion.div
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Truck className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Delivery Runs</h4>
-            <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Route fleet management</p>
-          </div>
-        </Link>
+          <Link
+            href="/delivery"
+            className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer h-full"
+          >
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug truncate">Delivery Runs</h4>
+              <p className="text-[10px] sm:text-xs text-stone-500 font-normal truncate">Route fleet management</p>
+            </div>
+          </Link>
+        </motion.div>
       </section>
     </div>
   );

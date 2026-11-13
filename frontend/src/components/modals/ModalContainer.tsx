@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { MilkVariant } from '@/types';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
+import { motion, AnimatePresence } from 'motion/react';
 
 export function ModalContainer() {
   const {
@@ -181,11 +182,23 @@ export function ModalContainer() {
     }
   };
 
-  if (!activeModal) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${activeModal === 'dairyProfile' ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150`}>
+    <AnimatePresence>
+      {activeModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${activeModal === 'dairyProfile' ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] flex flex-col overflow-hidden`}
+          >
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-3">
@@ -1295,7 +1308,9 @@ export function ModalContainer() {
             </form>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 }

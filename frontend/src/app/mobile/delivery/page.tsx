@@ -49,6 +49,7 @@ import { useOfflineDeliverySync } from '@/lib/offlineSync';
 import { calculateRouteProgress } from '@/lib/calculations/delivery';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function DeliveryPartnerMobileApp() {
   const {
@@ -1009,21 +1010,27 @@ export default function DeliveryPartnerMobileApp() {
                 <div className="space-y-3">
                   {activeTab === 'PENDING' ? (
                     pendingStops.length > 0 ? (
-                      pendingStops.map((stop, index) => {
-                        const estimatedMinutes = 45 + index * 8;
-                        const estHour = Math.floor(estimatedMinutes / 60) + 5;
-                        const estMin = estimatedMinutes % 60;
-                        const estTimeString = `0${estHour}:${estMin < 10 ? '0' : ''}${estMin} AM`;
+                      <AnimatePresence mode="popLayout">
+                        {pendingStops.map((stop, index) => {
+                          const estimatedMinutes = 45 + index * 8;
+                          const estHour = Math.floor(estimatedMinutes / 60) + 5;
+                          const estMin = estimatedMinutes % 60;
+                          const estTimeString = `0${estHour}:${estMin < 10 ? '0' : ''}${estMin} AM`;
 
-                        const formData = getStopForm(stop.id);
-                        const isStopQueued = pendingQueue.some((q) => q.delivery_id === stop.id);
+                          const formData = getStopForm(stop.id);
+                          const isStopQueued = pendingQueue.some((q) => q.delivery_id === stop.id);
 
-                        return (
-                          <div
-                            key={stop.id}
-                            className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3 transition-colors hover:border-teal-300"
-                          >
-                            <div className="flex items-start justify-between">
+                          return (
+                            <motion.div
+                              key={stop.id}
+                              layout
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.92, x: 50, transition: { duration: 0.2 } }}
+                              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                              className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3 transition-colors hover:border-teal-300 relative overflow-hidden"
+                            >
+                              <div className="flex items-start justify-between">
                               <div>
                                 <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                   <span className="bg-stone-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold tabular-nums">
@@ -1151,18 +1158,21 @@ export default function DeliveryPartnerMobileApp() {
                               >
                                 Failed
                               </button>
-                              <button
+                              <motion.button
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.94 }}
                                 onClick={() => handleDeliver(stop.id)}
-                                className="flex items-center justify-center gap-1 py-2 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer active:scale-95"
+                                className="flex items-center justify-center gap-1 py-2 bg-[#0F766E] hover:bg-[#0D6560] text-white rounded-xl text-xs font-extrabold shadow-xs transition-all cursor-pointer"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>Done</span>
-                              </button>
+                              </motion.button>
                             </div>
-                          </div>
+                          </motion.div>
                         );
-                      })
-                    ) : (
+                      })}
+                    </AnimatePresence>
+                  ) : (
                       <div className="text-center py-10 bg-white rounded-3xl border border-stone-200 p-6 space-y-3.5 shadow-xs">
                         <div className="w-14 h-14 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 flex items-center justify-center mx-auto">
                           <CheckCircle2 className="w-8 h-8" />

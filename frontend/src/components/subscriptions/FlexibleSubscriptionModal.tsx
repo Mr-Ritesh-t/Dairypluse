@@ -20,6 +20,7 @@ import {
   scheduleExtraMilkApi,
 } from '@/lib/api';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface FlexibleSubscriptionModalProps {
   isOpen: boolean;
@@ -77,8 +78,6 @@ export function FlexibleSubscriptionModal({
   const [extraDate, setExtraDate] = useState(defaultDateStr);
   const [extraVariant, setExtraVariant] = useState(productVariant);
 
-  if (!isOpen) return null;
-
   const handleSkipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -129,9 +128,23 @@ export function FlexibleSubscriptionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-slate-200">
-        {/* Modal Header */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-slate-200"
+          >
+            {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
@@ -392,7 +405,9 @@ export function FlexibleSubscriptionModal({
             </button>
           </form>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 }

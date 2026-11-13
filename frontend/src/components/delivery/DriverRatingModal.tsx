@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Star, X, Check, ThumbsUp, Sparkles, MessageSquare, ShieldCheck, Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface DriverRatingModalProps {
   isOpen: boolean;
@@ -54,8 +55,6 @@ export function DriverRatingModal({
   const [feedback, setFeedback] = useState(currentFeedback || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  if (!isOpen) return null;
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -111,148 +110,187 @@ export function DriverRatingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-        {/* Header with Rider Identity */}
-        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white p-5 relative">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/20 text-white transition cursor-pointer"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 14 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col"
           >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-13 h-13 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl border border-white/30 shadow-inner">
-              🛵
-            </div>
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                Rate Delivery Partner
-              </span>
-              <h3 className="text-xl font-extrabold text-white leading-tight">
-                {driverName}
-              </h3>
-              <p className="text-xs text-emerald-100 flex items-center gap-1 mt-0.5 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Verified DairyPulse Fleet Partner</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        {isSuccess ? (
-          <div className="p-8 text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-xs transition-transform duration-300 scale-105">
-              <Heart className="w-8 h-8 fill-emerald-600" />
-            </div>
-            <h4 className="font-extrabold text-lg text-slate-900">Thank You for Rating!</h4>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Your feedback helps {driverName} maintain top-tier morning delivery standards for your doorstep.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-5 space-y-4">
-            {/* Interactive Star Rating */}
-            <div className="text-center bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-              <span className="text-xs font-semibold text-slate-600 block">
-                How was your doorstep delivery experience?
-              </span>
-
-              <div className="flex items-center justify-center gap-2 py-1">
-                {[1, 2, 3, 4, 5].map((star) => {
-                  const isActive = (hoverRating !== null ? hoverRating : rating) >= star;
-                  return (
-                    <button
-                      key={star}
-                      type="button"
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(null)}
-                      onClick={() => setRating(star)}
-                      className="p-1 transition-transform hover:scale-120 focus:outline-hidden cursor-pointer"
-                    >
-                      <Star
-                        className={`w-8 h-8 transition-colors ${
-                          isActive
-                            ? 'text-amber-400 fill-amber-400 drop-shadow-xs'
-                            : 'text-slate-300 hover:text-amber-200'
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="text-xs font-extrabold text-emerald-800 tracking-tight">
-                {getRatingLabel(hoverRating !== null ? hoverRating : rating)}
-              </div>
-            </div>
-
-            {/* Compliment Tag Chips */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
-                What did {driverName} do well?
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {COMPLIMENT_TAGS.map((tag) => {
-                  const isSelected = selectedTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 text-emerald-600" />}
-                      <span>{tag}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Optional Written Review */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Additional Comments (Optional)
-              </label>
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="e.g. Always delivers quietly before 6:30 AM without ringing bell. Very polite!"
-                rows={3}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:bg-white resize-none"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 pt-1">
-              <button
+            {/* Header with Rider Identity */}
+            <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white p-5 relative">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 type="button"
                 onClick={onClose}
-                className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/20 text-white transition cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-              >
-                <ThumbsUp className="w-3.5 h-3.5" />
-                <span>{isSubmitting ? 'Submitting...' : 'Submit Rating'}</span>
-              </button>
+                <X className="w-5 h-5" />
+              </motion.button>
+
+              <div className="flex items-center gap-3.5">
+                <motion.div
+                  initial={{ scale: 0.8, rotate: -8 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                  className="w-13 h-13 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl border border-white/30 shadow-inner"
+                >
+                  🛵
+                </motion.div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                    Rate Delivery Partner
+                  </span>
+                  <h3 className="text-xl font-extrabold text-white leading-tight">
+                    {driverName}
+                  </h3>
+                  <p className="text-xs text-emerald-100 flex items-center gap-1 mt-0.5 font-medium">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Verified DairyPulse Fleet Partner</span>
+                  </p>
+                </div>
+              </div>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
+
+            {/* Content Body */}
+            {isSuccess ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-8 text-center space-y-3"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                  className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-xs"
+                >
+                  <Heart className="w-8 h-8 fill-emerald-600" />
+                </motion.div>
+                <h4 className="font-extrabold text-lg text-slate-900">Thank You for Rating!</h4>
+                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                  Your feedback helps {driverName} maintain top-tier morning delivery standards for your doorstep.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                {/* Interactive Star Rating */}
+                <div className="text-center bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                  <span className="text-xs font-semibold text-slate-600 block">
+                    How was your doorstep delivery experience?
+                  </span>
+
+                  <div className="flex items-center justify-center gap-2 py-1">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const isActive = (hoverRating !== null ? hoverRating : rating) >= star;
+                      return (
+                        <motion.button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(null)}
+                          onClick={() => setRating(star)}
+                          whileHover={{ scale: 1.25, rotate: 6 }}
+                          whileTap={{ scale: 0.85 }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 15 }}
+                          className="p-1 focus:outline-hidden cursor-pointer"
+                        >
+                          <Star
+                            className={`w-8 h-8 transition-colors ${
+                              isActive
+                                ? 'text-amber-400 fill-amber-400 drop-shadow-xs'
+                                : 'text-slate-300 hover:text-amber-200'
+                            }`}
+                          />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="text-xs font-extrabold text-emerald-800 tracking-tight">
+                    {getRatingLabel(hoverRating !== null ? hoverRating : rating)}
+                  </div>
+                </div>
+
+                {/* Compliment Tag Chips */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">
+                    What did {driverName} do well?
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COMPLIMENT_TAGS.map((tag) => {
+                      const isSelected = selectedTags.includes(tag);
+                      return (
+                        <motion.button
+                          type="button"
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-2xs'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                          <span>{tag}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Feedback Note Textarea */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Feedback for {driverName} (Optional)</span>
+                    <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="e.g. Always delivers fresh milk early and keeps the pouch clean!"
+                    className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 transition focus:outline-hidden"
+                  />
+                </div>
+
+                {/* Submit Action */}
+                <div className="flex items-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span>{isSubmitting ? 'Submitting...' : 'Submit Review'}</span>
+                  </motion.button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
-

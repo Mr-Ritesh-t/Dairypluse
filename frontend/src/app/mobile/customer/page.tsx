@@ -48,6 +48,7 @@ import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { DeliveryTask } from '@/types';
+import { motion, AnimatePresence } from 'motion/react';
 
 function formatHistoryDate(dateStr?: string) {
   if (!dateStr) return 'Today';
@@ -495,10 +496,12 @@ export default function CustomerSelfServiceApp() {
 
             {/* Smart Delivery Controls */}
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => toggleSubscriptionPause(sub.id)}
-                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden ${
                   sub.status === 'Active'
                     ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
                     : 'bg-teal-700 hover:bg-teal-800 text-white shadow-xs'
@@ -515,36 +518,42 @@ export default function CustomerSelfServiceApp() {
                     <span>Resume Delivery</span>
                   </>
                 )}
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => openModal('EXTRA')}
-                className="py-2.5 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
+                className="py-2.5 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
               >
                 <Plus className="w-3.5 h-3.5 text-teal-700" />
                 <span>Order Extra Milk</span>
-              </button>
+              </motion.button>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => openModal('SKIP')}
-                className="py-2.5 px-3 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 min-h-[40px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
+                className="py-2.5 px-3 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
               >
                 <CalendarX2 className="w-3.5 h-3.5 text-amber-600" />
                 <span>Skip a Date</span>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => openModal('QUANTITY')}
-                className="py-2.5 px-3 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 min-h-[40px] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
+                className="py-2.5 px-3 bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-hidden"
               >
                 <Sliders className="w-3.5 h-3.5 text-teal-700" />
                 <span>Change Liters</span>
-              </button>
+              </motion.button>
             </div>
           </section>
 
@@ -976,10 +985,23 @@ export default function CustomerSelfServiceApp() {
         />
 
         {/* CUSTOMER PROFILE & MAP LOCATION MODAL */}
-        {isProfileOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 max-h-[92vh] flex flex-col overflow-hidden">
-              {/* Modal Header */}
+        <AnimatePresence>
+          {isProfileOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-950/60 backdrop-blur-xs"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 16 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 max-h-[92vh] flex flex-col overflow-hidden"
+              >
+                {/* Modal Header */}
               <div className="bg-teal-900 text-white px-5 py-4 flex items-center justify-between shrink-0 border-b border-teal-800">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
@@ -1186,9 +1208,10 @@ export default function CustomerSelfServiceApp() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
         {/* DRIVER RATING MODAL (Strictly locked until delivery is complete) */}
         <DriverRatingModal
@@ -1210,9 +1233,22 @@ export default function CustomerSelfServiceApp() {
         />
 
         {/* SWITCH DAIRY MODAL */}
-        {isChangeDairyOpen && (
-          <div className="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-            <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-100 space-y-4 max-h-[90vh] flex flex-col">
+        <AnimatePresence>
+          {isChangeDairyOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 16 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-100 space-y-4 max-h-[90vh] flex flex-col"
+              >
               <div className="flex items-start justify-between pb-2 border-b border-stone-100">
                 <div>
                   <h3 className="font-extrabold text-base text-stone-900 flex items-center gap-2">
@@ -1319,14 +1355,28 @@ export default function CustomerSelfServiceApp() {
                   Close
                 </button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
         {/* Full Doorstep Delivery History & Calendar Modal */}
-        {isHistoryModalOpen && (
-          <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 max-h-[85vh] flex flex-col overflow-hidden">
+        <AnimatePresence>
+          {isHistoryModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.96 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 max-h-[85vh] flex flex-col overflow-hidden"
+              >
               {/* Header */}
               <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-[#FAF8F5]">
                 <div className="flex items-center gap-2.5">
@@ -1474,9 +1524,10 @@ export default function CustomerSelfServiceApp() {
                   Done
                 </button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+      </AnimatePresence>
       </div>
     </div>
   );
