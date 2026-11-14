@@ -1,9 +1,9 @@
 'use client';
-import { PageHead } from '@/components/common/PageHead';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { PageHead } from '@/components/common/PageHead';
 import { useAuth } from '@/context/AuthContext';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { MilkVariant, UserRole } from '@/types';
@@ -17,12 +17,9 @@ import {
   Lock,
   Phone,
   User,
-  MapPin,
   Milk,
   AlertCircle,
-  Clock,
   Building2,
-  Star,
   ChevronRight,
   Search,
   BadgeCheck,
@@ -32,6 +29,13 @@ import {
   BarChart3,
   UserPlus,
   ExternalLink,
+  Sparkles,
+  Zap,
+  RotateCw,
+  Award,
+  Clock,
+  HelpCircle,
+  CheckCircle,
 } from 'lucide-react';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
@@ -52,6 +56,7 @@ export default function LoginPage() {
   const [authMode, setAuthMode] = useState<'password' | 'phone_otp'>('password');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(45);
 
   // Account Not Found Interactivity State
   const [notFoundPrompt, setNotFoundPrompt] = useState(false);
@@ -60,6 +65,9 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Forgot password helper modal
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   // -------------------------------------------------------------
   // CUSTOMER REGISTRATION 3-STEP WIZARD STATE
@@ -75,7 +83,7 @@ export default function LoginPage() {
   const [dairySearch, setDairySearch] = useState('');
 
   // Keep selectedDairyName synchronized with available dairies list and clear stale offline data
-  React.useEffect(() => {
+  useEffect(() => {
     refreshDairies();
     if (typeof window !== 'undefined' && !user) {
       try {
@@ -89,13 +97,26 @@ export default function LoginPage() {
     }
   }, [user]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (dairies && dairies.length > 0) {
       if (!selectedDairyName || !dairies.some((d) => d.name.toLowerCase() === selectedDairyName.toLowerCase())) {
         setSelectedDairyName(dairies[0].name);
       }
     }
   }, [dairies, selectedDairyName]);
+
+  // OTP Countdown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (otpSent && otpCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [otpSent, otpCountdown]);
 
   const [custAddress, setCustAddress] = useState('');
   const [custArea, setCustArea] = useState('');
@@ -136,6 +157,25 @@ export default function LoginPage() {
     setNotFoundPrompt(false);
   };
 
+  // Quick Demo Autofill Helper
+  const handleQuickDemoFill = (role: UserRole) => {
+    setSelectedRole(role);
+    setAuthMode('password');
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setNotFoundPrompt(false);
+    if (role === 'OWNER') {
+      setLoginId('admin@dairypulse.farm');
+      setPassword('dairy123');
+    } else if (role === 'DELIVERY') {
+      setLoginId('+91 98220 11984');
+      setPassword('rider123');
+    } else if (role === 'CUSTOMER') {
+      setLoginId('+91 98200 44551');
+      setPassword('cust123');
+    }
+  };
+
   const redirectToRole = (role: UserRole) => {
     let target = '/';
     if (role === 'DELIVERY') {
@@ -168,7 +208,8 @@ export default function LoginPage() {
           const res = await loginWithPhoneOtp(loginId.trim());
           if (res.success) {
             setOtpSent(true);
-            setSuccessMessage(`SMS OTP sent to ${loginId}. Please enter the code below.`);
+            setOtpCountdown(45);
+            setSuccessMessage(`Verification OTP sent to ${loginId}. Please enter the 6-digit code below.`);
           } else {
             setErrorMessage(res.error || 'Failed to send OTP code.');
           }
@@ -199,6 +240,7 @@ export default function LoginPage() {
         loginId: loginId.trim(),
         password: password.trim(),
         role: selectedRole,
+        rememberMe,
       });
 
       if (res.success) {
@@ -267,14 +309,14 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const routeName = `${custArea} Route R-04`;
+      const routeName = `${custArea || 'Main Area'} Route R-04`;
       const newCust = await addCustomer({
         name: custName.trim(),
         type: 'HOUSEHOLD',
         phone: custPhone.trim(),
         email: custEmail.trim() || undefined,
         address: custAddress.trim(),
-        area: custArea,
+        area: custArea || 'Sector 1',
         route: routeName,
         dairyName: selectedDairyName,
         latitude: custLat,
@@ -317,7 +359,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     await login({
       loginId: custSuccess.phone,
-      password: custPassword || 'password123',
+      password: custPassword || 'cust123',
       role: 'CUSTOMER',
     });
     router.push('/mobile/customer');
@@ -381,122 +423,162 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#FEFBF6] relative flex flex-col justify-between overflow-x-clip selection:bg-teal-100 selection:text-teal-900 font-sans">
-      <PageHead title="Portal Sign In | DairyPulse" description="Secure sign-in for DairyPulse farm owners, delivery fleet riders, and household milk customers." />
+      <PageHead
+        title="Portal Sign In | DairyPulse"
+        description="Unified enterprise access for dairy plant owners, early-morning delivery fleets, and household milk subscribers."
+      />
 
-      
-      {/* Desktop Background Image (Scenic pastoral view uploaded by user) */}
+      {/* Desktop Background Image */}
       <div className="hidden lg:block fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <Image
           src="/images/login-desktop-bg.jpg"
-          alt="DairyPulse Farm PC Background"
+          alt="DairyPulse Farm Background"
           fill
+          sizes="100vw"
           className="object-cover object-center"
           priority
         />
+        {/* Soft gradient scrim ensuring crystal clarity */}
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-900/35 via-stone-900/10 to-stone-900/40 pointer-events-none" />
       </div>
 
-      {/* Mobile Background Image (Exact full-height pasture & leaves uploaded by user) */}
+      {/* Mobile Background Image */}
       <div className="lg:hidden fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <Image
           src="/images/login-mobile-bg.jpg"
-          alt="DairyPulse Farm Mobile Background"
+          alt="DairyPulse Mobile Pasture"
           fill
+          sizes="100vw"
           className="object-cover object-bottom"
           priority
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FEFBF6]/85 via-white/80 to-[#FEFBF6]/90 pointer-events-none" />
       </div>
 
       {/* Main Split Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between min-h-screen">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between min-h-screen px-4 sm:px-6 lg:px-8 py-6">
         
         {/* ================= LEFT COLUMN: HERO & BRAND (Desktop) ================= */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between pt-10 pb-4 px-8 lg:px-12 xl:px-16 min-h-screen">
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between py-6 px-4 lg:px-8 xl:px-12 min-h-[90vh]">
           
-          {/* Logo & Tagline */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-xs border border-emerald-200/70 bg-white p-1 shrink-0">
-              <Image
-                src="/images/dairypulse-badge.png"
-                alt="DairyPulse"
-                width={48}
-                height={48}
-                className="w-full h-full object-contain"
-                priority
-              />
+          {/* Top Logo & Trust Badge */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-13 h-13 rounded-2xl overflow-hidden shadow-md border border-emerald-200/80 bg-white p-1.5 shrink-0 transition-transform hover:scale-105">
+                <Image
+                  src="/images/dairypulse-badge.png"
+                  alt="DairyPulse Emblem"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                    Dairy<span className="text-[#0F766E]">Pulse</span>
+                  </h2>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/90 text-emerald-800 border border-emerald-300/80 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
+                    v2.4 Live
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 font-medium mt-1">
+                  Aapke Dairy Business ka Smart Saathi
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
-                Dairy<span className="text-emerald-600">Pulse</span>
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-1">
-                Aapke Dairy Business ka Smart Saathi
-              </p>
+
+            {/* Social Proof Pill */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs text-xs font-semibold text-slate-700">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+              <span>Trusted by <strong>120+ Dairies</strong> &amp; <strong>15,000+ Daily Households</strong></span>
             </div>
           </div>
 
-          {/* Main Headline & Feature Circles */}
-          <div className="my-auto py-4 space-y-6 max-w-lg">
+          {/* Main Headline & Value Props */}
+          <div className="my-auto py-8 space-y-6 max-w-lg">
             <div className="space-y-3">
               <h1 className="text-4xl xl:text-5xl font-black text-slate-900 tracking-tight leading-[1.12]">
-                Manage Your <br />
-                Dairy Business <br />
-                <span className="text-emerald-600">Effortlessly</span>
+                Run Your Entire <br />
+                Dairy Operations <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0F766E] to-emerald-600">
+                  On Autopilot
+                </span>
               </h1>
               <p className="text-sm xl:text-base text-slate-600 font-normal leading-relaxed max-w-md pt-1">
-                From milk stock to deliveries, billing and reports — everything in one simple platform.
+                Automated 5:00 AM dispatch manifests, cold-chain silo telemetry, recurring household milk subscriptions, and automated WhatsApp billing in one secure platform.
               </p>
             </div>
 
-            {/* 4 Feature Badges */}
-            <div className="grid grid-cols-4 gap-3 pt-2 max-w-md">
-              <div className="text-center group cursor-default">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center mx-auto mb-2 shadow-2xs group-hover:scale-105 transition">
+            {/* 4 Feature Cards */}
+            <div className="grid grid-cols-2 gap-3 pt-2 max-w-lg">
+              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
                   <Milk className="w-5 h-5 text-emerald-600" />
                 </div>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Manage<br />Inventory
+                <h4 className="text-xs font-bold text-slate-900">Intake &amp; Silo Stock</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Real-time Fat/SNF calculations &amp; auto stock deduction.
                 </p>
               </div>
 
-              <div className="text-center group cursor-default">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center mx-auto mb-2 shadow-2xs group-hover:scale-105 transition">
-                  <Users className="w-5 h-5 text-emerald-600" />
+              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <Truck className="w-5 h-5 text-sky-600" />
                 </div>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Handle<br />Customers
+                <h4 className="text-xs font-bold text-slate-900">Early Morning Dispatch</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  GPS-sequenced crates &amp; instant proof of delivery.
                 </p>
               </div>
 
-              <div className="text-center group cursor-default">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center mx-auto mb-2 shadow-2xs group-hover:scale-105 transition">
-                  <Truck className="w-5 h-5 text-emerald-600" />
+              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <Users className="w-5 h-5 text-amber-700" />
                 </div>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Track<br />Deliveries
+                <h4 className="text-xs font-bold text-slate-900">Smart Subscriptions</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Vacation pauses, extra milk, and 10:00 PM cutoff locks.
                 </p>
               </div>
 
-              <div className="text-center group cursor-default">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center mx-auto mb-2 shadow-2xs group-hover:scale-105 transition">
-                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <BarChart3 className="w-5 h-5 text-[#0F766E]" />
                 </div>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Get<br />Reports
+                <h4 className="text-xs font-bold text-slate-900">WhatsApp &amp; UPI Billing</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  Automated PDF invoices with 1-click payment links.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Spacer allowing background milk cans on wooden table to show through */}
-          <div className="relative h-44 xl:h-52 max-w-md pointer-events-none" />
+          {/* Bottom Trust & Compliance Bar */}
+          <div className="pt-4 border-t border-stone-200/60 flex items-center gap-6 text-[11px] text-slate-500 font-medium">
+            <div className="flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-emerald-600" />
+              <span>FSSAI &amp; ISO 22000 Ready</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>256-Bit Bank-Grade Security</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              <span>99.8% On-Time Dispatch</span>
+            </div>
+          </div>
         </div>
 
         {/* ================= RIGHT COLUMN: AUTH CARD (Mobile & Desktop) ================= */}
-        <div className="w-full max-w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-6">
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center py-2 sm:py-6">
           
-          {/* Mobile Header Branding (Visible on mobile only) */}
-          <div className="lg:hidden text-center pt-1 pb-3 px-2 space-y-1.5 w-full">
-            <div className="w-13 h-13 rounded-2xl overflow-hidden shadow-xs border border-emerald-200/70 bg-white p-1 mx-auto">
+          {/* Mobile Header Branding */}
+          <div className="lg:hidden text-center pb-4 px-2 space-y-1.5 w-full">
+            <div className="w-13 h-13 rounded-2xl overflow-hidden shadow-md border border-emerald-200/80 bg-white p-1.5 mx-auto">
               <Image
                 src="/images/dairypulse-badge.png"
                 alt="DairyPulse"
@@ -508,7 +590,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
-                Dairy<span className="text-emerald-600">Pulse</span>
+                Dairy<span className="text-[#0F766E]">Pulse</span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-1">
                 Aapke Dairy Business ka Smart Saathi
@@ -516,17 +598,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Main Card Container */}
-          <div
-            className={`w-full sm:max-w-[490px] lg:max-w-[530px] sm:mx-auto relative z-20 transition-all ${
-              activeTab === 'signin'
-                ? 'bg-transparent sm:bg-white sm:rounded-3xl sm:shadow-xl sm:shadow-emerald-950/5 sm:border sm:border-slate-200/80 p-0 sm:p-7'
-                : 'bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-slate-200/80 p-4 sm:p-7'
-            }`}
-          >
+          {/* Main Card Container with Modern Glassmorphism */}
+          <div className="w-full max-w-md sm:max-w-[490px] lg:max-w-[530px] bg-white/95 backdrop-blur-md rounded-3xl shadow-xl shadow-stone-900/5 border border-stone-200/90 p-5 sm:p-7 relative z-20 transition-all">
             
-            {/* 3 Top Tabs: Sign In | Customer Sign Up | Register Dairy (Desktop & Tablet) */}
-            <div className="hidden sm:grid bg-stone-100 p-1 rounded-2xl border border-stone-200/80 grid-cols-3 gap-1 mb-6 text-xs font-semibold">
+            {/* 3 Top Segmented Tabs */}
+            <div className="grid bg-stone-100/90 p-1 rounded-2xl border border-stone-200/80 grid-cols-3 gap-1 mb-5 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => {
@@ -534,14 +610,14 @@ export default function LoginPage() {
                   setErrorMessage(null);
                   setNotFoundPrompt(false);
                 }}
-                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'signin'
                     ? 'bg-[#0F766E] text-white shadow-xs font-bold'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <User className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">Sign In</span>
+                <span className="truncate">Sign In</span>
               </button>
 
               <button
@@ -553,14 +629,14 @@ export default function LoginPage() {
                   setCustSuccess(null);
                   refreshDairies();
                 }}
-                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'customer'
                     ? 'bg-[#0F766E] text-white shadow-xs font-bold'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">Customer Sign Up</span>
+                <span className="truncate">Customer Sign Up</span>
               </button>
 
               <button
@@ -570,24 +646,24 @@ export default function LoginPage() {
                   setErrorMessage(null);
                   setDairySuccess(null);
                 }}
-                className={`py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   activeTab === 'dairy'
                     ? 'bg-[#0F766E] text-white shadow-xs font-bold'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5 shrink-0" />
-                <span className="whitespace-nowrap">Register Dairy</span>
+                <span className="truncate">Register Dairy</span>
               </button>
             </div>
 
             {/* Mobile Header when in Registration Tabs */}
             {activeTab !== 'signin' && (
-              <div className="sm:hidden flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+              <div className="flex items-center justify-between pb-3.5 border-b border-stone-100 mb-4">
                 <button
                   type="button"
                   onClick={() => setActiveTab('signin')}
-                  className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                  className="flex items-center gap-1.5 text-xs font-bold text-[#0F766E] hover:text-teal-800 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Sign In</span>
@@ -600,15 +676,15 @@ export default function LoginPage() {
 
             {/* ================= TAB 1: SIGN IN ================= */}
             {activeTab === 'signin' && (
-              <form onSubmit={handleLoginSubmit} className="space-y-3 sm:space-y-4">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
                 
                 {/* Active Session Warning / Switcher */}
                 {user && (
-                  <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between text-xs animate-in fade-in duration-150">
+                  <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 flex items-center justify-between text-xs animate-in fade-in duration-150">
                     <div className="flex items-center gap-2 truncate pr-2 min-w-0">
-                      <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                       <span className="text-amber-900 truncate text-[11px] sm:text-xs font-medium">
-                        Currently signed in as: <strong>{user.name}</strong> ({user.role})
+                        Active Session: <strong>{user.name}</strong> ({user.role})
                       </span>
                     </div>
                     <button
@@ -617,77 +693,114 @@ export default function LoginPage() {
                         await logout();
                         window.location.reload();
                       }}
-                      className="text-[11px] sm:text-xs font-bold text-rose-700 hover:text-rose-900 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs hover:bg-rose-50 transition cursor-pointer shrink-0"
+                      className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs hover:bg-rose-50 transition cursor-pointer shrink-0"
                     >
                       Log Out
                     </button>
                   </div>
                 )}
 
-                {/* Heading (Desktop only, matches Mockup 1) */}
-                <div className="hidden sm:block text-center mb-4 sm:mb-5">
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Welcome to <span className="text-slate-900">Dairy</span><span className="text-emerald-600">Pulse</span>
-                  </h2>
+                {/* Heading */}
+                <div className="text-center mb-1">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Welcome to <span className="text-slate-900">Dairy</span><span className="text-[#0F766E]">Pulse</span>
+                  </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Sign in to access your dairy management dashboard
+                    Sign in to access your dairy management workspace
                   </p>
+                </div>
+
+                {/* Quick 1-Click Demo Fill Strip */}
+                <div className="bg-stone-50 border border-stone-200/70 rounded-2xl p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      <span>One-Click Demo Fill:</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">Auto-populates credentials</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoFill('OWNER')}
+                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-teal-400 hover:bg-teal-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <ShieldCheck className="w-3 h-3 text-teal-600" />
+                      <span>Owner</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoFill('DELIVERY')}
+                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-sky-400 hover:bg-sky-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Truck className="w-3 h-3 text-sky-600" />
+                      <span>Rider</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoFill('CUSTOMER')}
+                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-amber-400 hover:bg-amber-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Users className="w-3 h-3 text-amber-600" />
+                      <span>Customer</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Select Your Role */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1.5 sm:mb-2">
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
                     Select Your Role
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
-                    {/* Admin */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Admin / Owner */}
                     <button
                       type="button"
                       onClick={() => handleSelectRole('OWNER')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'OWNER'
-                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'OWNER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0F766E] text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-100/70 text-teal-700 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-teal-700" />
+                      <div className="w-8 h-8 rounded-xl bg-teal-100/70 text-[#0F766E] flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Admin</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'OWNER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
+                        <span className={`block text-[11px] truncate ${selectedRole === 'OWNER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
                           Dairy Owner
                         </span>
                       </div>
                     </button>
 
-                    {/* Rider */}
+                    {/* Rider / Delivery */}
                     <button
                       type="button"
                       onClick={() => handleSelectRole('DELIVERY')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'DELIVERY'
-                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'DELIVERY' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0F766E] text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-sky-100/70 text-sky-700 flex items-center justify-center shrink-0">
-                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-sky-700" />
+                      <div className="w-8 h-8 rounded-xl bg-sky-100/70 text-sky-700 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4 text-sky-700" />
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Rider</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'DELIVERY' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
-                          Delivery Staff
+                        <span className={`block text-[11px] truncate ${selectedRole === 'DELIVERY' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
+                          Delivery Fleet
                         </span>
                       </div>
                     </button>
@@ -696,24 +809,24 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => handleSelectRole('CUSTOMER')}
-                      className={`relative p-2 sm:p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 sm:gap-1.5 cursor-pointer min-w-0 ${
+                      className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'CUSTOMER'
-                          ? 'border-2 border-teal-600 bg-teal-50/70 text-teal-950 shadow-2xs'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
                       {selectedRole === 'CUSTOMER' && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0F766E] text-white flex items-center justify-center">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </div>
                       )}
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-100/70 text-amber-800 flex items-center justify-center shrink-0">
-                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
+                      <div className="w-8 h-8 rounded-xl bg-amber-100/70 text-amber-800 flex items-center justify-center shrink-0">
+                        <Users className="w-4 h-4 text-amber-700" />
                       </div>
                       <div className="w-full min-w-0">
                         <span className="block text-xs sm:text-sm font-bold text-stone-900 truncate">Customer</span>
-                        <span className={`block text-xs truncate ${selectedRole === 'CUSTOMER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
-                          Milk Subscriber
+                        <span className={`block text-[11px] truncate ${selectedRole === 'CUSTOMER' ? 'text-teal-800 font-semibold' : 'text-stone-500'}`}>
+                          Subscriber
                         </span>
                       </div>
                     </button>
@@ -722,10 +835,15 @@ export default function LoginPage() {
 
                 {/* Authentication Method Toggle */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                    Authentication Method
-                  </label>
-                  <div className="bg-stone-100 p-1 rounded-2xl border border-stone-200/80 grid grid-cols-2 gap-1 text-xs font-semibold">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Authentication Method
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {authMode === 'password' ? 'Password login' : 'Instant OTP verification'}
+                    </span>
+                  </div>
+                  <div className="bg-stone-100/90 p-1 rounded-2xl border border-stone-200/80 grid grid-cols-2 gap-1 text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => {
@@ -762,15 +880,19 @@ export default function LoginPage() {
 
                 {/* Email or Phone Number Input */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {selectedRole === 'DELIVERY' ? 'Rider Phone Number or Email' : 'Email or Phone Number'}
+                  <label htmlFor="loginId" className="block text-xs font-bold text-slate-700 mb-1">
+                    {selectedRole === 'DELIVERY' ? 'Rider Phone Number or Email' : 'Email or Mobile Number'}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <User className="w-4 h-4" />
                     </div>
                     <input
+                      id="loginId"
+                      name="username"
                       type={authMode === 'phone_otp' ? 'tel' : 'text'}
+                      autoComplete="username"
+                      inputMode={authMode === 'phone_otp' ? 'tel' : 'text'}
                       required
                       value={loginId}
                       onChange={(e) => {
@@ -779,10 +901,10 @@ export default function LoginPage() {
                       }}
                       placeholder={
                         selectedRole === 'DELIVERY'
-                          ? 'Enter 10-digit mobile number or email'
-                          : 'owner@dairypulse.in or +91 98765 43210'
+                          ? '+91 98220 11984 or rider@gmail.com'
+                          : 'owner@dairypulse.farm or +91 98200 44551'
                       }
-                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] transition shadow-2xs font-medium"
                     />
                   </div>
                 </div>
@@ -791,12 +913,22 @@ export default function LoginPage() {
                 {authMode === 'password' && (
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold text-slate-700">
+                      <label htmlFor="passwordInput" className="block text-xs font-bold text-slate-700">
                         Password
                       </label>
                       {selectedRole === 'CUSTOMER' && (
                         <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          Default: cust123
+                          Demo: cust123
+                        </span>
+                      )}
+                      {selectedRole === 'DELIVERY' && (
+                        <span className="text-[10px] text-sky-700 font-semibold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                          Demo: rider123
+                        </span>
+                      )}
+                      {selectedRole === 'OWNER' && (
+                        <span className="text-[10px] text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                          Demo: dairy123
                         </span>
                       )}
                     </div>
@@ -805,15 +937,19 @@ export default function LoginPage() {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        id="passwordInput"
+                        name="password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs font-medium"
+                        className="w-full pl-10 pr-10 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] transition shadow-2xs font-medium"
                       />
                       <button
                         type="button"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition cursor-pointer"
                       >
@@ -825,33 +961,47 @@ export default function LoginPage() {
 
                 {/* Phone OTP Step 2: 6-digit Code */}
                 {authMode === 'phone_otp' && otpSent && (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      6-Digit SMS Verification Code
-                    </label>
+                  <div className="space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="otpCodeInput" className="block text-xs font-bold text-slate-700">
+                        6-Digit SMS Verification Code
+                      </label>
+                      {otpCountdown > 0 ? (
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          Resend in {otpCountdown}s
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setOtpCountdown(45);
+                            await loginWithPhoneOtp(loginId.trim());
+                            setSuccessMessage(`New code sent to ${loginId}`);
+                          }}
+                          className="text-[11px] text-[#0F766E] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          <RotateCw className="w-3 h-3" />
+                          <span>Resend OTP</span>
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        id="otpCodeInput"
+                        name="oneTimeCode"
                         type="text"
                         maxLength={6}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
                         required
                         value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
-                        placeholder="123456"
-                        className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-emerald-300 rounded-xl text-sm font-mono tracking-widest font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition shadow-2xs"
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="••••••"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-emerald-300 rounded-xl text-base font-mono tracking-widest font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0F766E] transition shadow-2xs text-center"
                       />
-                    </div>
-                    <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1.5">
-                      <span>Didn't receive code?</span>
-                      <button
-                        type="button"
-                        onClick={() => setOtpSent(false)}
-                        className="text-emerald-600 font-bold hover:underline cursor-pointer"
-                      >
-                        Resend OTP
-                      </button>
                     </div>
                   </div>
                 )}
@@ -863,18 +1013,14 @@ export default function LoginPage() {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer accent-emerald-600"
+                      className="w-4 h-4 rounded text-[#0F766E] focus:ring-[#0F766E] border-stone-300 cursor-pointer accent-[#0F766E]"
                     />
                     <span>Remember me</span>
                   </label>
                   <button
                     type="button"
-                    onClick={() =>
-                      setErrorMessage(
-                        'To reset your password, please switch to Phone OTP or contact support@dairypulse.in.'
-                      )
-                    }
-                    className="text-emerald-700 hover:text-emerald-800 font-semibold hover:underline cursor-pointer text-xs"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[#0F766E] hover:text-teal-800 font-semibold hover:underline cursor-pointer text-xs"
                   >
                     Forgot password?
                   </button>
@@ -908,7 +1054,7 @@ export default function LoginPage() {
                             setNotFoundPrompt(false);
                             setErrorMessage(null);
                           }}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
+                          className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
                         >
                           <span>Create Customer Account</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -928,7 +1074,7 @@ export default function LoginPage() {
                             setNotFoundPrompt(false);
                             setErrorMessage(null);
                           }}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
+                          className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
                         >
                           <span>Register New Dairy Farm</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -976,9 +1122,9 @@ export default function LoginPage() {
                                   setIsSubmitting(false);
                                 }
                               }}
-                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
+                              className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
                             >
-                              <span>Auto-Create & Sign In as Rider</span>
+                              <span>Auto-Create &amp; Sign In as Rider</span>
                               <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                             <a
@@ -997,14 +1143,14 @@ export default function LoginPage() {
 
                 {/* Error and Success Messages */}
                 {errorMessage && !notFoundPrompt && (
-                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-in fade-in">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
 
                 {successMessage && (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>{successMessage}</span>
                   </div>
@@ -1014,27 +1160,34 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 sm:py-3.5 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <span>
-                    {isSubmitting
-                      ? 'Signing In...'
-                      : authMode === 'phone_otp'
-                      ? otpSent
-                        ? 'Verify & Sign In'
-                        : 'Send OTP Code'
-                      : 'Sign In to Dashboard'}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <>
+                      <RotateCw className="w-4 h-4 animate-spin" />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {authMode === 'phone_otp'
+                          ? otpSent
+                            ? 'Verify & Sign In'
+                            : 'Send OTP Code'
+                          : 'Sign In to Dashboard'}
+                      </span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
 
                 {/* Divider */}
-                <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t border-slate-200"></div>
-                  <span className="flex-shrink mx-3 text-xs font-semibold text-slate-600">
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-stone-200"></div>
+                  <span className="flex-shrink mx-3 text-xs font-semibold text-slate-400">
                     Or continue with
                   </span>
-                  <div className="flex-grow border-t border-slate-200"></div>
+                  <div className="flex-grow border-t border-stone-200"></div>
                 </div>
 
                 {/* Google Sign In */}
@@ -1042,7 +1195,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isSubmitting}
-                  className="w-full py-2.5 sm:py-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-700 transition flex items-center justify-center gap-2.5 shadow-2xs hover:border-slate-300 cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm font-bold text-slate-700 transition flex items-center justify-center gap-2.5 shadow-2xs hover:border-stone-300 cursor-pointer disabled:opacity-50"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path
@@ -1065,8 +1218,8 @@ export default function LoginPage() {
                   <span>Sign in with Google</span>
                 </button>
 
-                {/* Mobile Registration Switcher (Visible on Mobile Only) */}
-                <div className="sm:hidden text-center text-xs text-slate-500 pt-2 space-y-1 select-none">
+                {/* Mobile Registration Switcher */}
+                <div className="text-center text-xs text-slate-500 pt-2 space-y-1 select-none">
                   <p>Don&apos;t have an account?</p>
                   <div className="flex items-center justify-center gap-2">
                     <button
@@ -1076,7 +1229,7 @@ export default function LoginPage() {
                         setCustomerStep(1);
                         setErrorMessage(null);
                       }}
-                      className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                      className="text-[#0F766E] font-bold hover:underline cursor-pointer"
                     >
                       Sign Up as Customer
                     </button>
@@ -1087,9 +1240,9 @@ export default function LoginPage() {
                         setActiveTab('dairy');
                         setErrorMessage(null);
                       }}
-                      className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                      className="text-[#0F766E] font-bold hover:underline cursor-pointer"
                     >
-                      Register Dairy
+                      Register Dairy Farm
                     </button>
                   </div>
                 </div>
@@ -1100,7 +1253,7 @@ export default function LoginPage() {
             {activeTab === 'customer' && (
               <div>
                 {custSuccess ? (
-                  <div className="py-6 text-center space-y-4">
+                  <div className="py-6 text-center space-y-4 animate-in fade-in">
                     <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
@@ -1111,18 +1264,18 @@ export default function LoginPage() {
                       </p>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-left space-y-2">
+                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs text-left space-y-2">
                       <div className="flex justify-between">
                         <span className="text-slate-500">Selected Dairy:</span>
-                        <span className="font-bold text-emerald-700">{custSuccess.dairyName}</span>
+                        <span className="font-bold text-[#0F766E]">{custSuccess.dairyName}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Customer ID:</span>
                         <span className="font-mono font-bold text-slate-900">{custSuccess.id}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Login Mobile Phone:</span>
-                        <a href={`tel:${custSuccess.phone}`} className="font-mono font-bold text-emerald-700 hover:underline">{custSuccess.phone}</a>
+                        <span className="text-slate-500">Login Mobile:</span>
+                        <span className="font-mono font-bold text-[#0F766E]">{custSuccess.phone}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Subscription Status:</span>
@@ -1143,23 +1296,23 @@ export default function LoginPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* Step Progress Bar */}
-                    <div className="pb-3 border-b border-slate-100">
+                    <div className="pb-3 border-b border-stone-100">
                       <div className="flex items-center justify-between text-[11px] font-bold mb-2">
-                        <span className={customerStep === 1 ? 'text-emerald-600' : 'text-slate-500'}>
-                          1. Create Account
+                        <span className={customerStep === 1 ? 'text-[#0F766E]' : 'text-slate-400'}>
+                          1. Profile
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                        <span className={customerStep === 2 ? 'text-emerald-600' : 'text-slate-500'}>
+                        <span className={customerStep === 2 ? 'text-[#0F766E]' : 'text-slate-400'}>
                           2. Select Dairy
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                        <span className={customerStep === 3 ? 'text-emerald-600' : 'text-slate-500'}>
-                          3. Address & Milk
+                        <span className={customerStep === 3 ? 'text-[#0F766E]' : 'text-slate-400'}>
+                          3. Milk &amp; Address
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
                         <div
-                          className="bg-emerald-600 h-full transition-all duration-300"
+                          className="bg-[#0F766E] h-full transition-all duration-300 rounded-full"
                           style={{ width: customerStep === 1 ? '33%' : customerStep === 2 ? '66%' : '100%' }}
                         />
                       </div>
@@ -1169,7 +1322,7 @@ export default function LoginPage() {
                     {customerStep === 1 && (
                       <form onSubmit={handleStep1Next} className="space-y-3.5">
                         <div className="text-xs text-slate-500">
-                          Enter your contact details to create your customer profile.
+                          Enter your contact details to create your customer subscription profile.
                         </div>
 
                         <div>
@@ -1182,7 +1335,7 @@ export default function LoginPage() {
                             value={custName}
                             onChange={(e) => setCustName(e.target.value)}
                             placeholder="e.g. Priya Kulkarni"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                            className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                           />
                         </div>
 
@@ -1194,10 +1347,11 @@ export default function LoginPage() {
                             <input
                               type="tel"
                               required
+                              inputMode="tel"
                               value={custPhone}
                               onChange={(e) => setCustPhone(e.target.value)}
                               placeholder="+91 98..."
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                              className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                             />
                           </div>
                           <div>
@@ -1209,7 +1363,7 @@ export default function LoginPage() {
                               value={custEmail}
                               onChange={(e) => setCustEmail(e.target.value)}
                               placeholder="priya@example.com"
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                              className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                             />
                           </div>
                         </div>
@@ -1223,8 +1377,8 @@ export default function LoginPage() {
                             required
                             value={custPassword}
                             onChange={(e) => setCustPassword(e.target.value)}
-                            placeholder="Create a password"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                            placeholder="Create a password (min 6 characters)"
+                            className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                           />
                         </div>
 
@@ -1249,16 +1403,16 @@ export default function LoginPage() {
                     {customerStep === 2 && (
                       <div className="space-y-3.5">
                         <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>Select the dairy farm to deliver your daily fresh milk:</span>
+                          <span>Choose your local dairy farm partner:</span>
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => refreshDairies()}
-                              className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold underline cursor-pointer"
+                              className="text-[10px] text-[#0F766E] hover:underline font-semibold cursor-pointer"
                             >
                               Refresh
                             </button>
-                            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
+                            <span className="font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
                               {dairies.length} available
                             </span>
                           </div>
@@ -1271,7 +1425,7 @@ export default function LoginPage() {
                             value={dairySearch}
                             onChange={(e) => setDairySearch(e.target.value)}
                             placeholder="Search dairy farm, owner, or city..."
-                            className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                            className="w-full pl-8 pr-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#0F766E] focus:bg-white transition"
                           />
                           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
                         </div>
@@ -1288,7 +1442,7 @@ export default function LoginPage() {
                             <button
                               type="button"
                               onClick={() => setActiveTab('dairy')}
-                              className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-xs hover:bg-emerald-700 transition cursor-pointer"
+                              className="px-3 py-1.5 bg-[#0F766E] text-white rounded-xl text-xs font-semibold shadow-xs hover:bg-teal-800 transition cursor-pointer"
                             >
                               Register First Dairy Farm
                             </button>
@@ -1314,16 +1468,16 @@ export default function LoginPage() {
                                     onClick={() => setSelectedDairyName(dairy.name)}
                                     className={`p-3 rounded-2xl border text-xs cursor-pointer transition flex items-start justify-between gap-3 ${
                                       isSelected
-                                        ? 'border-emerald-600 bg-emerald-50/70 shadow-xs'
-                                        : 'border-slate-200 hover:border-emerald-200 hover:bg-slate-50'
+                                        ? 'border-[#0F766E] bg-teal-50/70 shadow-xs'
+                                        : 'border-stone-200 hover:border-teal-200 hover:bg-stone-50'
                                     }`}
                                   >
                                     <div className="flex items-start gap-2.5">
                                       <div
                                         className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                                           isSelected
-                                            ? 'bg-emerald-600 text-white'
-                                            : 'bg-slate-100 text-slate-600'
+                                            ? 'bg-[#0F766E] text-white'
+                                            : 'bg-stone-100 text-stone-600'
                                         }`}
                                       >
                                         <Building2 className="w-4 h-4" />
@@ -1332,7 +1486,7 @@ export default function LoginPage() {
                                         <div className="flex items-center gap-1.5">
                                           <h4 className="font-bold text-slate-900">{dairy.name}</h4>
                                           {isSelected && (
-                                            <BadgeCheck className="w-4 h-4 text-emerald-600 fill-emerald-100" />
+                                            <BadgeCheck className="w-4 h-4 text-[#0F766E] fill-teal-100" />
                                           )}
                                         </div>
                                         <p className="text-[10px] text-slate-500 mt-0.5">
@@ -1352,7 +1506,7 @@ export default function LoginPage() {
                                         name="dairy_choice"
                                         checked={isSelected}
                                         onChange={() => setSelectedDairyName(dairy.name)}
-                                        className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 accent-emerald-600"
+                                        className="w-4 h-4 text-[#0F766E] focus:ring-[#0F766E] border-stone-300 accent-[#0F766E]"
                                       />
                                     </div>
                                   </div>
@@ -1365,7 +1519,7 @@ export default function LoginPage() {
                           <button
                             type="button"
                             onClick={() => setCustomerStep(1)}
-                            className="w-1/3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-1/3 py-2 border border-stone-200 hover:bg-stone-50 text-slate-600 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <ArrowLeft className="w-3.5 h-3.5" />
                             <span>Back</span>
@@ -1376,7 +1530,7 @@ export default function LoginPage() {
                             disabled={!selectedDairyName}
                             className="w-2/3 py-2 bg-[#0F766E] hover:bg-[#0D6560] active:bg-[#115E59] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                           >
-                            <span>Next: Address & Milk</span>
+                            <span>Next: Address &amp; Milk</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -1386,14 +1540,14 @@ export default function LoginPage() {
                     {/* STEP 3: ADDRESS & MILK REQUIREMENTS */}
                     {customerStep === 3 && (
                       <form onSubmit={handleStep3Submit} className="space-y-3.5">
-                        <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center justify-between">
+                        <div className="bg-teal-50/70 p-2.5 rounded-xl border border-teal-200/80 text-[11px] text-teal-900 flex items-center justify-between">
                           <span>
                             Delivering from: <strong>{selectedDairyName}</strong>
                           </span>
                           <button
                             type="button"
                             onClick={() => setCustomerStep(2)}
-                            className="text-emerald-700 underline font-bold cursor-pointer"
+                            className="text-[#0F766E] underline font-bold cursor-pointer"
                           >
                             Change
                           </button>
@@ -1401,7 +1555,7 @@ export default function LoginPage() {
 
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Delivery Address (Doorstep) *
+                            Doorstep Delivery Address *
                           </label>
                           <input
                             type="text"
@@ -1409,7 +1563,7 @@ export default function LoginPage() {
                             value={custAddress}
                             onChange={(e) => setCustAddress(e.target.value)}
                             placeholder="Flat / House No., Wing, Society / Building Name"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                            className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                           />
                         </div>
 
@@ -1438,18 +1592,18 @@ export default function LoginPage() {
                               required
                               value={custArea}
                               onChange={(e) => setCustArea(e.target.value)}
-                              placeholder="e.g. Sector 14, Civil Lines, or Colony Name"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                              placeholder="e.g. Sector 14, Hinjawadi"
+                              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0F766E]"
                             />
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
-                              Preferred Milk Variant
+                              Milk Variant
                             </label>
                             <select
                               value={custVariant}
                               onChange={(e) => setCustVariant(e.target.value as MilkVariant)}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0F766E]"
                             >
                               {products && products.length > 0 ? (
                                 products.map((p) => (
@@ -1477,7 +1631,7 @@ export default function LoginPage() {
                             <select
                               value={custQuantity}
                               onChange={(e) => setCustQuantity(e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0F766E]"
                             >
                               <option value="0.5">0.5 Liter (Small)</option>
                               <option value="1.0">1.0 Liter (Standard)</option>
@@ -1494,11 +1648,11 @@ export default function LoginPage() {
                             <select
                               value={custSlot}
                               onChange={(e) => setCustSlot(e.target.value as any)}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0F766E]"
                             >
                               <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 - 7:30 AM)</option>
                               <option value="Evening (5:30 PM - 7:00 PM)">Evening (5:30 - 7:00 PM)</option>
-                              <option value="Both">Both (Morning & Evening)</option>
+                              <option value="Both">Both (Morning &amp; Evening)</option>
                             </select>
                           </div>
                         </div>
@@ -1514,7 +1668,7 @@ export default function LoginPage() {
                           <button
                             type="button"
                             onClick={() => setCustomerStep(2)}
-                            className="w-1/3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-1/3 py-2 border border-stone-200 hover:bg-stone-50 text-slate-600 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <ArrowLeft className="w-3.5 h-3.5" />
                             <span>Back</span>
@@ -1539,7 +1693,7 @@ export default function LoginPage() {
             {activeTab === 'dairy' && (
               <div>
                 {dairySuccess ? (
-                  <div className="py-6 text-center space-y-4">
+                  <div className="py-6 text-center space-y-4 animate-in fade-in">
                     <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
@@ -1550,18 +1704,18 @@ export default function LoginPage() {
                       </p>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-left space-y-2">
+                    <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-xs text-left space-y-2">
                       <div className="flex justify-between">
                         <span className="text-slate-500">Dairy Name:</span>
-                        <span className="font-bold text-emerald-700">{dairySuccess.name}</span>
+                        <span className="font-bold text-[#0F766E]">{dairySuccess.name}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Owner / Manager:</span>
                         <span className="font-medium text-slate-800">{dairySuccess.ownerName}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Login ID / Email:</span>
-                        <a href={`mailto:${dairySuccess.email}`} className="font-mono font-bold text-emerald-700 hover:underline">{dairySuccess.email}</a>
+                        <span className="text-slate-500">Admin Login:</span>
+                        <span className="font-mono font-bold text-[#0F766E]">{dairySuccess.email}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Plant GPS:</span>
@@ -1596,8 +1750,8 @@ export default function LoginPage() {
                         required
                         value={newDairyName}
                         onChange={(e) => setNewDairyName(e.target.value)}
-                        placeholder="e.g. Shivneri Dairy Farm"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                        placeholder="e.g. Shivneri Organic Dairy Farm"
+                        className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                       />
                     </div>
 
@@ -1612,7 +1766,7 @@ export default function LoginPage() {
                           value={newOwnerName}
                           onChange={(e) => setNewOwnerName(e.target.value)}
                           placeholder="e.g. Vikram Gaikwad"
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                          className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                         />
                       </div>
                       <div>
@@ -1625,7 +1779,7 @@ export default function LoginPage() {
                           value={newDairyCity}
                           onChange={(e) => setNewDairyCity(e.target.value)}
                           placeholder="Pune"
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                          className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                         />
                       </div>
                     </div>
@@ -1638,10 +1792,11 @@ export default function LoginPage() {
                         <input
                           type="tel"
                           required
+                          inputMode="tel"
                           value={newDairyPhone}
                           onChange={(e) => setNewDairyPhone(e.target.value)}
                           placeholder="+91 98..."
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                          className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                         />
                       </div>
                       <div>
@@ -1654,7 +1809,7 @@ export default function LoginPage() {
                           value={newDairyEmail}
                           onChange={(e) => setNewDairyEmail(e.target.value)}
                           placeholder="owner@shivneri.com"
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                          className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                         />
                       </div>
                     </div>
@@ -1668,7 +1823,7 @@ export default function LoginPage() {
                         value={newDairyAddress}
                         onChange={(e) => setNewDairyAddress(e.target.value)}
                         placeholder="e.g. Gate No 142, Khed-Shivapur Road, Pune"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                        className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                       />
                     </div>
 
@@ -1697,7 +1852,7 @@ export default function LoginPage() {
                         value={newDairyPassword}
                         onChange={(e) => setNewDairyPassword(e.target.value)}
                         placeholder="Create secure admin password"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
+                        className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-[#0F766E] font-medium"
                       />
                     </div>
 
@@ -1722,16 +1877,41 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Mobile Bottom Spacing for Pastoral Background with Cows & Barn */}
-          <div className="lg:hidden h-28 sm:h-32 w-full pointer-events-none" />
-
-          {/* Bottom Footnote (Desktop only) */}
-          <div className="hidden lg:block text-center text-[11px] text-slate-400 mt-5 space-y-0.5">
+          {/* Bottom Footnote */}
+          <div className="text-center text-[11px] text-slate-500 mt-4 space-y-0.5">
             <p>DairyPulse &bull; Aapke Dairy Business ka Smart Saathi</p>
           </div>
         </div>
 
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 space-y-3 animate-in zoom-in-95">
+            <div className="flex items-center gap-2 text-[#0F766E]">
+              <HelpCircle className="w-5 h-5" />
+              <h4 className="font-bold text-slate-900 text-sm">Reset or Recover Password</h4>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              To instantly access your account without a password:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+              <li>Switch to <strong>Phone OTP</strong> mode to receive a 6-digit one-time passcode on your registered mobile.</li>
+              <li>Or contact your dairy system administrator at <a href="mailto:support@dairypulse.in" className="text-[#0F766E] font-semibold underline">support@dairypulse.in</a>.</li>
+            </ul>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="px-4 py-2 bg-[#0F766E] text-white rounded-xl text-xs font-bold hover:bg-teal-800 transition cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
