@@ -30,19 +30,17 @@ import {
   UserPlus,
   ExternalLink,
   Sparkles,
-  Zap,
   RotateCw,
   Award,
-  Clock,
-  HelpCircle,
   CheckCircle,
+  HelpCircle,
 } from 'lucide-react';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, logout, login, loginWithGoogle, loginWithPhoneOtp, verifyPhoneOtp } = useAuth();
-  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products, addStaff } = useDairyPulse();
+  const { dairies, addDairy, addCustomer, addSubscription, refreshDairies, products } = useDairyPulse();
 
   // Tab: 'signin' | 'customer' | 'dairy'
   const [activeTab, setActiveTab] = useState<'signin' | 'customer' | 'dairy'>('signin');
@@ -155,25 +153,6 @@ export default function LoginPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
     setNotFoundPrompt(false);
-  };
-
-  // Quick Demo Autofill Helper
-  const handleQuickDemoFill = (role: UserRole) => {
-    setSelectedRole(role);
-    setAuthMode('password');
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setNotFoundPrompt(false);
-    if (role === 'OWNER') {
-      setLoginId('admin@dairypulse.farm');
-      setPassword('dairy123');
-    } else if (role === 'DELIVERY') {
-      setLoginId('+91 98220 11984');
-      setPassword('rider123');
-    } else if (role === 'CUSTOMER') {
-      setLoginId('+91 98200 44551');
-      setPassword('cust123');
-    }
   };
 
   const redirectToRole = (role: UserRole) => {
@@ -359,7 +338,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     await login({
       loginId: custSuccess.phone,
-      password: custPassword || 'cust123',
+      password: custPassword,
       role: 'CUSTOMER',
     });
     router.push('/mobile/customer');
@@ -415,7 +394,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     await login({
       loginId: dairySuccess.email,
-      password: newDairyPassword || 'dairy123',
+      password: newDairyPassword,
       role: 'OWNER',
     });
     router.push('/');
@@ -428,31 +407,47 @@ export default function LoginPage() {
         description="Unified enterprise access for dairy plant owners, early-morning delivery fleets, and household milk subscribers."
       />
 
-      {/* Desktop Background Image */}
-      <div className="hidden lg:block fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <Image
-          src="/images/login-desktop-bg.jpg"
-          alt="DairyPulse Farm Background"
-          fill
-          sizes="100vw"
-          className="object-cover object-center"
-          priority
-        />
-        {/* Soft gradient scrim ensuring crystal clarity */}
-        <div className="absolute inset-0 bg-gradient-to-r from-stone-900/35 via-stone-900/10 to-stone-900/40 pointer-events-none" />
-      </div>
+      {/* Clean, Modern SaaS Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Soft top-left emerald atmospheric orb */}
+        <div className="absolute -top-32 -left-32 w-[620px] h-[620px] bg-emerald-500/6 rounded-full blur-3xl" />
+        
+        {/* Soft bottom-right teal atmospheric orb */}
+        <div className="absolute -bottom-36 -right-36 w-[680px] h-[680px] bg-teal-600/6 rounded-full blur-3xl" />
 
-      {/* Mobile Background Image */}
-      <div className="lg:hidden fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <Image
-          src="/images/login-mobile-bg.jpg"
-          alt="DairyPulse Mobile Pasture"
-          fill
-          sizes="100vw"
-          className="object-cover object-bottom"
-          priority
+        {/* Ambient pastoral landscape curves (SVG) */}
+        <svg
+          className="absolute -top-12 -left-24 w-[750px] h-[550px] text-emerald-100/40"
+          viewBox="0 0 600 600"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0 0C150 120 320 80 450 200C580 320 620 450 600 600H0V0Z"
+            fill="currentColor"
+          />
+        </svg>
+
+        <svg
+          className="absolute bottom-0 right-0 w-[900px] h-[480px] text-teal-100/30"
+          viewBox="0 0 1000 550"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0 320C200 240 400 350 650 220C900 90 980 180 1000 250V550H0V320Z"
+            fill="currentColor"
+          />
+        </svg>
+
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: `radial-gradient(#0F766E 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FEFBF6]/85 via-white/80 to-[#FEFBF6]/90 pointer-events-none" />
       </div>
 
       {/* Main Split Content Container */}
@@ -481,7 +476,7 @@ export default function LoginPage() {
                   </h2>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/90 text-emerald-800 border border-emerald-300/80 shadow-2xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
-                    v2.4 Live
+                    Enterprise Live
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 font-medium mt-1">
@@ -491,14 +486,14 @@ export default function LoginPage() {
             </div>
 
             {/* Social Proof Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs text-xs font-semibold text-slate-700">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs text-xs font-semibold text-slate-700">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
               <span>Trusted by <strong>120+ Dairies</strong> &amp; <strong>15,000+ Daily Households</strong></span>
             </div>
           </div>
 
           {/* Main Headline & Value Props */}
-          <div className="my-auto py-8 space-y-6 max-w-lg">
+          <div className="my-auto py-6 space-y-6 max-w-lg">
             <div className="space-y-3">
               <h1 className="text-4xl xl:text-5xl font-black text-slate-900 tracking-tight leading-[1.12]">
                 Run Your Entire <br />
@@ -512,46 +507,68 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* 4 Feature Cards */}
-            <div className="grid grid-cols-2 gap-3 pt-2 max-w-lg">
-              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                  <Milk className="w-5 h-5 text-emerald-600" />
+            {/* Clean Featured Milk Hero Illustration */}
+            <div className="relative pt-1 max-w-md">
+              <div className="relative overflow-hidden rounded-2xl border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/60 p-2 shadow-xs">
+                <Image
+                  src="/images/login-milk-hero-clean.png"
+                  alt="Fresh Dairy Can, Milk Bottles and Glass"
+                  width={450}
+                  height={226}
+                  className="w-full h-auto object-contain rounded-xl"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* 4 Feature Badges */}
+            <div className="grid grid-cols-2 gap-3 pt-1 max-w-md">
+              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/70 flex items-center justify-center shrink-0">
+                    <Milk className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Silo Stock</h4>
+                    <p className="text-[10px] text-slate-500">Fat/SNF calculations</p>
+                  </div>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900">Intake &amp; Silo Stock</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  Real-time Fat/SNF calculations &amp; auto stock deduction.
-                </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                  <Truck className="w-5 h-5 text-sky-600" />
+              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4 text-sky-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">5 AM Dispatch</h4>
+                    <p className="text-[10px] text-slate-500">GPS route sequencing</p>
+                  </div>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900">Early Morning Dispatch</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  GPS-sequenced crates &amp; instant proof of delivery.
-                </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                  <Users className="w-5 h-5 text-amber-700" />
+              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/70 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 text-amber-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Subscriptions</h4>
+                    <p className="text-[10px] text-slate-500">Vacation &amp; cutoffs</p>
+                  </div>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900">Smart Subscriptions</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  Vacation pauses, extra milk, and 10:00 PM cutoff locks.
-                </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all group">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/70 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                  <BarChart3 className="w-5 h-5 text-[#0F766E]" />
+              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/70 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-4 h-4 text-[#0F766E]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">UPI Billing</h4>
+                    <p className="text-[10px] text-slate-500">WhatsApp PDF ledger</p>
+                  </div>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900">WhatsApp &amp; UPI Billing</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  Automated PDF invoices with 1-click payment links.
-                </p>
               </div>
             </div>
           </div>
@@ -710,43 +727,6 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {/* Quick 1-Click Demo Fill Strip */}
-                <div className="bg-stone-50 border border-stone-200/70 rounded-2xl p-2.5 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                      <span>One-Click Demo Fill:</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">Auto-populates credentials</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickDemoFill('OWNER')}
-                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-teal-400 hover:bg-teal-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-                    >
-                      <ShieldCheck className="w-3 h-3 text-teal-600" />
-                      <span>Owner</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickDemoFill('DELIVERY')}
-                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-sky-400 hover:bg-sky-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-                    >
-                      <Truck className="w-3 h-3 text-sky-600" />
-                      <span>Rider</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickDemoFill('CUSTOMER')}
-                      className="py-1 px-2 rounded-lg bg-white border border-stone-200/80 hover:border-amber-400 hover:bg-amber-50/50 text-[11px] font-bold text-slate-700 transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-                    >
-                      <Users className="w-3 h-3 text-amber-600" />
-                      <span>Customer</span>
-                    </button>
-                  </div>
-                </div>
-
                 {/* Select Your Role */}
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
@@ -881,7 +861,7 @@ export default function LoginPage() {
                 {/* Email or Phone Number Input */}
                 <div>
                   <label htmlFor="loginId" className="block text-xs font-bold text-slate-700 mb-1">
-                    {selectedRole === 'DELIVERY' ? 'Rider Phone Number or Email' : 'Email or Mobile Number'}
+                    {selectedRole === 'DELIVERY' ? 'Rider Mobile Number or Email' : 'Email or Mobile Number'}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -901,8 +881,8 @@ export default function LoginPage() {
                       }}
                       placeholder={
                         selectedRole === 'DELIVERY'
-                          ? '+91 98220 11984 or rider@gmail.com'
-                          : 'owner@dairypulse.farm or +91 98200 44551'
+                          ? 'Enter 10-digit mobile number or email'
+                          : 'Enter your registered email or phone'
                       }
                       className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] transition shadow-2xs font-medium"
                     />
@@ -916,21 +896,6 @@ export default function LoginPage() {
                       <label htmlFor="passwordInput" className="block text-xs font-bold text-slate-700">
                         Password
                       </label>
-                      {selectedRole === 'CUSTOMER' && (
-                        <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          Demo: cust123
-                        </span>
-                      )}
-                      {selectedRole === 'DELIVERY' && (
-                        <span className="text-[10px] text-sky-700 font-semibold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
-                          Demo: rider123
-                        </span>
-                      )}
-                      {selectedRole === 'OWNER' && (
-                        <span className="text-[10px] text-teal-700 font-semibold bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                          Demo: dairy123
-                        </span>
-                      )}
                     </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -1084,56 +1049,23 @@ export default function LoginPage() {
                       {selectedRole === 'DELIVERY' && (
                         <div className="w-full space-y-2 pt-1">
                           <p className="text-[11px] text-amber-800">
-                            No rider account found for &quot;{notFoundId}&quot;. You can auto-create this rider now or open the staff portal.
+                            No rider account found for &quot;{notFoundId}&quot;. Delivery fleet accounts are provisioned by your dairy owner.
                           </p>
                           <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                setIsSubmitting(true);
-                                try {
-                                  const phoneVal = /\d{5,}/.test(notFoundId) ? notFoundId : '9876543210';
-                                  const emailVal = notFoundId.includes('@') ? notFoundId : undefined;
-                                  const riderName = notFoundId.includes('@') ? notFoundId.split('@')[0] : `Rider ${notFoundId.slice(-4)}`;
-                                  await addStaff({
-                                    name: riderName,
-                                    role: 'Delivery Rider',
-                                    phone: phoneVal,
-                                    email: emailVal,
-                                    password: password || 'rider123',
-                                    assignedArea: 'Main Delivery Route',
-                                    status: 'On Duty',
-                                    deliveriesToday: 0,
-                                    rating: 5.0,
-                                  });
-                                  setNotFoundPrompt(false);
-                                  setSuccessMessage('Rider created! Logging in now...');
-                                  const res = await login({
-                                    loginId: notFoundId,
-                                    password: password || 'rider123',
-                                    role: 'DELIVERY',
-                                  });
-                                  if (res.success) {
-                                    redirectToRole('DELIVERY');
-                                  }
-                                } catch (e: any) {
-                                  setErrorMessage(e.message || 'Auto-creation failed.');
-                                } finally {
-                                  setIsSubmitting(false);
-                                }
-                              }}
-                              className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs text-xs"
-                            >
-                              <span>Auto-Create &amp; Sign In as Rider</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
                             <a
                               href="/staff"
                               className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition flex items-center gap-1 text-xs"
                             >
-                              <span>Staff Portal</span>
+                              <span>Open Staff Directory</span>
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotModal(true)}
+                              className="text-xs text-[#0F766E] font-semibold hover:underline cursor-pointer"
+                            >
+                              Contact Support
+                            </button>
                           </div>
                         </div>
                       )}
@@ -1875,6 +1807,18 @@ export default function LoginPage() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Mobile Bottom Pasture Scene */}
+          <div className="lg:hidden w-full max-w-md sm:max-w-[490px] mt-4 overflow-hidden rounded-2xl shadow-xs border border-stone-200/80">
+            <Image
+              src="/images/login-farm-pasture-clean.png"
+              alt="Dairy Farm Pasture with Grazing Cows"
+              width={472}
+              height={174}
+              className="w-full h-auto object-cover"
+              priority
+            />
           </div>
 
           {/* Bottom Footnote */}
