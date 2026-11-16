@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 import {
   Milk,
   Truck,
@@ -34,6 +36,53 @@ export default function LoadingShowcasePage() {
   const [simulatedProgress, setSimulatedProgress] = useState(68);
   const [isSimulating, setIsSimulating] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // GSAP: Continuous ripple and emblem breathing animation
+  useGSAP(
+    () => {
+      // Concentric ambient ripple rings
+      gsap.to('.gsap-loading-ripple-1', {
+        scale: 1.45,
+        opacity: 0,
+        duration: 2.4,
+        repeat: -1,
+        ease: 'power1.out',
+      });
+
+      gsap.to('.gsap-loading-ripple-2', {
+        scale: 1.6,
+        opacity: 0,
+        duration: 3.0,
+        delay: 0.9,
+        repeat: -1,
+        ease: 'power1.out',
+      });
+
+      // Emblem breathing pulse
+      gsap.to('.gsap-loading-emblem', {
+        scale: 1.04,
+        duration: 1.8,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+    },
+    { scope: containerRef, dependencies: [activeTab] }
+  );
+
+  // GSAP: Smooth text transition when status message cycles
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        '.gsap-status-text',
+        { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+      );
+    },
+    { dependencies: [statusIndex], scope: containerRef }
+  );
+
   // Cycle status messages
   useEffect(() => {
     const timer = setInterval(() => {
@@ -60,7 +109,10 @@ export default function LoadingShowcasePage() {
   }, [isSimulating]);
 
   return (
-    <div className="min-h-screen bg-[#FEFBF6] py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-[#FEFBF6] py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6"
+    >
       {/* ── Control Header ── */}
       <div className="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -123,14 +175,14 @@ export default function LoadingShowcasePage() {
       {/* ── View 1: Brand Splash & Central Progress Loader ── */}
       {activeTab === 'SPLASH' && (
         <div className="relative min-h-[65vh] rounded-3xl bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50/60 via-white to-[#F6F2EA] border border-stone-200/80 p-6 sm:p-12 flex flex-col items-center justify-center text-center shadow-xs overflow-hidden">
-          {/* Subtle Background Milk Ripple Circles */}
-          <div className="absolute w-[450px] h-[450px] rounded-full border border-teal-100/70 animate-ping opacity-20 pointer-events-none" />
-          <div className="absolute w-[600px] h-[600px] rounded-full border border-teal-200/30 opacity-30 pointer-events-none" />
+          {/* Background Milk Ripple Circles animated via GSAP */}
+          <div className="absolute w-[450px] h-[450px] rounded-full border border-teal-200/60 pointer-events-none gsap-loading-ripple-1" />
+          <div className="absolute w-[580px] h-[580px] rounded-full border border-teal-300/40 pointer-events-none gsap-loading-ripple-2" />
 
           {/* Central Glassmorphic Card */}
           <div className="relative z-10 max-w-md w-full bg-white/95 backdrop-blur-md rounded-3xl p-8 sm:p-10 shadow-xl border border-stone-200/90 flex flex-col items-center space-y-6">
             {/* Animated Brand Emblem */}
-            <div className="relative">
+            <div className="relative gsap-loading-emblem">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-800 p-0.5 shadow-lg shadow-teal-700/20">
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center p-3">
                   <Image
@@ -186,7 +238,7 @@ export default function LoadingShowcasePage() {
 
               {/* Rotating Status Narrative */}
               <div className="h-10 flex items-center justify-center">
-                <p className="text-xs text-stone-600 font-medium leading-relaxed italic animate-fadeIn">
+                <p className="text-xs text-stone-600 font-medium leading-relaxed italic gsap-status-text">
                   &ldquo;{STATUS_MESSAGES[statusIndex]}&rdquo;
                 </p>
               </div>
