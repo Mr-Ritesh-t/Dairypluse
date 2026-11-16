@@ -22,7 +22,44 @@ import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { Card, StatCard, Badge, Button, ProgressBar } from '@/components/ui';
-import { motion } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
+
+// Motion Orchestration Variants
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
+    },
+  },
+};
+
+const sectionVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 320,
+      damping: 26,
+    },
+  },
+};
+
+const rowVariants: Variants = {
+  hidden: { opacity: 0, x: -8 },
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.3,
+      ease: 'easeOut',
+    },
+  },
+};
 
 export default function DashboardPage() {
   const { products, deliveries, subscriptions, shopOrders, invoices, openModal } = useDairyPulse();
@@ -54,28 +91,52 @@ export default function DashboardPage() {
   const todaySales = totalShopSales + totalSubscriptionSales;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
       <PageHead
         title="Operations Dashboard"
         description="Real-time overview of daily milk collection, stock levels, delivery fleet dispatch, and active subscriptions."
       />
 
       {/* ── 1. Hero Welcome & Operations Banner ── */}
-      <section
+      <motion.section
+        variants={sectionVariants}
+        whileHover={{ boxShadow: '0 4px 20px -2px rgba(15, 118, 110, 0.08)' }}
+        transition={{ duration: 0.25 }}
         className="pastoral-banner rounded-3xl border border-stone-200/90 shadow-[0_1px_3px_rgba(28,25,23,0.04)] relative px-5 sm:px-8 py-6 sm:py-8 flex flex-col lg:flex-row lg:items-center justify-between min-h-[160px] overflow-hidden gap-6"
         data-purpose="hero-banner"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-amber-200/40 via-teal-100/30 to-transparent rounded-full blur-3xl" />
+          <motion.div
+            animate={{
+              scale: [1, 1.08, 1],
+              opacity: [0.35, 0.5, 0.35],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-amber-200/40 via-teal-100/30 to-transparent rounded-full blur-3xl"
+          />
         </div>
 
         <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-xs text-stone-800 text-xs font-semibold border border-stone-200/80 shadow-2xs">
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-xs text-stone-800 text-xs font-semibold border border-stone-200/80 shadow-2xs"
+          >
             <span className="w-2 h-2 rounded-full bg-[#0F766E] animate-pulse" />
             <span className="font-bold text-stone-900">{dairyName}</span>
             <span className="text-stone-300">•</span>
             <span className="text-stone-500 font-medium">{todayFormatted}</span>
-          </div>
+          </motion.div>
 
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 tracking-tight leading-tight">
             {greeting},{' '}
@@ -86,23 +147,27 @@ export default function DashboardPage() {
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5 pt-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => openModal('addStock')}
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-            >
-              Add Milk Intake
-            </Button>
-            <Link href="/delivery">
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Button
-                variant="secondary"
+                variant="primary"
                 size="sm"
-                leftIcon={<Truck className="w-3.5 h-3.5 text-[#0F766E]" />}
+                onClick={() => openModal('addStock')}
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
-                View Dispatches
+                Add Milk Intake
               </Button>
-            </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link href="/delivery">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Truck className="w-3.5 h-3.5 text-[#0F766E]" />}
+                >
+                  View Dispatches
+                </Button>
+              </Link>
+            </motion.div>
           </div>
         </div>
 
@@ -113,7 +178,7 @@ export default function DashboardPage() {
               Fleet Status
             </span>
             <span className="text-base sm:text-lg font-extrabold text-stone-900 flex items-center gap-1.5 lg:justify-end mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               Active Dispatch
             </span>
           </div>
@@ -126,10 +191,14 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── 2. KPI Metrics Grid ── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-purpose="metrics-row">
+      <motion.section
+        variants={sectionVariants}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+        data-purpose="metrics-row"
+      >
         {[
           {
             title: "Today's Sales",
@@ -175,241 +244,274 @@ export default function DashboardPage() {
         ].map((card, i) => (
           <motion.div
             key={card.title}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350, delay: i * 0.05 }}
-            whileHover={{ y: -3 }}
+            variants={sectionVariants}
+            whileHover={{ y: -4, transition: { duration: 0.2, ease: 'easeOut' } }}
           >
             <StatCard {...card} />
           </motion.div>
         ))}
-      </section>
+      </motion.section>
 
       {/* ── 3. Milk Inventory Overview Table ── */}
-      <Card
-        title="Live Milk Inventory & Stock Levels"
-        subtitle="Real-time chilling center tank levels and variant availability"
-        action={
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-block text-xs text-stone-500 font-medium">
-              Total Storage:{' '}
-              <strong className="text-stone-800 font-bold tabular-nums">
-                {totalStockLitres} Litres
-              </strong>
-            </span>
-            <Link
-              href="/inventory"
-              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
-            >
-              Manage
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        }
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs" aria-label="Milk Inventory Table">
-            <thead>
-              <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
-                <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">
-                  Product / Variety
-                </th>
-                <th scope="col" className="py-2.5 px-3 font-semibold text-center">
-                  Available Stock
-                </th>
-                <th scope="col" className="py-2.5 px-3 font-semibold text-center">
-                  Unit Price
-                </th>
-                <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {products.map((p) => (
-                <tr key={p.id} className="hover:bg-stone-50/80 transition-colors">
-                  <td className="py-3 px-3 flex items-center gap-2.5 font-semibold text-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center text-sm border border-teal-200/60 shadow-2xs shrink-0">
-                      <Milk className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-stone-900 block">{p.variant}</span>
-                      <span className="text-[11px] text-stone-500 font-normal">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-center font-bold text-stone-800 tabular-nums">
-                    {p.availableStock} {p.unit}
-                  </td>
-                  <td className="py-3 px-3 text-center font-semibold text-stone-600 tabular-nums">
-                    ₹{p.sellingPrice} / {p.unit}
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <Badge
-                      variant={p.status === 'In Stock' ? 'success' : 'warning'}
-                      dot
-                      size="sm"
-                    >
-                      {p.status}
-                    </Badge>
-                  </td>
+      <motion.div variants={sectionVariants}>
+        <Card
+          title="Live Milk Inventory & Stock Levels"
+          subtitle="Real-time chilling center tank levels and variant availability"
+          action={
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-block text-xs text-stone-500 font-medium">
+                Total Storage:{' '}
+                <strong className="text-stone-800 font-bold tabular-nums">
+                  {totalStockLitres} Litres
+                </strong>
+              </span>
+              <Link
+                href="/inventory"
+                className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1 group"
+              >
+                <span>Manage</span>
+                <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </Link>
+            </div>
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs" aria-label="Milk Inventory Table">
+              <thead>
+                <tr className="text-stone-500 font-bold border-b border-stone-200/80 bg-[#F6F2EA]/60">
+                  <th scope="col" className="py-2.5 px-3 font-semibold rounded-l-lg">
+                    Product / Variety
+                  </th>
+                  <th scope="col" className="py-2.5 px-3 font-semibold text-center">
+                    Available Stock
+                  </th>
+                  <th scope="col" className="py-2.5 px-3 font-semibold text-center">
+                    Unit Price
+                  </th>
+                  <th scope="col" className="py-2.5 px-3 font-semibold text-right rounded-r-lg">
+                    Status
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {products.map((p, idx) => (
+                  <motion.tr
+                    key={p.id}
+                    variants={rowVariants}
+                    initial="hidden"
+                    animate="show"
+                    transition={{ delay: idx * 0.04 }}
+                    className="hover:bg-stone-50/80 transition-colors"
+                  >
+                    <td className="py-3 px-3 flex items-center gap-2.5 font-semibold text-stone-800">
+                      <motion.div
+                        whileHover={{ rotate: [0, -8, 8, 0] }}
+                        transition={{ duration: 0.4 }}
+                        className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center text-sm border border-teal-200/60 shadow-2xs shrink-0"
+                      >
+                        <Milk className="w-4 h-4" />
+                      </motion.div>
+                      <div>
+                        <span className="font-bold text-stone-900 block">{p.variant}</span>
+                        <span className="text-[11px] text-stone-500 font-normal">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold text-stone-800 tabular-nums">
+                      {p.availableStock} {p.unit}
+                    </td>
+                    <td className="py-3 px-3 text-center font-semibold text-stone-600 tabular-nums">
+                      ₹{p.sellingPrice} / {p.unit}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <Badge
+                        variant={p.status === 'In Stock' ? 'success' : 'warning'}
+                        dot
+                        size="sm"
+                      >
+                        {p.status}
+                      </Badge>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </motion.div>
 
       {/* ── 4. Split Grid: Route Stops & Commercial Orders ── */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-5" data-purpose="deliveries-and-orders-tables">
         {/* Today's Route Stops */}
-        <Card
-          title="Today's Route Stops"
-          subtitle="Live status from rider delivery dispatch"
-          action={
-            <Link
-              href="/delivery"
-              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
-            >
-              All Stops
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs" aria-label="Today Route Stops">
-              <thead>
-                <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
-                  <th scope="col" className="pb-2.5 font-semibold">Customer</th>
-                  <th scope="col" className="pb-2.5 font-semibold">Qty</th>
-                  <th scope="col" className="pb-2.5 font-semibold">Rider</th>
-                  <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {deliveries.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-stone-500">
-                      <div className="flex flex-col items-center justify-center gap-1.5">
-                        <Truck className="w-6 h-6 text-stone-300" />
-                        <span className="font-semibold text-xs text-stone-600">No active delivery runs today</span>
-                        <span className="text-xs text-stone-400">Generate stops from the Deliveries tab</span>
-                      </div>
-                    </td>
+        <motion.div variants={sectionVariants}>
+          <Card
+            title="Today's Route Stops"
+            subtitle="Live status from rider delivery dispatch"
+            action={
+              <Link
+                href="/delivery"
+                className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1 group"
+              >
+                <span>All Stops</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            }
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs" aria-label="Today Route Stops">
+                <thead>
+                  <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
+                    <th scope="col" className="pb-2.5 font-semibold">Customer</th>
+                    <th scope="col" className="pb-2.5 font-semibold">Qty</th>
+                    <th scope="col" className="pb-2.5 font-semibold">Rider</th>
+                    <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
                   </tr>
-                ) : (
-                  deliveries.slice(0, 4).map((d) => (
-                    <tr key={d.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="py-3 font-semibold text-stone-800">
-                        <div className="font-bold text-stone-900">{d.customerName}</div>
-                        <div className="text-[11px] text-stone-500 font-normal">{d.area}</div>
-                      </td>
-                      <td className="py-3 font-bold text-stone-800 tabular-nums">
-                        {d.quantityLiters} L
-                      </td>
-                      <td className="py-3 text-stone-600 font-medium">{d.assignedRider}</td>
-                      <td className="py-3 text-right">
-                        <Badge
-                          variant={
-                            d.status === 'Delivered'
-                              ? 'success'
-                              : d.status === 'In Progress'
-                              ? 'info'
-                              : 'warning'
-                          }
-                          dot
-                          size="xs"
-                        >
-                          {d.status}
-                        </Badge>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {deliveries.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-stone-500">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <Truck className="w-6 h-6 text-stone-300" />
+                          <span className="font-semibold text-xs text-stone-600">No active delivery runs today</span>
+                          <span className="text-xs text-stone-400">Generate stops from the Deliveries tab</span>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                  ) : (
+                    deliveries.slice(0, 4).map((d, idx) => (
+                      <motion.tr
+                        key={d.id}
+                        variants={rowVariants}
+                        initial="hidden"
+                        animate="show"
+                        transition={{ delay: idx * 0.04 }}
+                        className="hover:bg-stone-50/80 transition-colors"
+                      >
+                        <td className="py-3 font-semibold text-stone-800">
+                          <div className="font-bold text-stone-900">{d.customerName}</div>
+                          <div className="text-[11px] text-stone-500 font-normal">{d.area}</div>
+                        </td>
+                        <td className="py-3 font-bold text-stone-800 tabular-nums">
+                          {d.quantityLiters} L
+                        </td>
+                        <td className="py-3 text-stone-600 font-medium">{d.assignedRider}</td>
+                        <td className="py-3 text-right">
+                          <Badge
+                            variant={
+                              d.status === 'Delivered'
+                                ? 'success'
+                                : d.status === 'In Progress'
+                                ? 'info'
+                                : 'warning'
+                            }
+                            dot
+                            size="xs"
+                          >
+                            {d.status}
+                          </Badge>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Commercial & Shop Orders */}
-        <Card
-          title="Commercial & Shop Orders"
-          subtitle="Bulk B2B orders and restaurant dispatches"
-          action={
-            <Link
-              href="/orders"
-              className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1"
-            >
-              All Orders
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs" aria-label="Commercial Orders Table">
-              <thead>
-                <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
-                  <th scope="col" className="pb-2.5 font-semibold">Order #</th>
-                  <th scope="col" className="pb-2.5 font-semibold">Buyer</th>
-                  <th scope="col" className="pb-2.5 font-semibold">Amount</th>
-                  <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {shopOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-stone-500">
-                      <div className="flex flex-col items-center justify-center gap-1.5">
-                        <ShoppingBag className="w-6 h-6 text-stone-300" />
-                        <span className="font-semibold text-xs text-stone-600">No commercial orders logged yet</span>
-                        <span className="text-xs text-stone-400">Click &apos;Shop Order&apos; below to log bulk sales</span>
-                      </div>
-                    </td>
+        <motion.div variants={sectionVariants}>
+          <Card
+            title="Commercial & Shop Orders"
+            subtitle="Bulk B2B orders and restaurant dispatches"
+            action={
+              <Link
+                href="/orders"
+                className="text-xs font-bold text-[#0F766E] hover:text-[#0D6560] inline-flex items-center gap-1 group"
+              >
+                <span>All Orders</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            }
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs" aria-label="Commercial Orders Table">
+                <thead>
+                  <tr className="text-stone-500 font-semibold border-b border-stone-200/80">
+                    <th scope="col" className="pb-2.5 font-semibold">Order #</th>
+                    <th scope="col" className="pb-2.5 font-semibold">Buyer</th>
+                    <th scope="col" className="pb-2.5 font-semibold">Amount</th>
+                    <th scope="col" className="pb-2.5 font-semibold text-right">Status</th>
                   </tr>
-                ) : (
-                  shopOrders.slice(0, 4).map((ord) => (
-                    <tr key={ord.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="py-3 font-mono font-bold text-[#0F766E]">{ord.orderNumber}</td>
-                      <td className="py-3 font-semibold text-stone-800">
-                        <div className="font-bold text-stone-900">{ord.shopName}</div>
-                        <div className="text-[11px] text-stone-500 font-normal">{ord.contactPerson}</div>
-                      </td>
-                      <td className="py-3 font-extrabold text-stone-900 tabular-nums">
-                        ₹{ord.totalAmount.toLocaleString()}
-                      </td>
-                      <td className="py-3 text-right">
-                        <Badge
-                          variant={
-                            ord.status === 'Delivered'
-                              ? 'success'
-                              : ord.status === 'Dispatched'
-                              ? 'info'
-                              : 'warning'
-                          }
-                          dot
-                          size="xs"
-                        >
-                          {ord.status}
-                        </Badge>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {shopOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-stone-500">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <ShoppingBag className="w-6 h-6 text-stone-300" />
+                          <span className="font-semibold text-xs text-stone-600">No commercial orders logged yet</span>
+                          <span className="text-xs text-stone-400">Click &apos;Shop Order&apos; below to log bulk sales</span>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                  ) : (
+                    shopOrders.slice(0, 4).map((ord, idx) => (
+                      <motion.tr
+                        key={ord.id}
+                        variants={rowVariants}
+                        initial="hidden"
+                        animate="show"
+                        transition={{ delay: idx * 0.04 }}
+                        className="hover:bg-stone-50/80 transition-colors"
+                      >
+                        <td className="py-3 font-mono font-bold text-[#0F766E]">{ord.orderNumber}</td>
+                        <td className="py-3 font-semibold text-stone-800">
+                          <div className="font-bold text-stone-900">{ord.shopName}</div>
+                          <div className="text-[11px] text-stone-500 font-normal">{ord.contactPerson}</div>
+                        </td>
+                        <td className="py-3 font-extrabold text-stone-900 tabular-nums">
+                          ₹{ord.totalAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 text-right">
+                          <Badge
+                            variant={
+                              ord.status === 'Delivered'
+                                ? 'success'
+                                : ord.status === 'Dispatched'
+                                ? 'info'
+                                : 'warning'
+                            }
+                            dot
+                            size="xs"
+                          >
+                            {ord.status}
+                          </Badge>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </motion.div>
       </section>
 
       {/* ── 5. Quick Farm Action Bar ── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 pt-2" data-purpose="quick-actions">
+      <motion.section
+        variants={sectionVariants}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 pt-2"
+        data-purpose="quick-actions"
+      >
         <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.025, y: -2 }}
+          whileTap={{ scale: 0.975 }}
           onClick={() => openModal('addStock')}
           className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
             <Plus className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -419,13 +521,13 @@ export default function DashboardPage() {
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.025, y: -2 }}
+          whileTap={{ scale: 0.975 }}
           onClick={() => openModal('addCustomer')}
           className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-sky-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 text-[#0369A1] border border-sky-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 text-[#0369A1] border border-sky-200/70 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
             <UserPlus className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -435,13 +537,13 @@ export default function DashboardPage() {
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.025, y: -2 }}
+          whileTap={{ scale: 0.975 }}
           onClick={() => openModal('generateBill')}
           className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer"
           type="button"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
             <Receipt className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -451,14 +553,14 @@ export default function DashboardPage() {
         </motion.button>
 
         <motion.div
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.025, y: -2 }}
+          whileTap={{ scale: 0.975 }}
         >
           <Link
             href="/delivery"
             className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-[#F6F2EA] border border-stone-200/90 shadow-2xs hover:border-teal-300 hover:shadow-xs transition-colors duration-150 group text-left cursor-pointer h-full"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/70 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
               <Truck className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -467,7 +569,7 @@ export default function DashboardPage() {
             </div>
           </Link>
         </motion.div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
