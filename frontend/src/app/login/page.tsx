@@ -72,65 +72,9 @@ export default function LoginPage() {
   // GSAP Scope Ref
   const mainContainerRef = useRef<HTMLDivElement>(null);
 
-  // GSAP: Initial entrance choreography
+  // GSAP: Continuous subtle floating effect on hero illustration only (zero opacity delay on auth form)
   useGSAP(
     () => {
-      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-
-      tl.from('.gsap-hero-brand', {
-        y: -20,
-        opacity: 0,
-        duration: 0.6,
-      })
-        .from(
-          '.gsap-hero-title',
-          {
-            y: 28,
-            opacity: 0,
-            duration: 0.7,
-          },
-          '-=0.3'
-        )
-        .from(
-          '.gsap-hero-artwork',
-          {
-            scale: 0.94,
-            opacity: 0,
-            duration: 0.75,
-            ease: 'back.out(1.15)',
-          },
-          '-=0.35'
-        )
-        .from(
-          '.gsap-hero-card',
-          {
-            y: 18,
-            opacity: 0,
-            duration: 0.45,
-            stagger: 0.08,
-          },
-          '-=0.4'
-        )
-        .from(
-          '.gsap-trust-bar',
-          {
-            y: 12,
-            opacity: 0,
-            duration: 0.5,
-          },
-          '-=0.2'
-        );
-
-      // Right Auth Card smooth entrance
-      gsap.from('.gsap-auth-card', {
-        y: 32,
-        opacity: 0,
-        duration: 0.75,
-        ease: 'power3.out',
-        delay: 0.15,
-      });
-
-      // Continuous subtle floating effect on hero illustration
       gsap.to('.gsap-float-artwork', {
         y: -5,
         duration: 3,
@@ -140,30 +84,6 @@ export default function LoginPage() {
       });
     },
     { scope: mainContainerRef }
-  );
-
-  // GSAP: Animate tab content transitions smoothly
-  useGSAP(
-    () => {
-      gsap.fromTo(
-        '.gsap-tab-content',
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
-      );
-    },
-    { dependencies: [activeTab], scope: mainContainerRef }
-  );
-
-  // GSAP: Micro-interaction bounce on active role selection
-  useGSAP(
-    () => {
-      gsap.fromTo(
-        '.gsap-role-active',
-        { scale: 0.96 },
-        { scale: 1, duration: 0.25, ease: 'back.out(1.5)' }
-      );
-    },
-    { dependencies: [selectedRole], scope: mainContainerRef }
   );
 
   // -------------------------------------------------------------
@@ -559,7 +479,7 @@ export default function LoginPage() {
         <div className="hidden lg:flex lg:w-1/2 flex-col justify-between py-6 px-4 lg:px-8 xl:px-12 min-h-[90vh]">
           
           {/* Top Logo & Trust Badge */}
-          <div className="space-y-4 gsap-hero-brand">
+          <div className="space-y-4">
             <div className="flex items-center gap-3.5">
               <div className="w-13 h-13 rounded-2xl overflow-hidden shadow-md border border-emerald-200/80 bg-white p-1.5 shrink-0 transition-transform hover:scale-105">
                 <Image
@@ -588,7 +508,7 @@ export default function LoginPage() {
             </div>
 
             {/* Social Proof Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs text-xs font-semibold text-slate-700">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-stone-200/90 shadow-xs text-xs font-semibold text-slate-700">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
               <span>Trusted by <strong>120+ Dairies</strong> &amp; <strong>15,000+ Daily Households</strong></span>
             </div>
@@ -596,7 +516,7 @@ export default function LoginPage() {
 
           {/* Main Headline & Value Props */}
           <div className="my-auto py-6 space-y-6 max-w-lg">
-            <div className="space-y-3 gsap-hero-title">
+            <div className="space-y-3">
               <h1 className="text-4xl xl:text-5xl font-black text-slate-900 tracking-tight leading-[1.12]">
                 Run Your Entire <br />
                 Dairy Operations <br />
@@ -610,7 +530,7 @@ export default function LoginPage() {
             </div>
 
             {/* Clean Featured Milk Hero Illustration */}
-            <div className="relative pt-1 max-w-md gsap-hero-artwork gsap-float-artwork">
+            <div className="relative pt-1 max-w-md gsap-float-artwork">
               <div className="relative overflow-hidden rounded-2xl border border-stone-200/70 bg-gradient-to-br from-white to-stone-50/60 p-2 shadow-xs">
                 <Image
                   src="/images/login-milk-hero-clean.png"
@@ -625,7 +545,7 @@ export default function LoginPage() {
 
             {/* 4 Feature Badges */}
             <div className="grid grid-cols-2 gap-3 pt-1 max-w-md">
-              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all gsap-hero-card">
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-xs hover:border-emerald-300 transition-all">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/70 flex items-center justify-center shrink-0">
                     <Milk className="w-4 h-4 text-emerald-600" />
@@ -637,7 +557,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all gsap-hero-card">
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-xs hover:border-emerald-300 transition-all">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center shrink-0">
                     <Truck className="w-4 h-4 text-sky-600" />
@@ -649,7 +569,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all gsap-hero-card">
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-xs hover:border-emerald-300 transition-all">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/70 flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4 text-amber-700" />
@@ -661,7 +581,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-stone-200/80 shadow-xs hover:border-emerald-300 transition-all gsap-hero-card">
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/90 shadow-xs hover:border-emerald-300 transition-all">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 border border-teal-200/70 flex items-center justify-center shrink-0">
                     <BarChart3 className="w-4 h-4 text-[#0F766E]" />
@@ -676,7 +596,7 @@ export default function LoginPage() {
           </div>
 
           {/* Bottom Trust & Compliance Bar */}
-          <div className="pt-4 border-t border-stone-200/60 flex items-center gap-6 text-[11px] text-slate-500 font-medium gsap-trust-bar">
+          <div className="pt-4 border-t border-stone-200/60 flex items-center gap-6 text-[11px] text-slate-500 font-medium">
             <div className="flex items-center gap-1.5">
               <Award className="w-4 h-4 text-emerald-600" />
               <span>FSSAI &amp; ISO 22000 Ready</span>
@@ -717,8 +637,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Main Card Container with Modern Glassmorphism */}
-          <div className="w-full max-w-md sm:max-w-[490px] lg:max-w-[530px] bg-white/95 backdrop-blur-md rounded-3xl shadow-xl shadow-stone-900/5 border border-stone-200/90 p-5 sm:p-7 relative z-20 transition-all gsap-auth-card">
+          {/* Main Auth Card (Solid White, Crisp Rendering, No Blur) */}
+          <div className="w-full max-w-md sm:max-w-[490px] lg:max-w-[530px] bg-white rounded-3xl shadow-xl shadow-stone-900/5 border border-stone-200/90 p-5 sm:p-7 relative z-20 transition-all">
             
             {/* 3 Top Segmented Tabs */}
             <div className="grid bg-stone-100/90 p-1 rounded-2xl border border-stone-200/80 grid-cols-3 gap-1 mb-5 text-xs font-semibold">
@@ -795,7 +715,7 @@ export default function LoginPage() {
 
             {/* ================= TAB 1: SIGN IN ================= */}
             {activeTab === 'signin' && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4 gsap-tab-content">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
                 
                 {/* Active Session Warning / Switcher */}
                 {user && (
@@ -841,7 +761,7 @@ export default function LoginPage() {
                       onClick={() => handleSelectRole('OWNER')}
                       className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'OWNER'
-                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs gsap-role-active'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
@@ -867,7 +787,7 @@ export default function LoginPage() {
                       onClick={() => handleSelectRole('DELIVERY')}
                       className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'DELIVERY'
-                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs gsap-role-active'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
@@ -893,7 +813,7 @@ export default function LoginPage() {
                       onClick={() => handleSelectRole('CUSTOMER')}
                       className={`relative p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 cursor-pointer min-w-0 ${
                         selectedRole === 'CUSTOMER'
-                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs gsap-role-active'
+                          ? 'border-2 border-[#0F766E] bg-teal-50/70 text-teal-950 shadow-xs'
                           : 'border-stone-200 bg-white hover:border-stone-300 text-stone-600'
                       }`}
                     >
@@ -1285,7 +1205,7 @@ export default function LoginPage() {
 
             {/* ================= TAB 2: CUSTOMER SIGN UP (3-STEP WIZARD) ================= */}
             {activeTab === 'customer' && (
-              <div className="gsap-tab-content">
+              <div>
                 {custSuccess ? (
                   <div className="py-6 text-center space-y-4 animate-in fade-in">
                     <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -1725,7 +1645,7 @@ export default function LoginPage() {
 
             {/* ================= TAB 3: REGISTER NEW DAIRY FARM ================= */}
             {activeTab === 'dairy' && (
-              <div className="gsap-tab-content">
+              <div>
                 {dairySuccess ? (
                   <div className="py-6 text-center space-y-4 animate-in fade-in">
                     <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
