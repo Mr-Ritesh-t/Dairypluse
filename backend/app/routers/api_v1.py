@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
 from app.database import get_db
+from app.auth.dependencies import get_current_user, require_role, AuthenticatedUser
 from app.models.models import (
     User,
     Product,
@@ -646,7 +647,7 @@ def create_subscription(sub: SubscriptionCreate, db: Session = Depends(get_db)):
     if not customer and sub.customer_name:
         customer = db.query(Customer).filter(Customer.name.ilike(sub.customer_name.strip())).first()
 
-    sub_dict = sub.dict()
+    sub_dict = sub.model_dump()
     if customer:
         sub_dict["customer_id"] = customer.id
         sub_dict["customer_name"] = customer.name
@@ -2094,6 +2095,27 @@ def sync_supabase_auth(sync_req: SupabaseAuthSyncRequest, db: Session = Depends(
         customer_id=user.id if user.role == "CUSTOMER" else None,
         dairy_name=user.dairy_name or "Dairy Farm HQ",
         token=jwt_token,
+    )
+
+@api_router.get("/auth/me", response_model=AuthUserResponse)
+def get_authenticated_user_profile(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns profile and tenant context for the currently authenticated user.
+    """
+    user_record = db.query(User).filter(User.id == current_user.id).first()
+    return AuthUserResponse(
+        id=current_user.id,
+        name=current_user.name,
+        role=current_user.role,
+        login_id=user_record.email if user_record and user_record.email else current_user.id,
+        phone=user_record.phone if user_record else None,
+        email=user_record.email if user_record else None,
+        assigned_area_or_route="HQ Operations",
+        dairy_name=current_user.dairy_name,
+        token="VALID_SESSION",
     )
 
 # =========================================================================

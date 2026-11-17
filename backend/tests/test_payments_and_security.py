@@ -141,3 +141,29 @@ def test_prepaid_delinquency_delivery_generation():
     tasks_res = client.get("/api/v1/deliveries/today").json()
     scheduled_names = [t["customer_name"] for t in tasks_res if t.get("delivery_date") == test_date]
     assert "Sunita Mane" not in scheduled_names
+
+
+def test_jwt_auth_and_role_protection():
+    from app.routers.api_v1 import create_jwt_token
+
+    # 1. Generate valid OWNER token
+    token = create_jwt_token(
+        user_id="usr-test-owner",
+        role="OWNER",
+        name="Test Owner",
+        dairy_name="Amrut Dairy Farm"
+    )
+    assert token is not None
+
+    # 2. Call /auth/me with valid Bearer token
+    res = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 200
+    user_data = res.json()
+    assert user_data["role"] == "OWNER"
+    assert user_data["name"] == "Test Owner"
+
+    # 3. Call with invalid/forged token -> 401 Unauthorized
+    bad_res = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer forged.invalid.token"})
+    assert bad_res.status_code == 401
+    assert "Invalid or expired" in bad_res.json()["detail"]
+

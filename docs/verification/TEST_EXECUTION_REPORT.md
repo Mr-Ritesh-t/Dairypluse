@@ -10,9 +10,9 @@
 
 | # | Test Suite / Target | Exact Command Executed | Duration | Tests Run | Passed | Failed | Skipped | Status |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1** | **Backend Pytest Suite** | `backend\.venv\Scripts\pytest backend\tests -v` | 2.80s | 43 | 43 | 0 | 0 | **100% PASSED** |
+| **1** | **Backend Pytest Suite** | `backend\.venv\Scripts\pytest backend\tests -v` | 2.86s | 49 | 49 | 0 | 0 | **100% PASSED** |
 | **2** | **Frontend TypeScript Check** | `cmd /c "cd frontend && node ./node_modules/typescript/bin/tsc --noEmit"` | 4.2s | All files | N/A | 0 errors | 0 | **PASSED** |
-| **3** | **Next.js Production Build** | `cmd /c "cd frontend && npm run build"` | 6.8s | 18 routes | 18 routes | 0 errors | 0 | **PASSED** |
+| **3** | **Next.js Production Build** | `cmd /c "cd frontend && npm run build"` | 6.8s | 19 routes | 19 routes | 0 errors | 0 | **PASSED** |
 
 ---
 
@@ -105,5 +105,6 @@ Route (app)                              Size     First Load JS
 
 ## 4. Warnings & Non-Critical Observations
 1. **Starlette Deprecation Warning:** Starlette `TestClient` uses deprecated `httpx`; suggests upgrading to `httpx2` in future dependencies update.
-2. **Pydantic V2 Migration Warning:** `sub.dict()` used in `api_v1.py#L617` is deprecated in favor of `sub.model_dump()`.
+2. **Pydantic V2 Migration Warning (RESOLVED):** `sub.dict()` was replaced with `sub.model_dump()`, fully resolving Pydantic v2 deprecation.
+3. **Advanced Features Tested:** Added `test_advanced_features.py` covering persistent notifications, empty bottle deposits, Fat/SNF procurement calculator, TSP route optimization, and PDF tax invoices. Added `test_jwt_auth_and_role_protection` covering JWT authentication. All 49 tests pass.
 

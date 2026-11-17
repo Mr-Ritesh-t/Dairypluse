@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
     TIMEZONE: str = "Asia/Kolkata"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "*")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
