@@ -16,7 +16,6 @@ import {
   DollarSign,
   CreditCard,
   Search,
-  Sparkles,
   ArrowUpRight,
   ShieldCheck,
   Droplets,
@@ -41,7 +40,6 @@ import {
   Legend,
 } from 'recharts';
 import { useDairyPulse } from '@/context/DairyPulseContext';
-import { getDemandForecastApi } from '@/lib/api';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { StatCard } from '@/components/ui/StatCard';
@@ -50,7 +48,7 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 
 type DateRangeOption = 'TODAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'LAST_MONTH' | 'ALL_TIME';
-type ActiveReportTab = 'overview' | 'financials' | 'routes' | 'inventory' | 'forecast';
+type ActiveReportTab = 'overview' | 'financials' | 'routes' | 'inventory';
 type OverviewChartMetric = 'FINANCIAL' | 'VOLUME';
 
 // Custom Tooltip for Recharts styled to match Hallmark theme
@@ -112,29 +110,9 @@ export default function ReportsDashboardPage() {
   const [overviewMetric, setOverviewMetric] = useState<OverviewChartMetric>('FINANCIAL');
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<'ALL' | 'Paid' | 'Partial' | 'Unpaid'>('ALL');
-  const [forecastData, setForecastData] = useState<any | null>(null);
-  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
-
-  // Load AI Forecast Data on mount
-  useEffect(() => {
-    let isMountedLocal = true;
-    setIsLoadingForecast(true);
-    getDemandForecastApi()
-      .then((data) => {
-        if (isMountedLocal && data) {
-          setForecastData(data);
-        }
-      })
-      .finally(() => {
-        if (isMountedLocal) setIsLoadingForecast(false);
-      });
-    return () => {
-      isMountedLocal = false;
-    };
   }, []);
 
   // Helper for date range filtering
@@ -618,7 +596,7 @@ export default function ReportsDashboardPage() {
       {/* Page Header */}
       <PageHeader
         title="Business Reports & Analytics"
-        description={`Real-time financial charts, volume distribution, fleet fulfillment, and AI procurement forecasting for ${activeDairy?.name || 'DairyPulse Farm HQ'}.`}
+        description={`Real-time financial charts, volume distribution, fleet fulfillment, and inventory tracking for ${activeDairy?.name || 'DairyPulse Farm HQ'}.`}
         badge={
           <Badge variant="teal" dot>
             Audit Ready
@@ -709,7 +687,6 @@ export default function ReportsDashboardPage() {
           { id: 'financials', label: 'Financials & Invoices', icon: DollarSign },
           { id: 'routes', label: 'Route & Fleet Efficiency', icon: Truck },
           { id: 'inventory', label: 'Inventory & Wastage', icon: Droplets },
-          { id: 'forecast', label: 'AI Demand Forecast', icon: Sparkles },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1034,14 +1011,14 @@ export default function ReportsDashboardPage() {
 
             <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2">
               <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
-                <Sparkles className="w-4 h-4 text-amber-700" />
-                <span>AI Forecasting Recommendation</span>
+                <TrendingUp className="w-4 h-4 text-amber-700" />
+                <span>Daily Procurement Target</span>
               </div>
               <h4 className="text-xl font-black text-stone-900 tabular-nums">
-                {forecastData?.total_suggested_procurement || 814} L Recommended
+                {totalLitersSold > 0 ? Math.round((totalLitersSold / 30) * 1.1) : 850} L Target
               </h4>
               <p className="text-xs text-stone-600">
-                Procurement suggestion for {forecastData?.target_day_name || 'tomorrow'} to satisfy residential morning surge.
+                Base active subscription demand plus a recommended 10% safety buffer for daily operations.
               </p>
             </div>
           </div>
@@ -1456,162 +1433,6 @@ export default function ReportsDashboardPage() {
               </table>
             </div>
           </Card>
-        </div>
-      )}
-
-      {/* =================================================================== */}
-      {/* TAB 5: AI DEMAND & PROCUREMENT FORECAST                            */}
-      {/* =================================================================== */}
-      {activeTab === 'forecast' && (
-        <div className="space-y-6">
-          {/* Hero Forecast Card */}
-          <div className="p-6 rounded-3xl bg-stone-900 text-white shadow-xl space-y-4 border border-stone-800">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold tracking-tight">AI Milk Demand Forecast & Sourcing</h3>
-                  <p className="text-xs text-stone-400">
-                    Predictive analysis for <strong className="text-white">{forecastData?.target_day_name || 'Tomorrow'} ({forecastData?.target_date || 'Upcoming'})</strong>
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                Confidence: {forecastData?.confidence_score || 94.6}%
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-stone-400">Predicted Demand</span>
-                <p className="text-xl font-black text-white tabular-nums">
-                  {forecastData?.total_predicted_demand || 2540} L
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-stone-400">Current Chiller Stock</span>
-                <p className="text-xl font-black text-white tabular-nums">
-                  {forecastData?.total_available_stock || 1980} L
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-stone-400">Net Shortage Buffer</span>
-                <p className="text-xl font-black text-amber-300 tabular-nums">
-                  {forecastData?.total_shortage || 814} L
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 space-y-0.5">
-                <span className="text-[11px] text-stone-400">Suggested Procurement</span>
-                <p className="text-xl font-black text-teal-300 tabular-nums">
-                  {forecastData?.total_suggested_procurement || 814} L (~₹{forecastData?.total_estimated_cost ? Math.round(forecastData.total_estimated_cost).toLocaleString('en-IN') : '38,240'})
-                </p>
-              </div>
-            </div>
-
-            {/* Recommendations */}
-            {forecastData?.recommendations && (
-              <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs text-stone-300">
-                <span className="font-bold uppercase tracking-wider text-[10px] text-teal-400">
-                  Procurement Actions:
-                </span>
-                <ul className="list-disc list-inside space-y-1 text-stone-300">
-                  {forecastData.recommendations.map((rec: string, i: number) => (
-                    <li key={i}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* 7-Day Predictive Forward Curve */}
-          <Card variant="default">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-              <div>
-                <h4 className="text-sm font-bold text-stone-900">7-Day Forward Demand Trend Curve</h4>
-                <p className="text-xs text-stone-500">Predicted daily consumption based on residential delivery schedules</p>
-              </div>
-              <Badge variant="teal" size="xs">Weekly Forward Curve</Badge>
-            </div>
-
-            <div className="h-64 w-full pt-1">
-              {!isMounted ? (
-                <div className="h-full w-full bg-stone-100 animate-pulse rounded-2xl" />
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={forecastData?.seven_day_trend || [
-                      { day: 'Thu', date: '05 Nov', predicted_liters: 2540, actual_or_baseline_liters: 2438 },
-                      { day: 'Fri', date: '06 Nov', predicted_liters: 2715, actual_or_baseline_liters: 2606 },
-                      { day: 'Sat', date: '07 Nov', predicted_liters: 2890, actual_or_baseline_liters: 2774 },
-                      { day: 'Sun', date: '08 Nov', predicted_liters: 2965, actual_or_baseline_liters: 2846 },
-                      { day: 'Mon', date: '09 Nov', predicted_liters: 2565, actual_or_baseline_liters: 2462 },
-                      { day: 'Tue', date: '10 Nov', predicted_liters: 2515, actual_or_baseline_liters: 2414 },
-                      { day: 'Wed', date: '11 Nov', predicted_liters: 2615, actual_or_baseline_liters: 2510 },
-                    ]}
-                    margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0F766E" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#0F766E" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
-                    <XAxis dataKey="day" tickLine={false} tick={{ fontSize: 11, fill: '#78716C' }} />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#78716C' }} tickFormatter={(v) => `${v}L`} />
-                    <RechartsTooltip content={<CustomChartTooltip />} />
-                    <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 11, paddingBottom: 10 }} />
-                    <Area type="monotone" dataKey="predicted_liters" name="Predicted Demand (L)" unit="L" stroke="#0F766E" strokeWidth={3} fill="url(#forecastGrad)" />
-                    <Line type="monotone" dataKey="actual_or_baseline_liters" name="Baseline Production (L)" unit="L" stroke="#0284C7" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </Card>
-
-          {/* Variant Breakdown Table */}
-          {forecastData?.variants && (
-            <Card variant="default">
-              <h4 className="text-sm font-bold text-stone-900 pb-2 border-b border-stone-100">Variety-wise Sourcing & Buffer Breakdown</h4>
-              <div className="overflow-x-auto -mx-6 px-6 mt-2">
-                <table className="w-full text-left text-xs min-w-[650px]">
-                  <thead>
-                    <tr className="text-stone-400 border-b border-stone-100 font-medium">
-                      <th className="pb-2.5 font-semibold">Milk Variant</th>
-                      <th className="pb-2.5 font-semibold text-right">Subscribers Demand</th>
-                      <th className="pb-2.5 font-semibold text-right">B2B Orders</th>
-                      <th className="pb-2.5 font-semibold text-right">Available Stock</th>
-                      <th className="pb-2.5 font-semibold text-right">Safety Buffer</th>
-                      <th className="pb-2.5 font-semibold text-right">Procurement Liters</th>
-                      <th className="pb-2.5 font-semibold text-right">Est. Cost (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-100">
-                    {forecastData.variants.map((v: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-stone-50/70 font-medium text-stone-700">
-                        <td className="py-2.5 font-bold text-stone-900">{v.variant}</td>
-                        <td className="py-2.5 text-right tabular-nums">{v.active_subscriptions_liters} L</td>
-                        <td className="py-2.5 text-right tabular-nums">{v.b2b_orders_liters} L</td>
-                        <td className="py-2.5 text-right tabular-nums">{v.current_available_stock} L</td>
-                        <td className="py-2.5 text-right tabular-nums text-stone-500">+{v.safety_buffer_liters} L</td>
-                        <td className="py-2.5 text-right tabular-nums font-black text-teal-800">
-                          {v.suggested_procurement > 0 ? `${v.suggested_procurement} L` : 'Sufficient'}
-                        </td>
-                        <td className="py-2.5 text-right tabular-nums font-bold text-stone-900">
-                          ₹{Math.round(v.estimated_procurement_cost).toLocaleString('en-IN')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
         </div>
       )}
     </div>

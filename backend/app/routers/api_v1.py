@@ -68,19 +68,9 @@ from app.schemas.schemas import (
     LoginRequest,
     SupabaseAuthSyncRequest,
     AuthUserResponse,
-    DemandForecastResponse,
-    VariantForecast,
-    DailyTrendPoint,
-    WastageInsightsResponse,
-    WastageByReason,
-    WastageByVariant,
-    RouteOptimizationResponse,
-    OptimizedStop,
     SkipDeliveryRequest,
     ModifyQuantityRequest,
     ExtraMilkRequest,
-    CustomerInsightItem,
-    CustomerInsightsResponse,
     OfflineDeliveryAction,
     DeliveryBatchSyncRequest,
     DeliveryBatchSyncResponse,
@@ -115,7 +105,6 @@ from app.schemas.schemas import (
 from fastapi.responses import Response, StreamingResponse
 import io
 from app.services.pdf_invoice import generate_invoice_pdf
-from app.services.route_optimizer import optimize_stops_tsp
 import os
 import uuid
 import urllib.parse
@@ -2253,281 +2242,7 @@ def get_authenticated_user_profile(
     )
 
 # =========================================================================
-# 1. AI-POWERED MILK DEMAND FORECASTING & PROCUREMENT ASSISTANT
-# =========================================================================
-@api_router.get("/analytics/demand-forecast", response_model=DemandForecastResponse)
-def get_demand_forecast(db: Session = Depends(get_db)):
-    products = db.query(Product).all()
-    subscriptions = db.query(Subscription).filter(Subscription.status == "Active").all()
-    orders = db.query(Order).all()
-
-    now = datetime.utcnow()
-    tomorrow = now + timedelta(days=1)
-    target_date = tomorrow.strftime("%Y-%m-%d")
-    day_name = tomorrow.strftime("%A")
-
-    # Day-of-week multiplier: Weekends have higher residential consumption
-    weekday_multipliers = {
-        "Monday": 1.02,
-        "Tuesday": 1.00,
-        "Wednesday": 1.04,
-        "Thursday": 1.01,
-        "Friday": 1.08,
-        "Saturday": 1.15,
-        "Sunday": 1.18,
-    }
-    multiplier = weekday_multipliers.get(day_name, 1.05)
-
-    variants_forecast: List[VariantForecast] = []
-    total_pred = 0.0
-    total_avail = 0.0
-    total_short = 0.0
-    total_procure = 0.0
-    total_cost = 0.0
-
-    # Default fallback products if empty
-    product_map = {p.variant: p for p in products}
-    default_variants = ["Cow Milk", "Buffalo Milk", "Toned Milk", "A2 Desi Cow Milk"]
-
-    for variant_name in default_variants:
-        p = product_map.get(variant_name)
-        unit_cost = p.cost_price if p else 45.0
-        avail_stock = p.available_stock if p else 200.0
-
-        # 1. Sum active subscription liters
-        sub_liters = sum(
-            s.quantity_liters for s in subscriptions if s.product_variant == variant_name
-        )
-        if sub_liters == 0.0:
-            # Baseline realistic default based on dairy scale
-            fallback_sub = {"Cow Milk": 950.0, "Buffalo Milk": 680.0, "Toned Milk": 310.0, "A2 Desi Cow Milk": 140.0}
-            sub_liters = fallback_sub.get(variant_name, 200.0)
-
-        # 2. Sum B2B shop orders for tomorrow
-        b2b_liters = 0.0
-        for o in orders:
-            for item in o.items:
-                if item.product_variant == variant_name:
-                    b2b_liters += item.quantity
-
-        if b2b_liters == 0.0:
-            fallback_b2b = {"Cow Milk": 240.0, "Buffalo Milk": 180.0, "Toned Milk": 60.0, "A2 Desi Cow Milk": 20.0}
-            b2b_liters = fallback_b2b.get(variant_name, 50.0)
-
-        # 3. Calculate predicted demand with day-of-week pattern
-        predicted = round((sub_liters + b2b_liters) * multiplier, 1)
-        safety_buffer = round(predicted * 0.10, 1)  # 10% safety cushion
-        required_total = predicted + safety_buffer
-
-        net_shortage = max(0.0, round(required_total - avail_stock, 1))
-        suggested_procure = net_shortage
-        estimated_cost = round(suggested_procure * unit_cost, 2)
-
-        total_pred += predicted
-        total_avail += avail_stock
-        total_short += net_shortage
-        total_procure += suggested_procure
-        total_cost += estimated_cost
-
-        variants_forecast.append(
-            VariantForecast(
-                variant=variant_name,
-                active_subscriptions_liters=round(sub_liters, 1),
-                b2b_orders_liters=round(b2b_liters, 1),
-                weekday_multiplier=multiplier,
-                total_predicted_demand=predicted,
-                current_available_stock=round(avail_stock, 1),
-                safety_buffer_liters=safety_buffer,
-                net_shortage=net_shortage,
-                suggested_procurement=suggested_procure,
-                unit_cost_estimate=unit_cost,
-                estimated_procurement_cost=estimated_cost,
-            )
-        )
-
-    # 7-day predictive forward curve
-    seven_day_trend: List[DailyTrendPoint] = []
-    base_daily = total_pred / multiplier
-    for i in range(7):
-        future_d = now + timedelta(days=i)
-        d_name = future_d.strftime("%a")
-        full_d_name = future_d.strftime("%A")
-        m_factor = weekday_multipliers.get(full_d_name, 1.0)
-        pred_val = round(base_daily * m_factor, 1)
-        seven_day_trend.append(
-            DailyTrendPoint(
-                day=d_name,
-                date=future_d.strftime("%d %b"),
-                predicted_liters=pred_val,
-                actual_or_baseline_liters=round(pred_val * 0.96, 1),
-            )
-        )
-
-    recommendations = [
-        f"Tomorrow is {day_name} with an expected demand peak factor of {multiplier}x.",
-        f"Procure {total_procure:.0f} Liters from rural chilling centers before 21:30 tonight.",
-        "Buffer Cow Milk stock in Silo #1: high demand from Baner morning household subscribers.",
-    ]
-
-    return DemandForecastResponse(
-        target_date=target_date,
-        target_day_name=day_name,
-        total_predicted_demand=round(total_pred, 1),
-        total_available_stock=round(total_avail, 1),
-        total_shortage=round(total_short, 1),
-        total_suggested_procurement=round(total_procure, 1),
-        total_estimated_cost=round(total_cost, 2),
-        variants=variants_forecast,
-        seven_day_trend=seven_day_trend,
-        confidence_score=94.6,
-        recommendations=recommendations,
-    )
-
-# =========================================================================
-# 2. MILK WASTAGE INTELLIGENCE & COLD-CHAIN AUDIT
-# =========================================================================
-@api_router.get("/analytics/wastage-insights", response_model=WastageInsightsResponse)
-def get_wastage_insights(db: Session = Depends(get_db)):
-    txs = db.query(InventoryTransaction).all()
-    wastage_txs = [t for t in txs if t.transaction_type == "WASTAGE"]
-    receipt_txs = [t for t in txs if t.transaction_type == "RECEIPT"]
-
-    total_procured = sum(r.quantity for r in receipt_txs) or 8450.0
-    recorded_wastage = sum(w.quantity for w in wastage_txs) or 96.5
-
-    # Reason breakdown
-    reasons_map = {
-        "Cold-Chain Temperature Breach (>6°C)": 42.0,
-        "Transit Spillage & Container Damage": 28.5,
-        "Quality Rejection (Low FAT/SNF)": 14.0,
-        "Packaging Pouch Rupture": 8.0,
-        "Lab Quality Testing Samples": 4.0,
-    }
-    # Supplement with any recorded from DB
-    for w in wastage_txs:
-        r_name = w.supplier_or_batch or "Other Spillage"
-        reasons_map[r_name] = reasons_map.get(r_name, 0.0) + w.quantity
-
-    total_w_liters = sum(reasons_map.values())
-    rate = round((total_w_liters / total_procured) * 100, 2)
-    loss = round(total_w_liters * 48.0, 2)  # Average milk cost ₹48/L
-
-    status = "HEALTHY" if rate < 1.5 else "WARNING" if rate <= 3.0 else "CRITICAL"
-
-    reasons_breakdown = [
-        WastageByReason(
-            reason=k,
-            quantity_liters=round(v, 1),
-            percentage=round((v / total_w_liters) * 100, 1),
-            financial_loss=round(v * 48.0, 2),
-        )
-        for k, v in reasons_map.items()
-    ]
-
-    variants_breakdown = [
-        WastageByVariant(variant="Cow Milk", quantity_liters=48.5, percentage=50.3, financial_loss=2328.0),
-        WastageByVariant(variant="Buffalo Milk", quantity_liters=32.0, percentage=33.2, financial_loss=1760.0),
-        WastageByVariant(variant="Toned Milk", quantity_liters=11.5, percentage=11.9, financial_loss=460.0),
-        WastageByVariant(variant="A2 Desi Cow Milk", quantity_liters=4.5, percentage=4.6, financial_loss=324.0),
-    ]
-
-    mitigation_tips = [
-        "Calibrate Silo #2 secondary chiller thermostat: 43% of souring occurred during 14:00 peak heat.",
-        "Inspect Delivery Van #3 crate latches to prevent road transit pouch ruptures.",
-        "Enforce 15-minute dock unloading SLA when raw milk tankers arrive from Baramati.",
-    ]
-
-    return WastageInsightsResponse(
-        total_wastage_liters=round(total_w_liters, 1),
-        total_procured_liters=round(total_procured, 1),
-        wastage_rate_percentage=rate,
-        total_financial_loss=loss,
-        benchmark_status=status,
-        reasons_breakdown=reasons_breakdown,
-        variants_breakdown=variants_breakdown,
-        cost_trend_vs_last_week_percentage=-14.2,
-        mitigation_tips=mitigation_tips,
-    )
-
-# =========================================================================
-# 3. SMART DELIVERY ROUTE OPTIMIZER & SEQUENCING
-# =========================================================================
-@api_router.get("/deliveries/optimized-route", response_model=RouteOptimizationResponse)
-def get_optimized_route(route_name: str = "Baner Morning Route R-04", db: Session = Depends(get_db)):
-    tasks = db.query(DeliveryTask).all()
-
-    # Base delivery stops sequence
-    sequenced_addresses = [
-        ("Kasturkunj Society, Tower B-402", "Baner Road", "05:45 AM", 0.0),
-        ("Rohan Nilay, Phase 1, Flat 104", "Aundh-Baner Link Rd", "05:52 AM", 1.8),
-        ("Pride Panorama, Penthouse 12", "Pancard Club Road", "06:01 AM", 2.1),
-        ("Pecan Tree Enclave, Villa 18", "Veerbhadra Nagar", "06:09 AM", 1.9),
-        ("Blue Ridge Residency, Tower 6-302", "Hinjawadi Phase 1", "06:18 AM", 3.2),
-        ("Balewadi High Street, Apt 501", "Balewadi", "06:26 AM", 2.4),
-        ("Windmill Village, Rowhouse 7", "Bavdhan Main Rd", "06:34 AM", 2.8),
-        ("Amar Paradigm, Block C-201", "Baner Hill Trail", "06:42 AM", 3.0),
-    ]
-
-    stops: List[OptimizedStop] = []
-    for idx, (addr, area, arrival, dist) in enumerate(sequenced_addresses):
-        t = tasks[idx] if idx < len(tasks) else None
-        cust_name = t.customer_name if t else f"Customer #{idx + 1}"
-        phone = t.customer_phone if t else "+91 98220 11980"
-        variant = t.product_variant if t else "Cow Milk (Pouch)"
-        qty = t.quantity_liters if t else 1.5
-        task_id = t.id if t else f"deliv-opt-{idx + 1}"
-
-        stops.append(
-            OptimizedStop(
-                stop_number=idx + 1,
-                delivery_id=task_id,
-                customer_name=cust_name,
-                customer_phone=phone,
-                address=addr,
-                area=area,
-                product_variant=variant,
-                quantity_liters=qty,
-                slot="Morning (6:00 AM - 7:30 AM)",
-                estimated_arrival=arrival,
-                distance_from_prev_km=dist,
-            )
-        )
-
-    # Route savings calculation
-    orig_dist = 26.4
-    opt_dist = 17.2
-    dist_saved = round(orig_dist - opt_dist, 1)
-
-    orig_time = 68
-    opt_time = 46
-    time_saved = orig_time - opt_time
-    fuel_saved = round(dist_saved * 0.14, 1)  # 0.14 L diesel/km
-
-    return RouteOptimizationResponse(
-        route_name=route_name,
-        total_stops=len(stops),
-        original_distance_km=orig_dist,
-        optimized_distance_km=opt_dist,
-        distance_saved_km=dist_saved,
-        original_time_mins=orig_time,
-        optimized_time_mins=opt_time,
-        time_saved_mins=time_saved,
-        fuel_saved_liters=fuel_saved,
-        stops=stops,
-        traffic_density="Low - Morning Clear Corridor",
-        is_applied=True,
-    )
-
-@api_router.post("/deliveries/apply-sequence")
-def apply_route_sequence(route_name: str = "Baner Morning Route R-04", db: Session = Depends(get_db)):
-    return {
-        "success": True,
-        "message": f"Optimal geo-clustered sequence applied to {route_name}. Rider mobile dispatch updated.",
-        "applied_at": datetime.utcnow().strftime("%H:%M:%S"),
-    }
-
-# =========================================================================
-# 4. FLEXIBLE CUSTOMER SUBSCRIPTIONS ACTIONS
+# CUSTOMER SUBSCRIPTION ACTIONS
 # =========================================================================
 @api_router.patch("/subscriptions/{sub_id}/skip")
 def skip_subscription_delivery(sub_id: str, req: SkipDeliveryRequest, db: Session = Depends(get_db)):
@@ -2638,131 +2353,7 @@ def schedule_extra_milk(sub_id: str, req: ExtraMilkRequest, db: Session = Depend
     }
 
 # =========================================================================
-# 5. CUSTOMER INTELLIGENCE & RETENTION ANALYTICS
-# =========================================================================
-@api_router.get("/analytics/customer-insights", response_model=CustomerInsightsResponse)
-def get_customer_insights(db: Session = Depends(get_db)):
-    customers = db.query(Customer).all()
-    subscriptions = db.query(Subscription).all()
-    invoices = db.query(Invoice).all()
-
-    total_cust = len(customers) or 148
-    active_subs = sum(1 for s in subscriptions if s.status == "Active") or 118
-    retention_rate = round((active_subs / total_cust) * 100, 1)
-
-    insights: List[CustomerInsightItem] = [
-        CustomerInsightItem(
-            id="c-top-1",
-            name="Chitale Bandhu Mithaiwale",
-            type="SHOP",
-            area="Deccan Gymkhana",
-            phone="+91 98221 00234",
-            status="Active",
-            category="TOP_BUYER",
-            metric_label="Monthly Volume",
-            metric_value="1,450 L (₹87,000/mo)",
-            risk_level="LOW",
-            recommended_action="VIP Account: Schedule weekly cold-chain review",
-        ),
-        CustomerInsightItem(
-            id="c-top-2",
-            name="Priya Kulkarni",
-            type="HOUSEHOLD",
-            area="Baner Road",
-            phone="+91 98200 44551",
-            status="Active",
-            category="TOP_BUYER",
-            metric_label="Subscription Loyalty",
-            metric_value="18 Months Active • Zero Delays",
-            risk_level="LOW",
-            recommended_action="Send festive premium ghee sampler gift",
-        ),
-        CustomerInsightItem(
-            id="c-risk-1",
-            name="Vikram Salunkhe",
-            type="HOUSEHOLD",
-            area="Kothrud Stand",
-            phone="+91 98220 77612",
-            status="Paused",
-            category="AT_RISK",
-            metric_label="Paused Duration",
-            metric_value="Paused for 9 consecutive days",
-            risk_level="HIGH",
-            recommended_action="Send friendly WhatsApp check-in: 'Is your vacation over?'",
-        ),
-        CustomerInsightItem(
-            id="c-risk-2",
-            name="Sunita Deshpande",
-            type="HOUSEHOLD",
-            area="Aundh Gaon",
-            phone="+91 98220 99431",
-            status="Active",
-            category="AT_RISK",
-            metric_label="Quota Reduction",
-            metric_value="Decreased from 2.0L to 0.5L",
-            risk_level="MEDIUM",
-            recommended_action="Call to inquire about taste or delivery timing feedback",
-        ),
-        CustomerInsightItem(
-            id="c-due-1",
-            name="Modern Bakery & Confectionery",
-            type="SHOP",
-            area="Camp East",
-            phone="+91 98220 33819",
-            status="Active",
-            category="OVERDUE",
-            metric_label="Overdue Balance",
-            metric_value="₹14,280 (24 days overdue)",
-            risk_level="HIGH",
-            recommended_action="Send automated UPI payment link & reminder SMS",
-        ),
-        CustomerInsightItem(
-            id="c-due-2",
-            name="Rajesh Patil",
-            type="HOUSEHOLD",
-            area="Viman Nagar",
-            phone="+91 98200 66129",
-            status="Active",
-            category="OVERDUE",
-            metric_label="Cycle Dues",
-            metric_value="₹2,480 (16 days overdue)",
-            risk_level="MEDIUM",
-            recommended_action="Soft reminder notification on delivery invoice",
-        ),
-        CustomerInsightItem(
-            id="c-vol-1",
-            name="Kalyani Cafe & Milk Center",
-            type="SHOP",
-            area="Kothrud Depot",
-            phone="+91 98220 88210",
-            status="Active",
-            category="HIGH_VOLUME_SHOP",
-            metric_label="Bulk Intake",
-            metric_value="85 L Buffalo Milk / Daily",
-            risk_level="LOW",
-            recommended_action="Lock in 6-month contract with 3% bulk rebate",
-        ),
-    ]
-
-    retention_tips = [
-        "Reach out to customers who have been on vacation pause > 7 days with a 1-tap 'Welcome Home' resume link.",
-        "Overdue B2B commercial accounts: Dispatch rider should collect cash/UPI receipt upon next morning drop.",
-        "Offer 500ml A2 Desi Cow Milk complimentary tasting to high-volume Cow Milk household subscribers.",
-    ]
-
-    return CustomerInsightsResponse(
-        total_customers=total_cust,
-        active_subscribers=active_subs,
-        retention_rate_percentage=retention_rate,
-        at_risk_count=2,
-        overdue_count=2,
-        top_buyers_count=2,
-        insights=insights,
-        retention_tips=retention_tips,
-    )
-
-# =========================================================================
-# 6. OFFLINE DELIVERY BATCH SYNC & REAL-TIME DRIVER TELEMETRY
+# OFFLINE DELIVERY BATCH SYNC & DRIVER TELEMETRY
 # =========================================================================
 @api_router.post("/deliveries/sync-batch", response_model=DeliveryBatchSyncResponse)
 def sync_offline_deliveries(req: DeliveryBatchSyncRequest, db: Session = Depends(get_db)):
@@ -3150,12 +2741,11 @@ def calculate_procurement_rate(req: ProcurementRateCalcRequest):
         recommendation=rec,
     )
 
-# ----------------- INTELLIGENT TSP ROUTE OPTIMIZATION -----------------
+# ----------------- ROUTE STOP ORDERING -----------------
 @api_router.post("/routes/{route_id}/optimize-tsp", response_model=RouteOptimizeResponse)
 def optimize_route_tsp_endpoint(route_id: str, db: Session = Depends(get_db)):
     """
-    Optimizes the delivery stop sequence for a given route using 2-Opt Nearest-Neighbor TSP.
-    Applies optimized sequence directly to today's DeliveryTasks in the database.
+    Applies standard sequential ordering to delivery stops for a given route.
     """
     route = db.query(Route).filter((Route.id == route_id) | (Route.route_code == route_id)).first()
     if not route:
@@ -3165,57 +2755,40 @@ def optimize_route_tsp_endpoint(route_id: str, db: Session = Depends(get_db)):
 
     tasks = db.query(DeliveryTask).filter(
         (DeliveryTask.route == route.route_code) | (DeliveryTask.area == route.area)
-    ).all()
+    ).order_by(DeliveryTask.sequence_order.asc()).all()
 
     if not tasks:
         tasks = db.query(DeliveryTask).limit(10).all()
 
     stops_data = []
-    for t in tasks:
-        stops_data.append({
-            "task_id": t.id,
-            "customer_name": t.customer_name,
-            "address": f"{t.flat_or_unit or ''} {t.society_or_landmark or ''}".strip() or t.address,
-            "latitude": t.latitude if t.latitude is not None else 18.5590,
-            "longitude": t.longitude if t.longitude is not None else 73.7868,
-            "quantity_liters": t.quantity_liters or 1.0,
-            "sequence_order": t.sequence_order or 0,
-        })
-
-    tsp_result = optimize_stops_tsp(stops_data, depot_lat=18.5590, depot_lon=73.7868)
-    optimized_stops = tsp_result["optimized_stops"]
-
-    for stop_info in optimized_stops:
-        t_id = stop_info.get("task_id")
-        seq = stop_info.get("sequence_order", 1)
-        task_rec = db.query(DeliveryTask).filter(DeliveryTask.id == t_id).first()
-        if task_rec:
-            task_rec.sequence_order = seq
+    for idx, t in enumerate(tasks):
+        seq = idx + 1
+        t.sequence_order = seq
+        stops_data.append(
+            TspOptimizedStop(
+                stop_id=t.id,
+                customer_name=t.customer_name,
+                sequence_order=seq,
+                address=f"{t.flat_or_unit or ''} {t.society_or_landmark or ''}".strip() or t.address,
+                latitude=t.latitude,
+                longitude=t.longitude,
+                quantity_liters=t.quantity_liters or 1.0,
+            )
+        )
 
     db.commit()
 
-    total_liters = sum(s.get("quantity_liters", 1.0) for s in optimized_stops)
+    total_liters = sum(s.quantity_liters for s in stops_data)
 
     return RouteOptimizeResponse(
         route_code=route.route_code,
         route_name=route.name,
-        total_stops=len(optimized_stops),
+        total_stops=len(stops_data),
         total_liters=round(total_liters, 1),
-        estimated_distance_km=tsp_result["optimized_distance_km"],
-        estimated_time_minutes=tsp_result["optimized_time_mins"],
-        optimization_method="2-Opt Nearest-Neighbor TSP",
-        stops=[
-            TspOptimizedStop(
-                stop_id=s.get("task_id", ""),
-                customer_name=s.get("customer_name", ""),
-                sequence_order=s.get("sequence_order", 1),
-                address=s.get("address", ""),
-                latitude=s.get("latitude"),
-                longitude=s.get("longitude"),
-                quantity_liters=s.get("quantity_liters", 1.0),
-            )
-            for s in optimized_stops
-        ],
+        estimated_distance_km=round(len(stops_data) * 1.5, 1),
+        estimated_time_minutes=len(stops_data) * 5,
+        optimization_method="Sequential Stop Order",
+        stops=stops_data,
     )
 
 # ----------------- PDF INVOICE DOWNLOAD -----------------

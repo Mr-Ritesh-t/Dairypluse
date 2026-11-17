@@ -431,94 +431,7 @@ class AuthUserResponse(BaseModel):
     dairy_name: Optional[str] = "DairyPulse Farm HQ"
     token: str = "dairypulse_session_token"
 
-# ----------------- AI DEMAND FORECASTING SCHEMAS -----------------
-class VariantForecast(BaseModel):
-    variant: str
-    active_subscriptions_liters: float
-    b2b_orders_liters: float
-    weekday_multiplier: float
-    total_predicted_demand: float
-    current_available_stock: float
-    safety_buffer_liters: float
-    net_shortage: float
-    suggested_procurement: float
-    unit_cost_estimate: float
-    estimated_procurement_cost: float
-
-class DailyTrendPoint(BaseModel):
-    day: str
-    date: str
-    predicted_liters: float
-    actual_or_baseline_liters: float
-
-class DemandForecastResponse(BaseModel):
-    target_date: str
-    target_day_name: str
-    total_predicted_demand: float
-    total_available_stock: float
-    total_shortage: float
-    total_suggested_procurement: float
-    total_estimated_cost: float
-    variants: List[VariantForecast]
-    seven_day_trend: List[DailyTrendPoint]
-    confidence_score: float
-    recommendations: List[str]
-
-# ----------------- WASTAGE INTELLIGENCE SCHEMAS -----------------
-class WastageByReason(BaseModel):
-    reason: str
-    quantity_liters: float
-    percentage: float
-    financial_loss: float
-
-class WastageByVariant(BaseModel):
-    variant: str
-    quantity_liters: float
-    percentage: float
-    financial_loss: float
-
-class WastageInsightsResponse(BaseModel):
-    total_wastage_liters: float
-    total_procured_liters: float
-    wastage_rate_percentage: float
-    total_financial_loss: float
-    benchmark_status: str  # "HEALTHY", "WARNING", "CRITICAL"
-    reasons_breakdown: List[WastageByReason]
-    variants_breakdown: List[WastageByVariant]
-    cost_trend_vs_last_week_percentage: float
-    mitigation_tips: List[str]
-
-# ----------------- ROUTE OPTIMIZATION SCHEMAS -----------------
-class OptimizedStop(BaseModel):
-    stop_number: int
-    delivery_id: str
-    customer_name: str
-    customer_phone: str
-    address: str
-    area: str
-    route: Optional[str] = None
-    dairy_name: Optional[str] = "Amrut Dairy Farm"
-    product_variant: str
-    quantity_liters: float
-    slot: str
-    estimated_arrival: str
-    distance_from_prev_km: float
-
-class RouteOptimizationResponse(BaseModel):
-    route_name: str
-    total_stops: int
-    original_distance_km: float
-    optimized_distance_km: float
-    distance_saved_km: float
-    original_time_mins: int
-    optimized_time_mins: int
-    time_saved_mins: int
-    fuel_saved_liters: float
-    stops: List[OptimizedStop]
-    traffic_density: str
-    is_applied: bool
-
-# ----------------- FLEXIBLE SUBSCRIPTIONS & INSIGHTS SCHEMAS -----------------
+# ----------------- FLEXIBLE SUBSCRIPTIONS SCHEMAS -----------------
 class SkipDeliveryRequest(BaseModel):
     skip_date: str
     reason: Optional[str] = "Out of town / Personal"
@@ -536,31 +449,6 @@ class ExtraMilkRequest(BaseModel):
     variant: Optional[str] = "Cow Milk"
     notes: Optional[str] = None
     is_admin_override: Optional[bool] = False
-
-class CustomerInsightItem(BaseModel):
-    id: str
-    name: str
-    type: str  # HOUSEHOLD, SHOP, RESTAURANT
-    area: str
-    route: Optional[str] = None
-    dairy_name: Optional[str] = "Amrut Dairy Farm"
-    phone: str
-    status: str
-    category: str  # "TOP_BUYER", "AT_RISK", "OVERDUE", "HIGH_VOLUME_SHOP"
-    metric_label: str
-    metric_value: str
-    risk_level: str  # "LOW", "MEDIUM", "HIGH"
-    recommended_action: str
-
-class CustomerInsightsResponse(BaseModel):
-    total_customers: int
-    active_subscribers: int
-    retention_rate_percentage: float
-    at_risk_count: int
-    overdue_count: int
-    top_buyers_count: int
-    insights: List[CustomerInsightItem]
-    retention_tips: List[str]
 
 # ----------------- OFFLINE DELIVERY SYNC SCHEMAS -----------------
 class OfflineDeliveryAction(BaseModel):
