@@ -76,3 +76,4 @@ assert res.status_code == 200  # SUCCEEDS ILLEGITIMATELY
 1. Implement `get_current_user` and `require_role(allowed_roles: List[str])` reusable FastAPI dependencies in a new module `backend/app/auth/dependencies.py`.
 2. Secure all administrative, financial, and deletion endpoints with `Depends(require_role(["OWNER", "ADMIN"]))`.
 3. Enforce automatic tenant filtering (`query.filter(Model.dairy_name == current_user.dairy_name)`).
+

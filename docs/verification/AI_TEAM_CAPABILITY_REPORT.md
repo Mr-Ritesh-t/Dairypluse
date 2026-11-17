@@ -74,3 +74,4 @@ The Antigravity AI multi-agent architecture is fully operational in this workspa
 - Real autonomous execution is verified via `invoke_subagent` and `run_command`.
 - Native swarm message board tools (`swarm`) are verified in active standby.
 - Evaluative personas provide disciplined, multi-angle oversight without hallucinating simulated actions as real agent runs.
+

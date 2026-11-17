@@ -89,3 +89,4 @@ sequenceDiagram
        raise HTTPException(status_code=400, detail="Invalid gateway signature")
    ```
 4. **Merchant Onboarding:** Store verified sub-merchant account IDs on the `Dairy` model so payments route directly to each dairy owner's bank account.
+

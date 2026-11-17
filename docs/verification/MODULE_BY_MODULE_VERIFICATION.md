@@ -231,3 +231,4 @@
   - Models: `Dairy`, `User` (`role="ADMIN"`).
 - **Status:** **PARTIALLY IMPLEMENTED**
 - **Discrepancies / Gaps:** Multi-tenant schemas exist in database, but there is no dedicated super-admin UI dashboard for cross-tenant management.
+

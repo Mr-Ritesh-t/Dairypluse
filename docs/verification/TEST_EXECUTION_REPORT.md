@@ -106,3 +106,4 @@ Route (app)                              Size     First Load JS
 ## 4. Warnings & Non-Critical Observations
 1. **Starlette Deprecation Warning:** Starlette `TestClient` uses deprecated `httpx`; suggests upgrading to `httpx2` in future dependencies update.
 2. **Pydantic V2 Migration Warning:** `sub.dict()` used in `api_v1.py#L617` is deprecated in favor of `sub.model_dump()`.
+

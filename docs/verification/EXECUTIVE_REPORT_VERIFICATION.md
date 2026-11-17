@@ -25,3 +25,4 @@
 1. **Core Workflows Are Solid:** Subscriptions, daily delivery task generation, morning route sequencing, staff attendance, and customer mobile portals are genuinely functional and backed by passing automated tests.
 2. **Financial Flow Is Simulated:** While double-entry balance deduction is verified locally, live money does NOT move through a payment gateway. Clients must not be told real money is being settled.
 3. **Security Perimeter Needs Sprint 1 Hardening:** Authentication (passwords and tokens) is fixed, but authorization (protecting endpoints with token checks) remains the single largest operational vulnerability.
+
