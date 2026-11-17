@@ -24,6 +24,8 @@ from app.models.models import (
     StaffAttendance,
     StaffSalaryPayment,
     PaymentTransaction,
+    CustomerBottleLog,
+    Notification,
 )
 from app.schemas.schemas import (
     ProductCreate,
@@ -101,7 +103,18 @@ from app.schemas.schemas import (
     PaymentOrderResponse,
     PaymentVerifyRequest,
     PaymentTransactionResponse,
+    ProcurementRateCalcRequest,
+    ProcurementRateCalcResponse,
+    BottleLogRequest,
+    CustomerBottleLogResponse,
+    BottleBalanceResponse,
+    TspOptimizedStop,
+    RouteOptimizeResponse,
 )
+from fastapi.responses import Response, StreamingResponse
+import io
+from app.services.pdf_invoice import generate_invoice_pdf
+from app.services.route_optimizer import optimize_stops_tsp
 import os
 import uuid
 import urllib.parse
@@ -279,6 +292,25 @@ def _notify_owner_new_customer(new_cust: Customer, db: Session) -> dict:
         "action_label": "View Customer",
     }
     NOTIFICATIONS_DB.insert(0, notif_item)
+
+    try:
+        db_notif = Notification(
+            id=notif_id,
+            title=notif_item["title"],
+            message=notif_item["message"],
+            category=notif_item["category"],
+            severity=notif_item["severity"],
+            timestamp=notif_item["timestamp"],
+            time_ago="Just now",
+            is_read=False,
+            action_url=notif_item["action_url"],
+            action_label=notif_item["action_label"],
+            dairy_name=dairy_name,
+        )
+        db.add(db_notif)
+        db.commit()
+    except Exception:
+        db.rollback()
 
     # Format 1-click WhatsApp owner notification
     wa_msg = (
@@ -2631,6 +2663,25 @@ def sync_offline_deliveries(req: DeliveryBatchSyncRequest, db: Session = Depends
     }
     NOTIFICATIONS_DB.insert(0, new_notif)
 
+    try:
+        db_sync_notif = Notification(
+            id=new_notif["id"],
+            title=new_notif["title"],
+            message=new_notif["message"],
+            category=new_notif["category"],
+            severity=new_notif["severity"],
+            timestamp=new_notif["timestamp"],
+            time_ago="Just now",
+            is_read=False,
+            action_url=new_notif["action_url"],
+            action_label=new_notif["action_label"],
+            dairy_name="Amrut Dairy Farm",
+        )
+        db.add(db_sync_notif)
+        db.commit()
+    except Exception:
+        db.rollback()
+
     return DeliveryBatchSyncResponse(
         synced_count=success_count,
         success=True,
@@ -2641,12 +2692,59 @@ def sync_offline_deliveries(req: DeliveryBatchSyncRequest, db: Session = Depends
 
 
 # =========================================================================
-# 7. IN-APP NOTIFICATION CENTER
+# 7. IN-APP NOTIFICATION CENTER (DATABASE PERSISTED)
 # =========================================================================
-# NOTIFICATIONS_DB initialized at module top
 
 @api_router.get("/notifications", response_model=NotificationListResponse)
-def get_notifications():
+def get_notifications(db: Session = Depends(get_db)):
+    # Check DB notifications
+    db_notifs = db.query(Notification).order_by(Notification.created_at.desc()).all()
+    if not db_notifs:
+        # Seed from NOTIFICATIONS_DB into table once
+        for n in NOTIFICATIONS_DB:
+            new_n = Notification(
+                id=n["id"],
+                title=n["title"],
+                message=n["message"],
+                category=n.get("category", "SYSTEM"),
+                severity=n.get("severity", "INFO"),
+                timestamp=n.get("timestamp", datetime.now().isoformat()),
+                time_ago=n.get("time_ago", "Just now"),
+                is_read=n.get("is_read", False),
+                action_url=n.get("action_url"),
+                action_label=n.get("action_label"),
+                dairy_name="Amrut Dairy Farm",
+            )
+            db.add(new_n)
+        try:
+            db.commit()
+            db_notifs = db.query(Notification).order_by(Notification.created_at.desc()).all()
+        except Exception:
+            db.rollback()
+
+    if db_notifs:
+        notif_items = [
+            NotificationItem(
+                id=n.id,
+                title=n.title,
+                message=n.message,
+                category=n.category,
+                severity=n.severity,
+                timestamp=n.timestamp,
+                time_ago=n.time_ago,
+                is_read=n.is_read,
+                action_url=n.action_url,
+                action_label=n.action_label,
+            )
+            for n in db_notifs
+        ]
+        unread = sum(1 for n in db_notifs if not n.is_read)
+        return NotificationListResponse(
+            notifications=notif_items,
+            unread_count=unread,
+            total_count=len(notif_items),
+        )
+
     unread = sum(1 for n in NOTIFICATIONS_DB if not n.get("is_read", False))
     return NotificationListResponse(
         notifications=[NotificationItem(**n) for n in NOTIFICATIONS_DB],
@@ -2655,87 +2753,344 @@ def get_notifications():
     )
 
 @api_router.patch("/notifications/{notif_id}/read")
-def mark_notification_read(notif_id: str):
+def mark_notification_read(notif_id: str, db: Session = Depends(get_db)):
+    # Update DB
+    db_n = db.query(Notification).filter(Notification.id == notif_id).first()
+    if db_n:
+        db_n.is_read = True
+        db.commit()
+    # Update in-memory fallback
     for n in NOTIFICATIONS_DB:
         if n["id"] == notif_id:
             n["is_read"] = True
             return {"success": True, "id": notif_id, "is_read": True}
+    if db_n:
+        return {"success": True, "id": notif_id, "is_read": True}
     return {"success": False, "message": "Notification not found"}
 
 @api_router.post("/notifications/mark-all-read")
-def mark_all_notifications_read():
+def mark_all_notifications_read(db: Session = Depends(get_db)):
+    # Update DB
+    db.query(Notification).update({Notification.is_read: True})
+    db.commit()
+    # Update in-memory
     for n in NOTIFICATIONS_DB:
         n["is_read"] = True
     return {"success": True, "message": "All notifications marked as read"}
 
 @api_router.post("/notifications/clear")
-def clear_read_notifications():
+def clear_read_notifications(db: Session = Depends(get_db)):
     global NOTIFICATIONS_DB
+    # Delete read from DB
+    db.query(Notification).filter(Notification.is_read == True).delete()
+    db.commit()
+    # Update in-memory
     NOTIFICATIONS_DB = [n for n in NOTIFICATIONS_DB if not n.get("is_read", False)]
-    return {"success": True, "remaining_count": len(NOTIFICATIONS_DB)}
+    remaining = db.query(Notification).count()
+    return {"success": True, "remaining_count": remaining}
 
 @api_router.post("/notifications/simulate-event")
-def simulate_notification_event(event_type: str = "SKIP"):
+def simulate_notification_event(event_type: str = "SKIP", db: Session = Depends(get_db)):
     """
     Demo endpoint: allows demonstrating real-time alerts.
     Supported types: SKIP, STOCK, ROUTE, ORDER
     """
     timestamp = datetime.now()
+    notif_id = f"notif_sim_{int(timestamp.timestamp())}"
     if event_type == "SKIP":
-        notif = {
-            "id": f"notif_sim_{int(timestamp.timestamp())}",
-            "title": "Customer Skipped Delivery Tomorrow",
-            "message": "Dr. Ramesh Shinde skipped 2.0L Cow Milk for 24 Oct via WhatsApp bot.",
-            "category": "SUBSCRIPTION",
-            "severity": "INFO",
-            "timestamp": timestamp.isoformat(),
-            "time_ago": "Just now",
-            "is_read": False,
-            "action_url": "/household",
-            "action_label": "View Subscription",
-        }
+        title = "Customer Skipped Delivery Tomorrow"
+        msg = "Dr. Ramesh Shinde skipped 2.0L Cow Milk for 24 Oct via WhatsApp bot."
+        cat = "SUBSCRIPTION"
+        sev = "INFO"
+        act_url = "/household"
+        act_lbl = "View Subscription"
     elif event_type == "STOCK":
-        notif = {
-            "id": f"notif_sim_{int(timestamp.timestamp())}",
-            "title": "Critical Stock: Buffalo Milk Alert",
-            "message": "Current stock is 95 L, falling below projected tomorrow evening demand (120 L).",
-            "category": "INVENTORY",
-            "severity": "URGENT",
-            "timestamp": timestamp.isoformat(),
-            "time_ago": "Just now",
-            "is_read": False,
-            "action_url": "/inventory",
-            "action_label": "Add Stock Intake",
-        }
+        title = "Critical Stock: Buffalo Milk Alert"
+        msg = "Current stock is 95 L, falling below projected tomorrow evening demand (120 L)."
+        cat = "INVENTORY"
+        sev = "URGENT"
+        act_url = "/inventory"
+        act_lbl = "Add Stock Intake"
     elif event_type == "ORDER":
-        notif = {
-            "id": f"notif_sim_{int(timestamp.timestamp())}",
-            "title": "New Commercial Bulk Order: ₹4,500",
-            "message": "Chitale Bandhu Sweets placed request for 75L Toned Milk for Diwali Batch.",
-            "category": "BILLING",
-            "severity": "SUCCESS",
-            "timestamp": timestamp.isoformat(),
-            "time_ago": "Just now",
-            "is_read": False,
-            "action_url": "/orders",
-            "action_label": "Review Order",
-        }
+        title = "New Commercial Bulk Order: ₹4,500"
+        msg = "Chitale Bandhu Sweets placed request for 75L Toned Milk for Diwali Batch."
+        cat = "BILLING"
+        sev = "SUCCESS"
+        act_url = "/orders"
+        act_lbl = "Review Order"
     else:
-        notif = {
-            "id": f"notif_sim_{int(timestamp.timestamp())}",
-            "title": "Route 2 Evening Dispatch Started",
-            "message": "Driver Amit Kadam started Wanowrie sector van with 140 pouches.",
-            "category": "DELIVERY",
-            "severity": "INFO",
-            "timestamp": timestamp.isoformat(),
-            "time_ago": "Just now",
-            "is_read": False,
-            "action_url": "/delivery",
-            "action_label": "Track Van",
-        }
+        title = "Route 2 Evening Dispatch Started"
+        msg = "Driver Amit Kadam started Wanowrie sector van with 140 pouches."
+        cat = "DELIVERY"
+        sev = "INFO"
+        act_url = "/delivery"
+        act_lbl = "Track Van"
 
-    NOTIFICATIONS_DB.insert(0, notif)
-    return {"success": True, "created_notification": notif}
+    notif_item = {
+        "id": notif_id,
+        "title": title,
+        "message": msg,
+        "category": cat,
+        "severity": sev,
+        "timestamp": timestamp.isoformat(),
+        "time_ago": "Just now",
+        "is_read": False,
+        "action_url": act_url,
+        "action_label": act_lbl,
+    }
+    NOTIFICATIONS_DB.insert(0, notif_item)
+
+    # Save to DB
+    try:
+        new_db_notif = Notification(
+            id=notif_id,
+            title=title,
+            message=msg,
+            category=cat,
+            severity=sev,
+            timestamp=timestamp.isoformat(),
+            time_ago="Just now",
+            is_read=False,
+            action_url=act_url,
+            action_label=act_lbl,
+            dairy_name="Amrut Dairy Farm",
+        )
+        db.add(new_db_notif)
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return {"success": True, "created_notification": notif_item}
+
+# ----------------- EMPTY BOTTLE DEPOSIT & LEDGER -----------------
+@api_router.get("/customers/{customer_id}/bottles", response_model=BottleBalanceResponse)
+def get_customer_bottle_balance(customer_id: str, db: Session = Depends(get_db)):
+    cust = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not cust:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    current_balance = cust.bottle_balance or 0
+    deposit_rate = cust.bottle_deposit_rate or 50.0
+    liability = round(current_balance * deposit_rate, 2)
+
+    recent_logs = db.query(CustomerBottleLog).filter(
+        CustomerBottleLog.customer_id == customer_id
+    ).order_by(CustomerBottleLog.timestamp.desc()).limit(15).all()
+
+    status_str = "CLEAR" if current_balance == 0 else ("HELD" if current_balance > 0 else "SURPLUS")
+
+    return BottleBalanceResponse(
+        customer_id=cust.id,
+        customer_name=cust.name,
+        phone=cust.phone,
+        bottle_balance=current_balance,
+        deposit_rate=deposit_rate,
+        total_deposit_liability=liability,
+        status=status_str,
+        recent_logs=[
+            CustomerBottleLogResponse(
+                id=log.id,
+                customer_id=log.customer_id,
+                bottles_delivered=log.bottles_delivered,
+                bottles_returned=log.bottles_returned,
+                net_change=log.net_change,
+                balance_after=log.balance_after,
+                date=log.date,
+                notes=log.notes,
+                logged_by=log.logged_by,
+            )
+            for log in recent_logs
+        ],
+    )
+
+@api_router.post("/customers/{customer_id}/bottles/log", response_model=BottleBalanceResponse)
+def log_customer_bottles(customer_id: str, req: BottleLogRequest, db: Session = Depends(get_db)):
+    cust = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not cust:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    net_change = req.bottles_delivered - req.bottles_returned
+    new_bal = max(0, (cust.bottle_balance or 0) + net_change)
+    cust.bottle_balance = new_bal
+
+    log_entry = CustomerBottleLog(
+        customer_id=customer_id,
+        bottles_delivered=req.bottles_delivered,
+        bottles_returned=req.bottles_returned,
+        net_change=net_change,
+        balance_after=new_bal,
+        date=datetime.now().strftime("%Y-%m-%d"),
+        notes=req.notes or f"Delivered {req.bottles_delivered}, Collected {req.bottles_returned}",
+        logged_by=req.logged_by or "Delivery Rider",
+    )
+    db.add(log_entry)
+    db.commit()
+    db.refresh(cust)
+
+    return get_customer_bottle_balance(customer_id, db)
+
+# ----------------- FAT/SNF PROCUREMENT RATE CALCULATOR -----------------
+@api_router.post("/inventory/procurement-rate-calc", response_model=ProcurementRateCalcResponse)
+def calculate_procurement_rate(req: ProcurementRateCalcRequest):
+    """
+    Indian Dairy Cooperative Two-Axis Rate Chart Formula:
+    Calculates procurement payout to farmers based on Fat% and SNF%.
+    Standard Cow standard: 4.0% Fat / 8.5% SNF
+    Standard Buffalo standard: 6.5% Fat / 9.0% SNF
+    """
+    milk_type = (req.milk_type or "COW").upper()
+    fat = max(0.0, req.fat_percentage)
+    snf = max(0.0, req.snf_percentage)
+    qty = max(0.0, req.quantity_liters)
+    total_solids = round(fat + snf, 2)
+
+    # Standard cooperative rate bases (per kg fat and per kg SNF)
+    base_fat_rate = req.base_rate_per_kg_fat or (340.0 if milk_type == "COW" else 310.0)
+    base_snf_rate = req.base_rate_per_kg_snf or (185.0 if milk_type == "COW" else 175.0)
+
+    # Approximate density of milk is ~1.03 kg/L
+    density = 1.03
+    fat_kg_per_l = (fat / 100.0) * density
+    snf_kg_per_l = (snf / 100.0) * density
+
+    fat_comp = round(fat_kg_per_l * base_fat_rate, 2)
+    snf_comp = round(snf_kg_per_l * base_snf_rate, 2)
+    rate_per_liter = round(fat_comp + snf_comp, 2)
+
+    if milk_type == "COW":
+        if fat >= 4.2 and snf >= 8.5:
+            grade = "PREMIUM"
+            rec = "Approved for Premium Bottle Packaging. High A2/Cream solids."
+        elif fat >= 3.5 and snf >= 8.0:
+            grade = "STANDARD"
+            rec = "Standard Market Milk Intake. Ready for pasteurization."
+        else:
+            grade = "SUBSTANDARD"
+            rec = "Low Fat/SNF. Reject or accept with penalty deduction."
+    else:  # BUFFALO
+        if fat >= 6.8 and snf >= 9.0:
+            grade = "PREMIUM"
+            rec = "High-Fat Cream Grade. Excellent for paneer/khoya batch."
+        elif fat >= 6.0 and snf >= 8.5:
+            grade = "STANDARD"
+            rec = "Standard Buffalo Intake. Approved for pouch distribution."
+        else:
+            grade = "SUBSTANDARD"
+            rec = "Below cooperative fat floor (min 6.0%). Deduct or reject."
+
+    total_cost = round(rate_per_liter * qty, 2)
+
+    return ProcurementRateCalcResponse(
+        milk_type=milk_type,
+        fat_percentage=fat,
+        snf_percentage=snf,
+        ts_percentage=total_solids,
+        quantity_liters=qty,
+        rate_per_liter=rate_per_liter,
+        total_procurement_cost=total_cost,
+        quality_grade=grade,
+        fat_component_rate=fat_comp,
+        snf_component_rate=snf_comp,
+        recommendation=rec,
+    )
+
+# ----------------- INTELLIGENT TSP ROUTE OPTIMIZATION -----------------
+@api_router.post("/routes/{route_id}/optimize-tsp", response_model=RouteOptimizeResponse)
+def optimize_route_tsp_endpoint(route_id: str, db: Session = Depends(get_db)):
+    """
+    Optimizes the delivery stop sequence for a given route using 2-Opt Nearest-Neighbor TSP.
+    Applies optimized sequence directly to today's DeliveryTasks in the database.
+    """
+    route = db.query(Route).filter((Route.id == route_id) | (Route.route_code == route_id)).first()
+    if not route:
+        route = db.query(Route).first()
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+
+    tasks = db.query(DeliveryTask).filter(
+        (DeliveryTask.route == route.route_code) | (DeliveryTask.area == route.area)
+    ).all()
+
+    if not tasks:
+        tasks = db.query(DeliveryTask).limit(10).all()
+
+    stops_data = []
+    for t in tasks:
+        stops_data.append({
+            "task_id": t.id,
+            "customer_name": t.customer_name,
+            "address": f"{t.flat_or_unit or ''} {t.society_or_landmark or ''}".strip() or t.address,
+            "latitude": t.latitude if t.latitude is not None else 18.5590,
+            "longitude": t.longitude if t.longitude is not None else 73.7868,
+            "quantity_liters": t.quantity_liters or 1.0,
+            "sequence_order": t.sequence_order or 0,
+        })
+
+    tsp_result = optimize_stops_tsp(stops_data, depot_lat=18.5590, depot_lon=73.7868)
+    optimized_stops = tsp_result["optimized_stops"]
+
+    for stop_info in optimized_stops:
+        t_id = stop_info.get("task_id")
+        seq = stop_info.get("sequence_order", 1)
+        task_rec = db.query(DeliveryTask).filter(DeliveryTask.id == t_id).first()
+        if task_rec:
+            task_rec.sequence_order = seq
+
+    db.commit()
+
+    total_liters = sum(s.get("quantity_liters", 1.0) for s in optimized_stops)
+
+    return RouteOptimizeResponse(
+        route_code=route.route_code,
+        route_name=route.name,
+        total_stops=len(optimized_stops),
+        total_liters=round(total_liters, 1),
+        estimated_distance_km=tsp_result["optimized_distance_km"],
+        estimated_time_minutes=tsp_result["optimized_time_mins"],
+        optimization_method="2-Opt Nearest-Neighbor TSP",
+        stops=[
+            TspOptimizedStop(
+                stop_id=s.get("task_id", ""),
+                customer_name=s.get("customer_name", ""),
+                sequence_order=s.get("sequence_order", 1),
+                address=s.get("address", ""),
+                latitude=s.get("latitude"),
+                longitude=s.get("longitude"),
+                quantity_liters=s.get("quantity_liters", 1.0),
+            )
+            for s in optimized_stops
+        ],
+    )
+
+# ----------------- PDF INVOICE DOWNLOAD -----------------
+@api_router.get("/invoices/{invoice_id}/pdf")
+def download_invoice_pdf(invoice_id: str, db: Session = Depends(get_db)):
+    """
+    Generates and returns an official, printable PDF Tax Invoice for a customer billing statement.
+    """
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        invoice = db.query(Invoice).filter(Invoice.invoice_number == invoice_id).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+    dairy = None
+    if invoice.dairy_name:
+        dairy = db.query(Dairy).filter(Dairy.name.ilike(invoice.dairy_name.strip())).first()
+
+    pdf_bytes = generate_invoice_pdf(invoice=invoice, customer=customer, dairy=dairy)
+
+    filename = f"Invoice_{invoice.invoice_number or 'INV'}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "application/pdf",
+        },
+    )
+
 
 
 # ----------------- ATTENDANCE & MILK PICKUP ENDPOINTS -----------------

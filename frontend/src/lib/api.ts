@@ -2378,3 +2378,101 @@ export async function getPaymentHistoryApi(
     return null;
   }
 }
+
+export async function downloadInvoicePdfApi(invoiceId: string, invoiceNumber?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/invoices/${invoiceId}/pdf`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to download invoice PDF');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Invoice_${invoiceNumber || invoiceId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    return true;
+  } catch (err) {
+    console.warn('API error downloading invoice PDF:', err);
+    return false;
+  }
+}
+
+export async function optimizeRouteTspApi(routeId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/routes/${encodeURIComponent(routeId)}/optimize-tsp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to optimize route via TSP');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error optimizing route:', err);
+    return null;
+  }
+}
+
+export async function getCustomerBottleBalanceApi(customerId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/customers/${customerId}/bottles`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Failed to fetch customer bottle balance');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching bottle balance:', err);
+    return null;
+  }
+}
+
+export async function logCustomerBottlesApi(
+  customerId: string,
+  data: { bottlesDelivered: number; bottlesReturned: number; notes?: string; loggedBy?: string }
+) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/customers/${customerId}/bottles/log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bottles_delivered: data.bottlesDelivered,
+        bottles_returned: data.bottlesReturned,
+        notes: data.notes,
+        logged_by: data.loggedBy || 'Delivery Rider',
+      }),
+    });
+    if (!res.ok) throw new Error('Failed to log customer bottles');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error logging bottles:', err);
+    return null;
+  }
+}
+
+export async function calcProcurementRateApi(data: {
+  milkType: string;
+  fatPercentage: number;
+  snfPercentage: number;
+  quantityLiters: number;
+}) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/inventory/procurement-rate-calc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        milk_type: data.milkType,
+        fat_percentage: data.fatPercentage,
+        snf_percentage: data.snfPercentage,
+        quantity_liters: data.quantityLiters,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed to calculate procurement rate');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error calculating procurement rate:', err);
+    return null;
+  }
+}
+

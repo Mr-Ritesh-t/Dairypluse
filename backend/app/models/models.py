@@ -85,10 +85,13 @@ class Customer(Base):
     joined_date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
     last_reminder_sent = Column(String, nullable=True)  # YYYY-MM-DD HH:MM
     billing_type = Column(String, default="POSTPAID", nullable=True)  # POSTPAID, PREPAID
+    bottle_balance = Column(Integer, default=0, nullable=True)  # Outstanding empty bottles with customer
+    bottle_deposit_rate = Column(Float, default=50.0, nullable=True)  # Standard INR deposit per glass bottle
 
     subscriptions = relationship("Subscription", back_populates="customer")
     orders = relationship("Order", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
+    bottle_logs = relationship("CustomerBottleLog", back_populates="customer", cascade="all, delete-orphan")
 
 class Product(Base):
     __tablename__ = "products"
@@ -329,3 +332,36 @@ class PaymentTransaction(Base):
     notes = Column(Text, nullable=True)
     dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class CustomerBottleLog(Base):
+    __tablename__ = "customer_bottle_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    customer_id = Column(String, ForeignKey("customers.id"), nullable=False)
+    bottles_delivered = Column(Integer, default=0)
+    bottles_returned = Column(Integer, default=0)
+    net_change = Column(Integer, default=0)
+    balance_after = Column(Integer, default=0)
+    date = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    notes = Column(String, nullable=True)
+    logged_by = Column(String, default="System")
+
+    customer = relationship("Customer", back_populates="bottle_logs")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    category = Column(String, default="SYSTEM")  # SUBSCRIPTION, STOCK, ROUTE, ORDER, SYSTEM
+    severity = Column(String, default="INFO")    # INFO, WARNING, SUCCESS, ERROR
+    timestamp = Column(String, nullable=False)
+    time_ago = Column(String, default="Just now")
+    is_read = Column(Boolean, default=False)
+    action_url = Column(String, nullable=True)
+    action_label = Column(String, nullable=True)
+    dairy_name = Column(String, default="Amrut Dairy Farm", nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

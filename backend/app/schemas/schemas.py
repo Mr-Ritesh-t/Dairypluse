@@ -63,6 +63,8 @@ class CustomerBase(BaseModel):
     preferred_time: Optional[str] = "6:00 AM - 7:30 AM"
     balance: float = 0.0
     billing_type: Optional[str] = "POSTPAID"  # POSTPAID, PREPAID
+    bottle_balance: Optional[int] = 0
+    bottle_deposit_rate: Optional[float] = 50.0
     status: str = "Active"
 
 class CustomerCreate(CustomerBase):
@@ -783,3 +785,75 @@ class PaymentTransactionResponse(BaseModel):
     notes: Optional[str] = None
     created_at: Optional[Any] = None
     model_config = ConfigDict(from_attributes=True)
+
+# ----------------- PROCUREMENT & RATE CHART -----------------
+class ProcurementRateCalcRequest(BaseModel):
+    milk_type: str = "COW"  # COW or BUFFALO
+    fat_percentage: float   # e.g. 4.2
+    snf_percentage: float   # e.g. 8.5
+    quantity_liters: float  # e.g. 150.0
+    base_rate_per_kg_fat: Optional[float] = None
+    base_rate_per_kg_snf: Optional[float] = None
+
+class ProcurementRateCalcResponse(BaseModel):
+    milk_type: str
+    fat_percentage: float
+    snf_percentage: float
+    ts_percentage: float
+    quantity_liters: float
+    rate_per_liter: float
+    total_procurement_cost: float
+    quality_grade: str  # PREMIUM, STANDARD, SUBSTANDARD
+    fat_component_rate: float
+    snf_component_rate: float
+    recommendation: str
+
+# ----------------- BOTTLE TRACKING & DEPOSITS -----------------
+class BottleLogRequest(BaseModel):
+    bottles_delivered: int = 0
+    bottles_returned: int = 0
+    notes: Optional[str] = None
+    logged_by: Optional[str] = "Delivery Rider"
+
+class CustomerBottleLogResponse(BaseModel):
+    id: str
+    customer_id: str
+    bottles_delivered: int
+    bottles_returned: int
+    net_change: int
+    balance_after: int
+    date: str
+    notes: Optional[str] = None
+    logged_by: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class BottleBalanceResponse(BaseModel):
+    customer_id: str
+    customer_name: str
+    phone: str
+    bottle_balance: int
+    deposit_rate: float
+    total_deposit_liability: float
+    status: str
+    recent_logs: List[CustomerBottleLogResponse] = []
+
+# ----------------- ROUTE OPTIMIZATION -----------------
+class TspOptimizedStop(BaseModel):
+    stop_id: str
+    customer_name: str
+    sequence_order: int
+    address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    quantity_liters: float
+
+class RouteOptimizeResponse(BaseModel):
+    route_code: str
+    route_name: str
+    total_stops: int
+    total_liters: float
+    estimated_distance_km: float
+    estimated_time_minutes: int
+    optimization_method: str = "2-Opt Nearest-Neighbor TSP"
+    stops: List[TspOptimizedStop]
+

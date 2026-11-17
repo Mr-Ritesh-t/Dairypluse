@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { PageHead } from '@/components/common/PageHead';
 import { useDairyPulse } from '@/context/DairyPulseContext';
+import { downloadInvoicePdfApi } from '@/lib/api';
 import {
   Card,
   StatCard,
@@ -233,9 +234,14 @@ export default function BillingPaymentsPage() {
                             </Button>
                           )}
                           <button
-                            onClick={() => alert(`Downloading PDF for ${inv.invoiceNumber}...`)}
-                            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition-colors cursor-pointer"
-                            title="Download Invoice PDF"
+                            onClick={async () => {
+                              const success = await downloadInvoicePdfApi(inv.id, inv.invoiceNumber);
+                              if (!success) {
+                                alert(`Failed to download PDF for ${inv.invoiceNumber}. Please verify backend connection.`);
+                              }
+                            }}
+                            className="p-1.5 text-stone-500 hover:text-teal-700 rounded-lg hover:bg-teal-50 transition-colors cursor-pointer"
+                            title="Download Official Tax Invoice PDF"
                             aria-label={`Download invoice PDF for ${inv.invoiceNumber}`}
                           >
                             <Download className="w-3.5 h-3.5" />
