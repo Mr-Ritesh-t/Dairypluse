@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar, Bell } from 'lucide-react';
+import { X, Milk, UserPlus, Receipt, DollarSign, ShoppingBag, AlertTriangle, Building2, MapPin, Save, Compass, Layers, Plus, Calendar, Bell, Lock, Eye, EyeOff, Check, Copy, CheckCircle2, MessageCircle } from 'lucide-react';
 import { useDairyPulse } from '@/context/DairyPulseContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -73,6 +73,19 @@ export function ModalContainer() {
   const [custLat, setCustLat] = useState<number>(18.5593);
   const [custLng, setCustLng] = useState<number>(73.7788);
   const [custDairyName, setCustDairyName] = useState(dairies[0]?.name || 'Amrut Dairy Farm');
+  const [custPassword, setCustPassword] = useState('cust123');
+  const [showCustPassword, setShowCustPassword] = useState(false);
+  const [isSavingCustomer, setIsSavingCustomer] = useState(false);
+  const [createdCustomerCredentials, setCreatedCustomerCredentials] = useState<{
+    id: string;
+    name: string;
+    phone: string;
+    password: string;
+    dairyName: string;
+    whatsappUrl?: string;
+    welcomeMessage?: string;
+  } | null>(null);
+  const [copiedCredentials, setCopiedCredentials] = useState(false);
 
   // Generate Bill State
   const [billCustId, setBillCustId] = useState(customers[0]?.id || '');
@@ -246,7 +259,7 @@ export function ModalContainer() {
               <h3 className="font-bold text-slate-900 text-base">
                 {activeModal === 'addVariety' && 'Add New Milk Variety'}
                 {activeModal === 'addStock' && 'Add Milk Stock Intake'}
-                {activeModal === 'addCustomer' && 'Register New Customer'}
+                {activeModal === 'addCustomer' && (createdCustomerCredentials ? 'Customer Login Credentials' : 'Register New Customer')}
                 {activeModal === 'generateBill' && 'Generate Invoice / Bill'}
                 {activeModal === 'addExpense' && 'Record Business Expense'}
                 {activeModal === 'createOrder' && 'New Commercial Shop Order'}
@@ -256,7 +269,7 @@ export function ModalContainer() {
               <p className="text-xs text-slate-500">
                 {activeModal === 'addVariety' && 'Configure custom milk variety, FAT/SNF specifications, and pricing'}
                 {activeModal === 'addStock' && 'Record incoming bulk milk cans or tanker supply'}
-                {activeModal === 'addCustomer' && 'Add household subscriber or commercial dairy buyer'}
+                {activeModal === 'addCustomer' && (createdCustomerCredentials ? 'Share or copy customer portal credentials via WhatsApp' : 'Add household subscriber or commercial dairy buyer')}
                 {activeModal === 'generateBill' && 'Create cycle invoice linked to client ledger'}
                 {activeModal === 'addExpense' && 'Log farm or operational expense with category'}
                 {activeModal === 'createOrder' && 'Create bulk dairy order for shops or cafes'}
@@ -266,7 +279,10 @@ export function ModalContainer() {
             </div>
           </div>
           <button
-            onClick={closeModal}
+            onClick={() => {
+              setCreatedCustomerCredentials(null);
+              closeModal();
+            }}
             className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition"
           >
             <X className="w-5 h-5" />
@@ -604,157 +620,358 @@ export function ModalContainer() {
             </form>
           )}
 
-          {/* Add Customer Form */}
+          {/* Add Customer Form & Credentials Sharing */}
           {activeModal === 'addCustomer' && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const assignedDairy = activeDairy?.name || user?.dairyName || (dairies[0]?.name || 'Amrut Dairy Farm');
-                addCustomer({
-                  name: custName,
-                  type: custType,
-                  phone: custPhone,
-                  address: custAddress,
-                  area: custArea,
-                  route: custRoute,
-                  dairyName: assignedDairy,
-                  latitude: custLat,
-                  longitude: custLng,
-                  balance: 0,
-                  activeSubscriptionsCount: custType === 'HOUSEHOLD' ? 1 : 0,
-                  status: 'Active',
-                });
-                showSuccess(`Customer ${custName} registered successfully`);
-                closeModal();
-                setCustName('');
-                setCustPhone('');
-                setCustAddress('');
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Supplying Dairy Farm
-                </label>
-                <div className="w-full px-3.5 py-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{activeDairy?.name || user?.dairyName || 'Amrut Dairy Farm'}</span>
+            createdCustomerCredentials ? (
+              <div className="space-y-4 py-1 animate-in fade-in zoom-in-95 duration-200">
+                <div className="text-center space-y-1.5 pb-1">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto ring-8 ring-emerald-50 shadow-sm">
+                    <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900 tracking-tight">Customer Registered Successfully!</h4>
+                  <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">
+                    Account login credentials have been created. You can now send them to the customer via WhatsApp or copy them.
+                  </p>
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Customer / Business Name</label>
-                <input
-                  type="text"
-                  required
-                  value={custName}
-                  onChange={(e) => setCustName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. Anand Sweet Mart or Sunita Kulkarni"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Type</label>
-                  <select
-                    value={custType}
-                    onChange={(e) => setCustType(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="HOUSEHOLD">Household (Daily Milk)</option>
-                    <option value="SHOP">Retail Shop (B2B)</option>
-                    <option value="RESTAURANT">Hotel / Restaurant</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={custPhone}
-                    onChange={(e) => setCustPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
-                    placeholder="+91 98XXX XXXXX"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Address & Landmark</label>
-                <input
-                  type="text"
-                  required
-                  value={custAddress}
-                  onChange={(e) => setCustAddress(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="Flat/Shop number, building, street"
-                />
-              </div>
 
-              {/* Pin location on map for delivery rider */}
-              <MapLocationPicker
-                initialLat={custLat}
-                initialLng={custLng}
-                areaHint={custArea}
-                onLocationSelect={(lat, lng) => {
-                  setCustLat(lat);
-                  setCustLng(lng);
+                {/* Credentials Display Card */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200/80">
+                    <span className="text-slate-500 font-medium">Customer Name</span>
+                    <span className="font-bold text-slate-900">{createdCustomerCredentials.name}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200/80">
+                    <div>
+                      <span className="block text-slate-500 font-medium">Login ID (Mobile Phone)</span>
+                      <span className="font-mono font-bold text-slate-900 text-sm">{createdCustomerCredentials.phone}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCustomerCredentials.phone);
+                        showSuccess('Copied Login ID to clipboard');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy ID</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200/80">
+                    <div>
+                      <span className="block text-slate-500 font-medium">Portal Password</span>
+                      <span className="font-mono font-bold text-emerald-700 text-sm tracking-wide bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 inline-block mt-0.5">
+                        {createdCustomerCredentials.password}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCustomerCredentials.password);
+                        showSuccess('Copied password to clipboard');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Password</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-medium">Portal Login URL</span>
+                    <span className="font-mono text-[11px] font-semibold text-blue-600 truncate max-w-[220px]">
+                      http://localhost:3000/login
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1-Click WhatsApp Button & Copy */}
+                <div className="space-y-2 pt-1">
+                  <a
+                    href={createdCustomerCredentials.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 bg-[#25D366] hover:bg-[#1EBE5D] active:bg-[#16A34A] text-white font-bold rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-current" />
+                    <span>Send Login Credentials via WhatsApp</span>
+                  </a>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCustomerCredentials.welcomeMessage || '');
+                        setCopiedCredentials(true);
+                        showSuccess('Copied complete WhatsApp welcome message!');
+                        setTimeout(() => setCopiedCredentials(false), 2500);
+                      }}
+                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {copiedCredentials ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedCredentials ? 'Message Copied!' : 'Copy Full Message'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreatedCustomerCredentials(null);
+                        setCustName('');
+                        setCustPhone('');
+                        setCustAddress('');
+                        setCustPassword('cust123');
+                        closeModal();
+                      }}
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition cursor-pointer text-center"
+                    >
+                      Done &amp; Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSavingCustomer(true);
+                  try {
+                    const assignedDairy = activeDairy?.name || user?.dairyName || (dairies[0]?.name || 'Amrut Dairy Farm');
+                    const cleanPhone = custPhone.replace(/\D/g, '');
+                    const resolvedPwd = custPassword.trim() || (cleanPhone.length >= 4 ? cleanPhone.slice(-4) : 'cust123');
+
+                    const created = await addCustomer({
+                      name: custName,
+                      type: custType,
+                      phone: custPhone,
+                      address: custAddress,
+                      area: custArea,
+                      route: custRoute,
+                      dairyName: assignedDairy,
+                      latitude: custLat,
+                      longitude: custLng,
+                      balance: 0,
+                      activeSubscriptionsCount: custType === 'HOUSEHOLD' ? 1 : 0,
+                      status: 'Active',
+                      password: resolvedPwd,
+                    });
+
+                    const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                    const portalUrl = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'http://localhost:3000/login';
+                    const messageText = created?.welcomeMessage || `🥛 *Welcome to ${assignedDairy}!* 🐄✨\n\nNamaste ${custName} ji,\nYour fresh milk subscription account has been created!\n\n📱 *Customer Portal:* ${portalUrl}\n👤 *Login ID / Mobile:* ${custPhone}\n🔑 *Your Password:* ${resolvedPwd}\n\nYou can log in to view your daily milk calendar, check delivery status, and view monthly bills.\n\nThank you for choosing fresh milk from ${assignedDairy}! 🥛`;
+                    const waUrl = created?.welcomeWhatsAppUrl || (cleanPhone ? `https://wa.me/${intlPhone}?text=${encodeURIComponent(messageText)}` : '');
+
+                    setCreatedCustomerCredentials({
+                      id: created?.id || `c_${Date.now()}`,
+                      name: custName,
+                      phone: custPhone,
+                      password: resolvedPwd,
+                      dairyName: assignedDairy,
+                      whatsappUrl: waUrl,
+                      welcomeMessage: messageText,
+                    });
+                    showSuccess(`Customer ${custName} registered successfully!`);
+                  } catch (err: any) {
+                    showError(err.message || 'Failed to register customer');
+                  } finally {
+                    setIsSavingCustomer(false);
+                  }
                 }}
-                label="Pin Delivery Location on Map"
-                compact={false}
-              />
-              <div className="grid grid-cols-2 gap-3">
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Area / Locality</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Supplying Dairy Farm
+                  </label>
+                  <div className="w-full px-3.5 py-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{activeDairy?.name || user?.dairyName || 'Amrut Dairy Farm'}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer / Business Name</label>
                   <input
                     type="text"
                     required
-                    value={custArea}
-                    onChange={(e) => setCustArea(e.target.value)}
-                    placeholder="e.g. Sector 14, Civil Lines, or Colony Name"
+                    value={custName}
+                    onChange={(e) => setCustName(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. Anand Sweet Mart or Sunita Kulkarni"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Route</label>
-                  <select
-                    value={custRoute}
-                    onChange={(e) => setCustRoute(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
-                  >
-                    {routes && routes.length > 0 ? (
-                      routes.map((r) => (
-                        <option key={r.id} value={r.name || r.routeCode}>
-                          {r.name || r.routeCode} {r.area ? `(${r.area})` : ''}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Main Morning Route">Main Morning Route</option>
-                        <option value="Central Commercial Route">Central Commercial Route</option>
-                      </>
-                    )}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Type</label>
+                    <select
+                      value={custType}
+                      onChange={(e) => setCustType(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="HOUSEHOLD">Household (Daily Milk)</option>
+                      <option value="SHOP">Retail Shop (B2B)</option>
+                      <option value="RESTAURANT">Hotel / Restaurant</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number (Login ID)</label>
+                    <input
+                      type="text"
+                      required
+                      value={custPhone}
+                      onChange={(e) => setCustPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-medium"
+                      placeholder="+91 98XXX XXXXX"
+                    />
+                  </div>
                 </div>
-              </div>
-                            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/90 text-[11px] text-emerald-800 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Upon saving, the Dairy Owner is automatically alerted via In-App Notifications and 1-click WhatsApp message.</span>
-              </div>
-<div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition"
-                >
-                  Save Customer
-                </button>
-              </div>
-            </form>
+
+                {/* Set Customer Portal Login Password */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <Lock className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Set Customer Login Password</span>
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-medium">Customer logs in with Phone &amp; this password</span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showCustPassword ? 'text' : 'password'}
+                      required
+                      value={custPassword}
+                      onChange={(e) => setCustPassword(e.target.value)}
+                      className="w-full px-3 py-2 pr-10 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g. cust123 or 4-digit PIN"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showCustPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowCustPassword(!showCustPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showCustPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Quick Shortcut Chips */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[11px] text-slate-500 font-medium">Quick options:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustPassword('cust123')}
+                      className="px-2.5 py-0.5 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      Default: cust123
+                    </button>
+                    {custPhone && custPhone.replace(/\D/g, '').length >= 4 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const digits = custPhone.replace(/\D/g, '');
+                          setCustPassword(digits.slice(-4));
+                        }}
+                        className="px-2.5 py-0.5 rounded-lg bg-white border border-blue-200 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 transition cursor-pointer"
+                      >
+                        Phone Last 4 Digits ({custPhone.replace(/\D/g, '').slice(-4)})
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const rand = Math.floor(1000 + Math.random() * 9000);
+                        setCustPassword(`milk${rand}`);
+                      }}
+                      className="px-2.5 py-0.5 rounded-lg bg-white border border-emerald-200 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 transition cursor-pointer"
+                    >
+                      Random PIN
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Address &amp; Landmark</label>
+                  <input
+                    type="text"
+                    required
+                    value={custAddress}
+                    onChange={(e) => setCustAddress(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                    placeholder="Flat/Shop number, building, street"
+                  />
+                </div>
+
+                {/* Pin location on map for delivery rider */}
+                <MapLocationPicker
+                  initialLat={custLat}
+                  initialLng={custLng}
+                  areaHint={custArea}
+                  onLocationSelect={(lat, lng) => {
+                    setCustLat(lat);
+                    setCustLng(lng);
+                  }}
+                  label="Pin Delivery Location on Map"
+                  compact={false}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Delivery Area / Locality</label>
+                    <input
+                      type="text"
+                      required
+                      value={custArea}
+                      onChange={(e) => setCustArea(e.target.value)}
+                      placeholder="e.g. Sector 14, Civil Lines, or Colony Name"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Route</label>
+                    <select
+                      value={custRoute}
+                      onChange={(e) => setCustRoute(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      {routes && routes.length > 0 ? (
+                        routes.map((r) => (
+                          <option key={r.id} value={r.name || r.routeCode}>
+                            {r.name || r.routeCode} {r.area ? `(${r.area})` : ''}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Main Morning Route">Main Morning Route</option>
+                          <option value="Central Commercial Route">Central Commercial Route</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/90 text-[11px] text-emerald-800 flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>After saving, you can instantly send the password and portal link to the customer via WhatsApp!</span>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingCustomer}
+                    className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isSavingCustomer ? 'Saving & Generating...' : 'Save & Generate Login'}
+                  </button>
+                </div>
+              </form>
+            )
           )}
 
           {/* Generate Bill Form */}

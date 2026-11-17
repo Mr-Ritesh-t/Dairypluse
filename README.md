@@ -129,34 +129,22 @@ dairypluse/
 │   │   ├── models/models.py      # SQLAlchemy Relational Models (SQLite/PostgreSQL)
 │   │   ├── schemas/schemas.py    # Pydantic Schemas for validation
 │   │   ├── routers/api_v1.py     # REST API Routing (v1)
+│   │   ├── services/             # Core business logic (route optimizer, PDF invoices)
 │   │   ├── utils/                # Utilities (phone normalization, helpers)
-│   │   │   └── phone.py          # Unified Indian phone search pattern generator
 │   │   ├── database.py           # Database engine & session maker
 │   │   ├── seed.py               # Seed data for dairy operations
 │   │   ├── config.py             # Settings & environment configuration
 │   │   └── main.py               # FastAPI App, CORS & Global Exception Handlers
-│   └── tests/test_api.py         # Pytest test suite (31/31 passed)
+├── docs/                         # Final Submission & Capstone Documentation
+│   ├── DairyPulse_Capstone_Report.pdf # Formal Capstone Project Report
+│   ├── REQUIREMENTS_SPECIFICATION.md  # Software Requirements Specification (SRS)
+│   ├── SYSTEM_DIAGRAMS.md             # System Architecture & UML Diagrams
+│   ├── DATABASE_DESIGN.md             # Entity-Relationship (ER) Schema
+│   ├── API_DOCUMENTATION.md           # 76 REST Endpoints Specification
+│   └── DEPLOYMENT_GUIDE.md            # Cloud Deployment Blueprint (Render & Vercel)
+├── render.yaml                   # 1-Click Render Cloud Deployment Config
 └── start.bat                     # 1-click startup script for both services
 ```
-
----
-
-## 🧪 Automated Testing
-
-The backend includes a comprehensive automated test suite verifying all 31 critical paths:
-- Inventory receipts, wastage logging, and stock deductions
-- Delivery assignments, live route sequencing, and batch sync
-- Milk variety lifecycle (creation, pricing, removal)
-- Multi-dairy registration, authentication, and Supabase OAuth sync
-- Customer 3-step onboarding and GPS coordinates
-- Staff daily attendance, milk collection pickup, and payout calculations
-- Predictive demand forecasting and wastage analytics
-
-```bash
-cd backend
-.\.venv\Scripts\pytest tests -v
-```
-*(Result: **31 passed in <1 second**)*
 
 ---
 

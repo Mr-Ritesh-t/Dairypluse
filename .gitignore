@@ -49,6 +49,8 @@ wheels/
 htmlcov/
 .tox/
 .nox/
+.agents/
+AGENTS.md
 
 # SQLite & Local Databases
 *.db

@@ -549,16 +549,71 @@ def get_customer_delivery_history(customer_id: str, db: Session = Depends(get_db
 
 @api_router.post("/customers", response_model=CustomerResponse)
 def create_customer(cust: CustomerCreate, db: Session = Depends(get_db)):
-    new_cust = Customer(**cust.model_dump())
+    cust_data = cust.model_dump()
+    raw_password = (cust_data.pop("password", None) or "").strip()
+    if not raw_password:
+        phone_digits = re.sub(r"\D", "", cust.phone or "")
+        raw_password = phone_digits[-4:] if len(phone_digits) >= 4 else "cust123"
+
+    new_cust = Customer(**cust_data)
     db.add(new_cust)
     db.commit()
     db.refresh(new_cust)
+
+    # Automatically provision User account for customer with the assigned password
+    digits = re.sub(r"\D", "", new_cust.phone or str(new_cust.id))
+    clean_email = new_cust.email or f"{digits}@customer.dairypulse.farm"
+
+    user_account = db.query(User).filter(
+        (User.phone == new_cust.phone) | (User.email == clean_email)
+    ).first()
+
+    if not user_account:
+        user_account = User(
+            email=clean_email,
+            phone=new_cust.phone,
+            password_hash=hash_password(raw_password),
+            full_name=new_cust.name,
+            dairy_name=new_cust.dairy_name or "Amrut Dairy Farm",
+            role="CUSTOMER",
+            is_active=True,
+        )
+        db.add(user_account)
+    else:
+        user_account.password_hash = hash_password(raw_password)
+        user_account.full_name = new_cust.name
+        user_account.dairy_name = new_cust.dairy_name or "Amrut Dairy Farm"
+        user_account.role = "CUSTOMER"
+        user_account.is_active = True
+
+    db.commit()
 
     # Automatically notify dairy owner and create in-app notification
     try:
         _notify_owner_new_customer(new_cust, db)
     except Exception as e:
         print(f"Error issuing new customer owner notification: {e}")
+
+    # Generate customer WhatsApp welcome & credential message
+    dairy_name = new_cust.dairy_name or "Amrut Dairy Farm"
+    clean_cust_phone = _clean_phone_for_whatsapp(new_cust.phone)
+    welcome_msg = (
+        f"🥛 *Welcome to {dairy_name}!* 🐄✨\n\n"
+        f"Namaste {new_cust.name} ji,\n"
+        f"Your fresh milk subscription account has been activated!\n\n"
+        f"📱 *Customer Portal:* http://localhost:3000/login\n"
+        f"👤 *Login ID / Mobile:* {new_cust.phone}\n"
+        f"🔑 *Your Password:* {raw_password}\n\n"
+        f"You can log in to view your daily milk delivery calendar, download monthly bills, or pause deliveries anytime.\n\n"
+        f"Thank you for choosing fresh milk from {dairy_name}! 🥛"
+    )
+    encoded_text = urllib.parse.quote_plus(welcome_msg)
+    welcome_url = f"https://wa.me/{clean_cust_phone}?text={encoded_text}" if clean_cust_phone else ""
+
+    # Attach dynamic properties to CustomerResponse
+    setattr(new_cust, "assigned_password", raw_password)
+    setattr(new_cust, "welcome_whatsapp_url", welcome_url)
+    setattr(new_cust, "welcome_message", welcome_msg)
 
     return new_cust
 
@@ -1823,8 +1878,26 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
 
     phone_patterns = get_phone_search_patterns(login_id)
 
-    # Cross-role lookup to automatically detect user's actual role
-    user_any = db.query(User).filter(
+    # First, query role-specific user if a specific role was chosen
+    role_user = None
+    if requested_role in ["DELIVERY", "STAFF"]:
+        role_user = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
+            User.role.in_(["DELIVERY", "STAFF"])
+        ).first()
+    elif requested_role == "CUSTOMER":
+        role_user = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
+            User.role == "CUSTOMER"
+        ).first()
+    elif requested_role in ["OWNER", "ADMIN"]:
+        role_user = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
+            User.role.in_(["OWNER", "ADMIN"])
+        ).first()
+
+    # Cross-role lookup fallback to automatically detect user's actual role
+    user_any = role_user or db.query(User).filter(
         (User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))
     ).first()
 
@@ -1871,6 +1944,16 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
         if user and user.password_hash and login_req.password:
             if not verify_password(login_req.password, user.password_hash):
                 raise HTTPException(status_code=401, detail="Incorrect password. Please verify your credentials.")
+        elif not user and matched_dairy and login_req.password:
+            entered_pwd = login_req.password.strip()
+            dairy_phone = re.sub(r"\D", "", matched_dairy.phone or "")
+            allowed = {"admin123", "owner123"}
+            if dairy_phone:
+                allowed.add(dairy_phone)
+                if len(dairy_phone) >= 4:
+                    allowed.add(dairy_phone[-4:])
+            if entered_pwd not in allowed:
+                raise HTTPException(status_code=401, detail="Incorrect password for dairy owner account.")
 
         user_name = user.full_name if user else (matched_dairy.owner_name if matched_dairy else "Dairy Owner")
         user_phone = user.phone if user else (matched_dairy.phone if matched_dairy else login_id)
@@ -1915,18 +1998,27 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
                 # Auto-provision user account for this registered staff
                 clean_email = staff.email or f"{re.sub(r'[^a-zA-Z0-9]', '', staff.name.lower())}@dairypulse.farm"
                 rider_pwd = login_req.password.strip() if login_req.password else "rider123"
-                target_user = User(
-                    email=clean_email,
-                    phone=staff.phone,
-                    password_hash=hash_password(rider_pwd),
-                    full_name=staff.name,
-                    dairy_name=staff.dairy_name or "DairyPulse Farm HQ",
-                    role="DELIVERY",
-                    is_active=True,
-                )
-                db.add(target_user)
-                db.commit()
-                db.refresh(target_user)
+                phone_to_store = staff.phone
+                existing_phone_user = db.query(User).filter(User.phone == staff.phone).first() if staff.phone else None
+                if existing_phone_user:
+                    if existing_phone_user.role in ["DELIVERY", "STAFF"]:
+                        target_user = existing_phone_user
+                    else:
+                        phone_to_store = None
+
+                if not target_user:
+                    target_user = User(
+                        email=clean_email,
+                        phone=phone_to_store,
+                        password_hash=hash_password(rider_pwd),
+                        full_name=staff.name,
+                        dairy_name=staff.dairy_name or "DairyPulse Farm HQ",
+                        role="DELIVERY",
+                        is_active=True,
+                    )
+                    db.add(target_user)
+                    db.commit()
+                    db.refresh(target_user)
 
         if target_user and login_req.password:
             entered_pwd = login_req.password.strip()
@@ -1957,8 +2049,24 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
 
     # 3. CUSTOMER / SUBSCRIBER ROLE
     elif effective_role == "CUSTOMER":
+        user_account = db.query(User).filter(
+            ((User.email.ilike(login_id)) | (User.phone.in_(phone_patterns)) | (User.full_name.ilike(f"%{login_id}%"))),
+            User.role == "CUSTOMER"
+        ).first()
+
         cust = customer_any
-        user_account = user_any if (user_any and user_any.role == "CUSTOMER") else None
+        if not cust and user_account:
+            cust_patterns = get_phone_search_patterns(user_account.phone) if user_account.phone else []
+            cust = db.query(Customer).filter(
+                (Customer.phone.in_(cust_patterns)) | (Customer.email.ilike(user_account.email) if user_account.email else False)
+            ).first()
+
+        if cust and not user_account:
+            cust_patterns = get_phone_search_patterns(cust.phone) if cust.phone else []
+            user_account = db.query(User).filter(
+                (User.phone.in_(cust_patterns)) | (User.email.ilike(cust.email) if cust.email else False),
+                User.role == "CUSTOMER"
+            ).first()
 
         if not cust and not user_account:
             raise HTTPException(
@@ -1968,32 +2076,58 @@ def login(login_req: LoginRequest, db: Session = Depends(get_db)):
 
         # Auto-provision user account for customer if not existing
         if not user_account and cust:
+            phone_digits = re.sub(r"\D", "", cust.phone or "")
+            allowed = {"cust123"}
+            if phone_digits:
+                allowed.add(phone_digits)
+                if len(phone_digits) >= 10:
+                    allowed.add(phone_digits[-10:])
+                if len(phone_digits) >= 4:
+                    allowed.add(phone_digits[-4:])
+
+            entered_pwd = login_req.password.strip() if login_req.password else "cust123"
+            if entered_pwd not in allowed:
+                raise HTTPException(status_code=401, detail="Invalid password for customer account.")
+
             digits = re.sub(r"\D", "", cust.phone or str(cust.id))
             clean_email = cust.email or f"{digits}@customer.dairypulse.farm"
             existing_email_user = db.query(User).filter(User.email == clean_email).first()
             if existing_email_user:
                 clean_email = f"{digits}_{str(cust.id)[:6]}@customer.dairypulse.farm"
-            
-            entered_pwd = login_req.password.strip() if login_req.password else "cust123"
-            user_account = User(
-                email=clean_email,
-                phone=cust.phone,
-                password_hash=hash_password(entered_pwd),
-                full_name=cust.name,
-                dairy_name=cust.dairy_name or "Amrut Dairy Farm",
-                role="CUSTOMER",
-                is_active=True,
-            )
-            db.add(user_account)
-            db.commit()
-            db.refresh(user_account)
+
+            phone_to_store = cust.phone
+            existing_phone_user = db.query(User).filter(User.phone == cust.phone).first() if cust.phone else None
+            if existing_phone_user:
+                if existing_phone_user.role == "CUSTOMER":
+                    user_account = existing_phone_user
+                else:
+                    phone_to_store = None
+
+            if not user_account:
+                user_account = User(
+                    email=clean_email,
+                    phone=phone_to_store,
+                    password_hash=hash_password(entered_pwd),
+                    full_name=cust.name,
+                    dairy_name=cust.dairy_name or "Amrut Dairy Farm",
+                    role="CUSTOMER",
+                    is_active=True,
+                )
+                db.add(user_account)
+                db.commit()
+                db.refresh(user_account)
         elif user_account and login_req.password:
             entered_pwd = login_req.password.strip()
             saved_pwd = user_account.password_hash.strip() if user_account.password_hash else "cust123"
-            phone_digits = re.sub(r"\D", "", user_account.phone or "")
-            allowed = {"cust123", phone_digits, phone_digits[-10:] if len(phone_digits) >= 10 else ""}
-            if len(phone_digits) >= 4:
-                allowed.add(phone_digits[-4:])
+            phone_source = user_account.phone or (cust.phone if cust else "") or login_id
+            phone_digits = re.sub(r"\D", "", phone_source)
+            allowed = {"cust123"}
+            if phone_digits:
+                allowed.add(phone_digits)
+                if len(phone_digits) >= 10:
+                    allowed.add(phone_digits[-10:])
+                if len(phone_digits) >= 4:
+                    allowed.add(phone_digits[-4:])
             if not verify_password(entered_pwd, saved_pwd) and entered_pwd not in allowed:
                 raise HTTPException(status_code=401, detail="Invalid password for customer account.")
 

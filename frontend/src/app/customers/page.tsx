@@ -23,6 +23,8 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Lock,
+  MessageCircle,
 } from 'lucide-react';
 import { PageHead } from '@/components/common/PageHead';
 import { Customer, Subscription } from '@/types';
@@ -168,6 +170,20 @@ export default function CustomersPage() {
     } catch (err) {
       console.error('Failed to copy WhatsApp reminder:', err);
     }
+  };
+
+  const handleSendCredentialsWhatsApp = (cust: Customer) => {
+    const dairyName = cust.dairyName || activeDairy?.name || 'Dairy Farm';
+    const cleanPhone = cust.phone.replace(/\D/g, '');
+    const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const portalUrl = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'http://localhost:3000/login';
+    const pwdHint = cust.assignedPassword || (cleanPhone.length >= 4 ? cleanPhone.slice(-4) : 'cust123');
+
+    const msg = `🥛 *Welcome to ${dairyName}!* 🐄✨\n\nNamaste ${cust.name} ji,\nHere are your customer portal login details:\n\n📱 *Login Portal:* ${portalUrl}\n👤 *Login ID / Mobile:* ${cust.phone}\n🔑 *Password:* ${pwdHint}\n\nYou can log in to view your daily milk delivery calendar, download monthly bills, or pause deliveries.\n\nThank you for choosing fresh milk from ${dairyName}! 🥛`;
+
+    const waUrl = `https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    setToastMessage(`📲 WhatsApp login credentials opened for ${cust.name}!`);
   };
 
   const customerFilterTabs = [
@@ -733,6 +749,30 @@ export default function CustomersPage() {
                     <MapPin className="w-3.5 h-3.5 text-[#0F766E] shrink-0 mt-0.5" />
                     <span>{selectedCust.address}</span>
                   </div>
+                </div>
+
+                {/* Customer Portal Login & WhatsApp Credentials */}
+                <div className="space-y-2 text-xs p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider text-blue-900">
+                      <Lock className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Customer Portal Login</span>
+                    </div>
+                    <span className="text-[10px] text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md font-mono font-bold">
+                      PW: {selectedCust.assignedPassword || (selectedCust.phone.replace(/\D/g, '').length >= 4 ? selectedCust.phone.replace(/\D/g, '').slice(-4) : 'cust123')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 font-normal leading-tight">
+                    Customer logs into <strong>/login</strong> using mobile number as User ID.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSendCredentialsWhatsApp(selectedCust)}
+                    className="w-full py-2 bg-[#25D366] hover:bg-[#1EBE5D] active:bg-[#16A34A] text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                    <span>Send Login Password via WhatsApp</span>
+                  </button>
                 </div>
 
                 {/* Additional Buttons */}

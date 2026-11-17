@@ -36,6 +36,11 @@ import {
   Award,
   CheckCircle,
   HelpCircle,
+  UserX,
+  ShieldAlert,
+  AlertTriangle,
+  KeyRound,
+  X,
 } from 'lucide-react';
 import MapLocationPicker from '@/components/delivery/MapLocationPicker';
 
@@ -57,6 +62,94 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(45);
+
+  // Dynamic Login Error Popup & Field Highlighting
+  const [fieldError, setFieldError] = useState<'loginId' | 'password' | 'both' | null>(null);
+  const [loginErrorPopup, setLoginErrorPopup] = useState<{
+    isOpen: boolean;
+    type: 'WRONG_PASSWORD' | 'ID_NOT_FOUND' | 'MISSING_FIELDS' | 'GENERAL_ERROR';
+    title: string;
+    message: string;
+    loginIdAttempt?: string;
+    roleAttempt?: UserRole;
+    hint?: string;
+    fieldFocus?: 'loginId' | 'password';
+  }>({
+    isOpen: false,
+    type: 'GENERAL_ERROR',
+    title: '',
+    message: '',
+  });
+
+  const formCardRef = useRef<HTMLDivElement>(null);
+  const loginIdInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerShake = () => {
+    try {
+      if (formCardRef.current && typeof gsap !== 'undefined') {
+        gsap.fromTo(
+          formCardRef.current,
+          { x: -10 },
+          {
+            x: 10,
+            duration: 0.07,
+            repeat: 5,
+            yoyo: true,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              if (formCardRef.current) gsap.set(formCardRef.current, { x: 0 });
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.warn('Shake animation skipped:', e);
+    }
+  };
+
+  const handleTryAgainPassword = () => {
+    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+    setPassword('');
+    setTimeout(() => {
+      passwordInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleCheckIdAndRetry = () => {
+    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+    setTimeout(() => {
+      loginIdInputRef.current?.focus();
+      loginIdInputRef.current?.select();
+    }, 100);
+  };
+
+  const handleGoToCustomerSignUp = () => {
+    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+    setActiveTab('customer');
+    setCustomerStep(1);
+    if (loginId.includes('@')) {
+      setCustEmail(loginId.trim());
+    } else if (/\d{5,}/.test(loginId)) {
+      setCustPhone(loginId.trim());
+    }
+    setFieldError(null);
+    setErrorMessage(null);
+    setNotFoundPrompt(false);
+  };
+
+  const handleGoToDairyRegister = () => {
+    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+    setActiveTab('dairy');
+    if (loginId.includes('@')) {
+      setNewDairyEmail(loginId.trim());
+    } else if (/\d{5,}/.test(loginId)) {
+      setNewDairyPhone(loginId.trim());
+    }
+    setFieldError(null);
+    setErrorMessage(null);
+    setNotFoundPrompt(false);
+  };
 
   // Account Not Found Interactivity State
   const [notFoundPrompt, setNotFoundPrompt] = useState(false);
@@ -172,6 +265,8 @@ export default function LoginPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
     setNotFoundPrompt(false);
+    setFieldError(null);
+    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
   };
 
   const redirectToRole = (role: UserRole) => {
@@ -187,14 +282,28 @@ export default function LoginPage() {
   };
 
   // Submit Login
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLoginSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setErrorMessage(null);
     setSuccessMessage(null);
     setNotFoundPrompt(false);
+    setFieldError(null);
 
     if (!loginId.trim()) {
+      triggerShake();
+      setFieldError('loginId');
       setErrorMessage('Please enter your email or phone number');
+      setLoginErrorPopup({
+        isOpen: true,
+        type: 'MISSING_FIELDS',
+        title: 'Missing User ID',
+        message: 'Please enter your registered mobile number or email address to sign in.',
+        fieldFocus: 'loginId',
+      });
+      loginIdInputRef.current?.focus();
       return;
     }
 
@@ -209,12 +318,28 @@ export default function LoginPage() {
             setOtpCountdown(45);
             setSuccessMessage(`Verification OTP sent to ${loginId}. Please enter the 6-digit code below.`);
           } else {
+            triggerShake();
+            setFieldError('loginId');
             setErrorMessage(res.error || 'Failed to send OTP code.');
+            setLoginErrorPopup({
+              isOpen: true,
+              type: 'GENERAL_ERROR',
+              title: 'OTP Dispatch Failed',
+              message: res.error || 'Could not send verification OTP. Please check your mobile number or network.',
+              fieldFocus: 'loginId',
+            });
           }
           return;
         } else {
           if (!otpCode.trim()) {
+            triggerShake();
             setErrorMessage('Please enter the 6-digit verification code.');
+            setLoginErrorPopup({
+              isOpen: true,
+              type: 'MISSING_FIELDS',
+              title: 'Verification Code Required',
+              message: 'Please enter the 6-digit SMS OTP code sent to your mobile phone.',
+            });
             return;
           }
           const res = await verifyPhoneOtp(loginId.trim(), otpCode.trim(), selectedRole);
@@ -222,7 +347,14 @@ export default function LoginPage() {
             setSuccessMessage(`Verified! Redirecting to ${selectedRole.toLowerCase()} portal...`);
             redirectToRole(selectedRole);
           } else {
+            triggerShake();
             setErrorMessage(res.error || 'Invalid or expired OTP code.');
+            setLoginErrorPopup({
+              isOpen: true,
+              type: 'WRONG_PASSWORD',
+              title: 'Invalid OTP Code',
+              message: res.error || 'The SMS verification code entered is invalid or has expired. Please request a new code.',
+            });
           }
           return;
         }
@@ -230,7 +362,17 @@ export default function LoginPage() {
 
       // Password Authentication
       if (!password.trim()) {
+        triggerShake();
+        setFieldError('password');
         setErrorMessage('Please enter your password.');
+        setLoginErrorPopup({
+          isOpen: true,
+          type: 'MISSING_FIELDS',
+          title: 'Missing Password',
+          message: 'Please enter your account password to sign in to DairyPulse.',
+          fieldFocus: 'password',
+        });
+        passwordInputRef.current?.focus();
         return;
       }
 
@@ -242,18 +384,89 @@ export default function LoginPage() {
       });
 
       if (res.success) {
+        setFieldError(null);
         const targetRole: UserRole = selectedRole === 'DELIVERY' ? 'DELIVERY' : (res.user?.role || selectedRole);
         setSuccessMessage(`Welcome back, ${res.user?.name || 'DairyPulse user'}! Redirecting to your portal...`);
         redirectToRole(targetRole);
       } else {
-        if (res.notFound) {
+        triggerShake();
+        const isWrongPass = Boolean(
+          res.isWrongPassword ||
+          res.statusCode === 401 ||
+          (res.error && (res.error.toLowerCase().includes('password') || res.error.toLowerCase().includes('credential')))
+        );
+        const isNotFound = Boolean(
+          res.notFound ||
+          res.statusCode === 404 ||
+          (res.error && res.error.toLowerCase().includes('not found'))
+        );
+
+        if (isWrongPass) {
+          setFieldError('password');
+          setErrorMessage(res.error || 'Incorrect password entered. Please try again.');
+          let hint = '';
+          if (selectedRole === 'CUSTOMER') {
+            hint = "For customer accounts, you can use the default password 'cust123', the last 4 digits of your phone, or your full phone number.";
+          } else if (selectedRole === 'DELIVERY') {
+            hint = "The default password for delivery fleet riders is 'rider123'.";
+          } else {
+            hint = "The default password for dairy owner accounts is 'admin123'.";
+          }
+          setLoginErrorPopup({
+            isOpen: true,
+            type: 'WRONG_PASSWORD',
+            title: 'Wrong Password',
+            message: `The password you entered is incorrect for ${loginId.trim()} (${selectedRole === 'DELIVERY' ? 'Delivery Rider' : selectedRole === 'CUSTOMER' ? 'Customer' : 'Dairy Owner'}).`,
+            hint,
+            loginIdAttempt: loginId.trim(),
+            roleAttempt: selectedRole,
+            fieldFocus: 'password',
+          });
+        } else if (isNotFound) {
+          setFieldError('loginId');
           setNotFoundPrompt(true);
           setNotFoundId(loginId.trim());
+          setErrorMessage(res.error || `No ${selectedRole.toLowerCase()} account found with ID "${loginId.trim()}".`);
+          let hint = '';
+          if (selectedRole === 'CUSTOMER') {
+            hint = "You can sign up as a new customer in under 1 minute to start fresh milk subscriptions!";
+          } else if (selectedRole === 'OWNER') {
+            hint = "Would you like to register your dairy farm to start managing deliveries and billing?";
+          } else {
+            hint = "Rider fleet accounts are set up by dairy owners. Please contact your dairy owner to add you under Staff.";
+          }
+          setLoginErrorPopup({
+            isOpen: true,
+            type: 'ID_NOT_FOUND',
+            title: 'Account ID Not Found',
+            message: `No ${selectedRole === 'DELIVERY' ? 'delivery rider' : selectedRole.toLowerCase()} account was found matching "${loginId.trim()}".`,
+            hint,
+            loginIdAttempt: loginId.trim(),
+            roleAttempt: selectedRole,
+            fieldFocus: 'loginId',
+          });
+        } else {
+          setFieldError('both');
+          setErrorMessage(res.error || 'Authentication failed. Please verify credentials.');
+          setLoginErrorPopup({
+            isOpen: true,
+            type: 'GENERAL_ERROR',
+            title: 'Sign In Failed',
+            message: res.error || 'An unexpected error occurred during authentication. Please check your credentials and try again.',
+            loginIdAttempt: loginId.trim(),
+            roleAttempt: selectedRole,
+          });
         }
-        setErrorMessage(res.error || 'Authentication failed. Please verify credentials.');
       }
     } catch (err: any) {
+      triggerShake();
       setErrorMessage(err.message || 'An error occurred during login.');
+      setLoginErrorPopup({
+        isOpen: true,
+        type: 'GENERAL_ERROR',
+        title: 'Sign In Failed',
+        message: err.message || 'An unexpected error occurred during login. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -323,6 +536,7 @@ export default function LoginPage() {
         balance: 0,
         activeSubscriptionsCount: 1,
         status: 'Active',
+        password: custPassword.trim() || undefined,
       });
 
       // Create initial subscription linked to selected dairy
@@ -638,7 +852,7 @@ export default function LoginPage() {
           </div>
 
           {/* Main Auth Card (Solid White, Crisp Rendering, No Blur) */}
-          <div className="w-full max-w-md sm:max-w-[490px] lg:max-w-[530px] bg-white rounded-3xl shadow-xl shadow-stone-900/5 border border-stone-200/90 p-5 sm:p-7 relative z-20 transition-all">
+          <div ref={formCardRef} className="w-full max-w-md sm:max-w-[490px] lg:max-w-[530px] bg-white rounded-3xl shadow-xl shadow-stone-900/5 border border-stone-200/90 p-5 sm:p-7 relative z-20 transition-all">
             
             {/* 3 Top Segmented Tabs */}
             <div className="grid bg-stone-100/90 p-1 rounded-2xl border border-stone-200/80 grid-cols-3 gap-1 mb-5 text-xs font-semibold">
@@ -715,7 +929,12 @@ export default function LoginPage() {
 
             {/* ================= TAB 1: SIGN IN ================= */}
             {activeTab === 'signin' && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <form
+                onSubmit={handleLoginSubmit}
+                action="javascript:void(0);"
+                method="POST"
+                className="space-y-4"
+              >
                 
                 {/* Active Session Warning / Switcher */}
                 {user && (
@@ -890,6 +1109,7 @@ export default function LoginPage() {
                       <User className="w-4 h-4" />
                     </div>
                     <input
+                      ref={loginIdInputRef}
                       id="loginId"
                       name="username"
                       type={authMode === 'phone_otp' ? 'tel' : 'text'}
@@ -900,15 +1120,29 @@ export default function LoginPage() {
                       onChange={(e) => {
                         setLoginId(e.target.value);
                         setNotFoundPrompt(false);
+                        if (fieldError === 'loginId' || fieldError === 'both') {
+                          setFieldError(null);
+                          setErrorMessage(null);
+                        }
                       }}
                       placeholder={
                         selectedRole === 'DELIVERY'
                           ? 'Enter 10-digit mobile number or email'
                           : 'Enter your registered email or phone'
                       }
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] transition shadow-2xs font-medium"
+                      className={`w-full pl-10 pr-4 py-2.5 bg-white rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition shadow-2xs font-medium ${
+                        fieldError === 'loginId' || fieldError === 'both'
+                          ? 'border-2 border-amber-500 ring-2 ring-amber-100 bg-amber-50/20'
+                          : 'border border-stone-200 focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E]'
+                      }`}
                     />
                   </div>
+                  {fieldError === 'loginId' && (
+                    <p className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1 animate-in fade-in">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Account ID not found. Verify phone/email or register.</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Password Input */}
@@ -924,15 +1158,26 @@ export default function LoginPage() {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        ref={passwordInputRef}
                         id="passwordInput"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="current-password"
                         required
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (fieldError === 'password' || fieldError === 'both') {
+                            setFieldError(null);
+                            setErrorMessage(null);
+                          }
+                        }}
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E] transition shadow-2xs font-medium"
+                        className={`w-full pl-10 pr-10 py-2.5 bg-white rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition shadow-2xs font-medium ${
+                          fieldError === 'password' || fieldError === 'both'
+                            ? 'border-2 border-rose-500 ring-2 ring-rose-100 bg-rose-50/20'
+                            : 'border border-stone-200 focus:ring-2 focus:ring-[#0F766E] focus:border-[#0F766E]'
+                        }`}
                       />
                       <button
                         type="button"
@@ -943,6 +1188,12 @@ export default function LoginPage() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {fieldError === 'password' && (
+                      <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1 animate-in fade-in">
+                        <Lock className="w-3.5 h-3.5 shrink-0" />
+                        <span>Incorrect password. Please verify and re-enter.</span>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1874,6 +2125,203 @@ export default function LoginPage() {
               >
                 Got It
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Login Error Popup Modal */}
+      {loginErrorPopup.isOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }))}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative animate-in zoom-in-95 duration-200 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }))}
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header with Icon Badge */}
+            <div className="flex items-start gap-3.5">
+              {loginErrorPopup.type === 'WRONG_PASSWORD' && (
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center ring-8 ring-rose-50 shrink-0">
+                  <Lock className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              )}
+              {loginErrorPopup.type === 'ID_NOT_FOUND' && (
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center ring-8 ring-amber-50 shrink-0">
+                  <UserX className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              )}
+              {loginErrorPopup.type === 'MISSING_FIELDS' && (
+                <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center ring-8 ring-orange-50 shrink-0">
+                  <AlertCircle className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              )}
+              {loginErrorPopup.type === 'GENERAL_ERROR' && (
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center ring-8 ring-rose-50 shrink-0">
+                  <ShieldAlert className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              )}
+              <div className="pr-6">
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide uppercase mb-1 ${
+                  loginErrorPopup.type === 'WRONG_PASSWORD'
+                    ? 'bg-rose-100 text-rose-800'
+                    : loginErrorPopup.type === 'ID_NOT_FOUND'
+                    ? 'bg-amber-100 text-amber-800'
+                    : loginErrorPopup.type === 'MISSING_FIELDS'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}>
+                  {loginErrorPopup.type === 'WRONG_PASSWORD'
+                    ? 'Authentication Failed'
+                    : loginErrorPopup.type === 'ID_NOT_FOUND'
+                    ? 'Account Not Found'
+                    : loginErrorPopup.type === 'MISSING_FIELDS'
+                    ? 'Required Field Missing'
+                    : 'Sign In Error'}
+                </span>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                  {loginErrorPopup.title}
+                </h3>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+              {loginErrorPopup.message}
+            </p>
+
+            {/* Smart Hint / Helper Box */}
+            {loginErrorPopup.hint && (
+              <div className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
+                loginErrorPopup.type === 'WRONG_PASSWORD'
+                  ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                  : 'bg-teal-50/80 border-teal-200 text-teal-900'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                  <div>
+                    <p className="font-bold text-[11px] uppercase tracking-wider mb-0.5">
+                      {loginErrorPopup.type === 'WRONG_PASSWORD' ? 'Login Credential Hint' : 'Recommended Next Step'}
+                    </p>
+                    <p className="text-slate-700">{loginErrorPopup.hint}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
+              {loginErrorPopup.type === 'WRONG_PASSWORD' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleTryAgainPassword}
+                    className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Try Again (Re-enter Password)</span>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+                        setAuthMode('phone_otp');
+                        setOtpSent(false);
+                        setErrorMessage(null);
+                      }}
+                      className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs transition cursor-pointer text-center"
+                    >
+                      Use Phone OTP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+                        setShowForgotModal(true);
+                      }}
+                      className="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs transition cursor-pointer text-center"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {loginErrorPopup.type === 'ID_NOT_FOUND' && (
+                <>
+                  {selectedRole === 'CUSTOMER' && (
+                    <button
+                      type="button"
+                      onClick={handleGoToCustomerSignUp}
+                      className="w-full py-2.5 bg-[#0F766E] hover:bg-teal-800 active:bg-teal-900 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Sign Up as New Customer</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {selectedRole === 'OWNER' && (
+                    <button
+                      type="button"
+                      onClick={handleGoToDairyRegister}
+                      className="w-full py-2.5 bg-[#0F766E] hover:bg-teal-800 active:bg-teal-900 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span>Register Dairy Farm</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {selectedRole === 'DELIVERY' && (
+                    <a
+                      href="/staff"
+                      className="w-full py-2.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Users className="w-4 h-4" />
+                      <span>Open Staff Directory</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleCheckIdAndRetry}
+                    className="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs transition cursor-pointer text-center"
+                  >
+                    Check ID &amp; Re-enter
+                  </button>
+                </>
+              )}
+
+              {(loginErrorPopup.type === 'MISSING_FIELDS' || loginErrorPopup.type === 'GENERAL_ERROR') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginErrorPopup((prev) => ({ ...prev, isOpen: false }));
+                    if (loginErrorPopup.fieldFocus === 'loginId') {
+                      loginIdInputRef.current?.focus();
+                    } else if (loginErrorPopup.fieldFocus === 'password') {
+                      passwordInputRef.current?.focus();
+                    }
+                  }}
+                  className="w-full py-2.5 bg-[#0F766E] hover:bg-teal-800 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer"
+                >
+                  Got It, Let Me Fix It
+                </button>
+              )}
             </div>
           </div>
         </div>

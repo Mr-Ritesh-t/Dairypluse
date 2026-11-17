@@ -68,11 +68,14 @@ class CustomerBase(BaseModel):
     status: str = "Active"
 
 class CustomerCreate(CustomerBase):
-    pass
+    password: Optional[str] = None
 
 class CustomerResponse(CustomerBase):
     id: str
     joined_date: str
+    assigned_password: Optional[str] = None
+    welcome_whatsapp_url: Optional[str] = None
+    welcome_message: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class CustomerUpdate(BaseModel):

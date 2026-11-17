@@ -48,6 +48,10 @@ export interface Customer {
   joinedDate: string;
   last_reminder_sent?: string;
   lastReminderSent?: string;
+  password?: string;
+  assignedPassword?: string;
+  welcomeWhatsAppUrl?: string;
+  welcomeMessage?: string;
 }
 
 export interface Subscription {

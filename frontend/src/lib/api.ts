@@ -306,6 +306,7 @@ export async function postCustomer(data: {
   preferredTime?: string;
   balance?: number;
   status?: string;
+  password?: string;
 }) {
   try {
     const res = await fetch(`${API_BASE_URL}/customers`, {
@@ -325,6 +326,7 @@ export async function postCustomer(data: {
         preferred_time: data.preferredTime || '6:00 AM - 7:30 AM',
         balance: data.balance || 0,
         status: data.status || 'Active',
+        password: data.password || null,
       }),
     });
     if (!res.ok) throw new Error('Failed to create customer');

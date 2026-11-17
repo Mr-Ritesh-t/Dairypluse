@@ -587,7 +587,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     postWastage({ variant, quantity, reason });
   };
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'>): Promise<Customer> => {
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'joinedDate'> & { password?: string }): Promise<Customer> => {
     const tempId = `c_${Date.now()}`;
     const targetDairy = customerData.dairyName || activeDairy?.name || user?.dairyName || 'Amrut Dairy Farm';
     const newCustomer: Customer = {
@@ -595,6 +595,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
       dairyName: targetDairy,
       id: tempId,
       joinedDate: new Date().toISOString().split('T')[0],
+      assignedPassword: customerData.password,
     };
     setCustomers((prev) => [newCustomer, ...prev]);
 
@@ -626,11 +627,22 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     const res = await postCustomer({
       ...customerData,
       dairyName: targetDairy,
+      password: customerData.password,
     });
     if (res && res.id) {
       newCustomer.id = res.id;
+      newCustomer.assignedPassword = res.assigned_password || customerData.password;
+      newCustomer.welcomeWhatsAppUrl = res.welcome_whatsapp_url;
+      newCustomer.welcomeMessage = res.welcome_message;
       setCustomers((prev) =>
-        prev.map((c) => (c.id === tempId ? { ...c, id: res.id, dairyName: res.dairy_name || targetDairy } : c))
+        prev.map((c) => (c.id === tempId ? {
+          ...c,
+          id: res.id,
+          dairyName: res.dairy_name || targetDairy,
+          assignedPassword: res.assigned_password || customerData.password,
+          welcomeWhatsAppUrl: res.welcome_whatsapp_url,
+          welcomeMessage: res.welcome_message,
+        } : c))
       );
 
       // Fetch server-generated owner alert link with clean WhatsApp URL

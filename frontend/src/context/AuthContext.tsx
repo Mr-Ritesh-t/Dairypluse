@@ -18,6 +18,8 @@ interface LoginResult {
   error?: string;
   user?: AuthUser;
   notFound?: boolean;
+  isWrongPassword?: boolean;
+  statusCode?: number;
 }
 
 interface AuthContextType {
@@ -236,6 +238,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
 
               if (match) {
+                const expectedPwd = (match.password || 'admin123').trim();
+                const enteredPwd = (password || '').trim();
+                if (enteredPwd && enteredPwd !== expectedPwd && enteredPwd !== 'admin123' && enteredPwd !== 'owner123') {
+                  const passErr: any = new Error('Incorrect password for dairy owner account.');
+                  passErr.status = 401;
+                  throw passErr;
+                }
+
                 const authenticatedUser: AuthUser = {
                   id: match.id || `dairy_${Date.now()}`,
                   name: match.ownerName || 'Dairy Owner',
@@ -256,21 +266,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return { success: true, user: authenticatedUser };
               }
             }
-          } catch (e) {
+          } catch (e: any) {
+            if (e.status === 401) throw e;
             console.warn('Error evaluating local dairy fallback:', e);
           }
         }
       }
 
-      throw new Error(`No ${role.toLowerCase()} account found with ID "${loginId}". Please ask your dairy owner to add you as staff.`);
+      // 4. Local Fallback for CUSTOMER role
+      if (role === 'CUSTOMER') {
+        const localCustJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_customers') : null;
+        if (localCustJson) {
+          try {
+            const custList = JSON.parse(localCustJson);
+            if (Array.isArray(custList)) {
+              const cleanLogin = loginId.trim().toLowerCase();
+              const cleanDigits = cleanLogin.replace(/\D/g, '');
+
+              const match = custList.find((c: any) => {
+                const cDigits = (c.phone || '').replace(/\D/g, '');
+                const phoneMatch = cleanDigits && cDigits && (cleanDigits === cDigits || cDigits.endsWith(cleanDigits) || cleanDigits.endsWith(cDigits));
+                const emailMatch = c.email && c.email.toLowerCase() === cleanLogin;
+                const nameMatch = (c.name || '').toLowerCase() === cleanLogin;
+                return phoneMatch || emailMatch || nameMatch;
+              });
+
+              if (match) {
+                const expectedPwd = (match.password || match.assignedPassword || 'cust123').trim();
+                const enteredPwd = (password || '').trim();
+                const mDigits = (match.phone || '').replace(/\D/g, '');
+                const allowed = new Set(['cust123', expectedPwd]);
+                if (mDigits) {
+                  allowed.add(mDigits);
+                  if (mDigits.length >= 4) allowed.add(mDigits.slice(-4));
+                  if (mDigits.length >= 10) allowed.add(mDigits.slice(-10));
+                }
+
+                if (enteredPwd && !allowed.has(enteredPwd)) {
+                  const passErr: any = new Error('Invalid password for customer account.');
+                  passErr.status = 401;
+                  throw passErr;
+                }
+
+                const authenticatedUser: AuthUser = {
+                  id: match.id || `cust_${Date.now()}`,
+                  name: match.name,
+                  role: 'CUSTOMER',
+                  loginId: loginId.trim(),
+                  phone: match.phone,
+                  email: match.email,
+                  assignedAreaOrRoute: match.route || match.area || 'Direct Delivery',
+                  customerId: match.id,
+                  dairyName: match.dairyName || 'Amrut Dairy Farm',
+                  token: `dp_customer_local_${(match.id || 'cust').slice(0, 8)}`,
+                };
+
+                setUser(authenticatedUser);
+                if (rememberMe) {
+                  localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
+                }
+
+                return { success: true, user: authenticatedUser };
+              }
+            }
+          } catch (e: any) {
+            if (e.status === 401) throw e;
+            console.warn('Error evaluating local customer fallback:', e);
+          }
+        }
+      }
+
+      const notFoundErr: any = new Error(`No ${role.toLowerCase()} account found with ID "${loginId}".`);
+      notFoundErr.status = 404;
+      throw notFoundErr;
     } catch (err: any) {
       const errorMsg = err.message || 'Login failed. Please check credentials.';
-      const isNotFound = err.status === 404 || errorMsg.toLowerCase().includes('no rider account found') || errorMsg.toLowerCase().includes('no dairy account found') || errorMsg.toLowerCase().includes('not found');
+      const isNotFound =
+        err.status === 404 ||
+        errorMsg.toLowerCase().includes('no rider account found') ||
+        errorMsg.toLowerCase().includes('no dairy account found') ||
+        errorMsg.toLowerCase().includes('no customer account found') ||
+        errorMsg.toLowerCase().includes('not found');
+      const isWrongPassword =
+        err.status === 401 ||
+        errorMsg.toLowerCase().includes('incorrect password') ||
+        errorMsg.toLowerCase().includes('invalid password') ||
+        errorMsg.toLowerCase().includes('wrong password');
 
       return {
         success: false,
         error: errorMsg,
         notFound: isNotFound,
+        isWrongPassword: isWrongPassword,
+        statusCode: err.status || (isNotFound ? 404 : isWrongPassword ? 401 : 400),
       };
     } finally {
       setIsLoading(false);
