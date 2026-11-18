@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Star, X, Check, ThumbsUp, Sparkles, MessageSquare, ShieldCheck, Heart } from 'lucide-react';
+import { Star, X, ThumbsUp, Sparkles, MessageSquare, ShieldCheck, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface DriverRatingModalProps {
@@ -27,15 +27,6 @@ interface DriverRatingModalProps {
   onSuccess?: () => void;
 }
 
-const COMPLIMENT_TAGS = [
-  '⚡ Always On Time',
-  '🥛 Handled with Care',
-  '😊 Polite & Courteous',
-  '🚪 Quiet Doorstep Drop',
-  '❄️ Cold & Fresh Milk',
-  '📍 Perfect GPS Location',
-];
-
 export function DriverRatingModal({
   isOpen,
   onClose,
@@ -51,16 +42,9 @@ export function DriverRatingModal({
 }: DriverRatingModalProps) {
   const [rating, setRating] = useState<number>(currentRating || 5);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [feedback, setFeedback] = useState(currentFeedback || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
 
   const getRatingLabel = (score: number) => {
     switch (score) {
@@ -91,7 +75,6 @@ export function DriverRatingModal({
         customerId,
         customerName,
         rating,
-        tags: selectedTags,
         feedback: feedback.trim(),
       });
 
@@ -219,35 +202,6 @@ export function DriverRatingModal({
 
                   <div className="text-xs font-extrabold text-emerald-800 tracking-tight">
                     {getRatingLabel(hoverRating !== null ? hoverRating : rating)}
-                  </div>
-                </div>
-
-                {/* Compliment Tag Chips */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">
-                    What did {driverName} do well?
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {COMPLIMENT_TAGS.map((tag) => {
-                      const isSelected = selectedTags.includes(tag);
-                      return (
-                        <motion.button
-                          type="button"
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                            isSelected
-                              ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-2xs'
-                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                          <span>{tag}</span>
-                        </motion.button>
-                      );
-                    })}
                   </div>
                 </div>
 
