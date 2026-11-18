@@ -1052,6 +1052,35 @@ export default function LoginPage() {
                       </div>
                     </button>
                   </div>
+
+                  {/* Quick-Fill Demo Helper */}
+                  <div className="mt-2 p-2 rounded-xl bg-teal-50/70 border border-teal-100 flex items-center justify-between text-[11px]">
+                    <span className="text-teal-900 font-medium truncate pr-1">
+                      {selectedRole === 'OWNER' && 'Demo: admin@dairypulse.farm (admin123)'}
+                      {selectedRole === 'DELIVERY' && 'Demo: rahul.rider@dairypulse.farm (rider123)'}
+                      {selectedRole === 'CUSTOMER' && 'Demo: priya.kulkarni@gmail.com (user123)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedRole === 'OWNER') {
+                          setLoginId('admin@dairypulse.farm');
+                          setPassword('admin123');
+                        } else if (selectedRole === 'DELIVERY') {
+                          setLoginId('rahul.rider@dairypulse.farm');
+                          setPassword('rider123');
+                        } else {
+                          setLoginId('priya.kulkarni@gmail.com');
+                          setPassword('user123');
+                        }
+                        setFieldError(null);
+                        setErrorMessage(null);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-white border border-teal-200 text-[#0F766E] font-bold hover:bg-teal-50 transition cursor-pointer shadow-2xs shrink-0"
+                    >
+                      Auto Fill
+                    </button>
+                  </div>
                 </div>
 
                 {/* Authentication Method Toggle */}

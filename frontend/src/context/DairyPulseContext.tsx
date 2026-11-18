@@ -76,6 +76,17 @@ import {
   getRiderSalarySummaryApi,
   postNotifyOwnerNewCustomerApi,
 } from '@/lib/api';
+import {
+  DEFAULT_DAIRIES,
+  DEFAULT_PRODUCTS,
+  DEFAULT_STAFF,
+  DEFAULT_CUSTOMERS,
+  DEFAULT_ROUTES,
+  DEFAULT_SUBSCRIPTIONS,
+  DEFAULT_DELIVERIES,
+  DEFAULT_INVOICES,
+  DEFAULT_EXPENSES,
+} from '@/lib/initialData';
 
 interface DairyPulseContextType {
   products: Product[];
@@ -180,21 +191,16 @@ interface DairyPulseContextType {
   refreshSalaryData: () => Promise<void>;
 }
 
-const initialProducts: Product[] = [];
-
+const initialProducts: Product[] = DEFAULT_PRODUCTS;
 const initialMovements: InventoryMovement[] = [];
-
-const initialCustomers: Customer[] = [];
-
-const initialSubscriptions: Subscription[] = [];
-
+const initialCustomers: Customer[] = DEFAULT_CUSTOMERS;
+const initialSubscriptions: Subscription[] = DEFAULT_SUBSCRIPTIONS;
 const initialShopOrders: ShopOrder[] = [];
-
-const initialDeliveries: DeliveryTask[] = [];
-
-const initialInvoices: Invoice[] = [];
-const initialExpenses: Expense[] = [];
-const initialStaff: StaffMember[] = [];
+const initialDeliveries: DeliveryTask[] = DEFAULT_DELIVERIES;
+const initialInvoices: Invoice[] = DEFAULT_INVOICES;
+const initialExpenses: Expense[] = DEFAULT_EXPENSES;
+const initialStaff: StaffMember[] = DEFAULT_STAFF;
+const initialRoutes: RouteInfo[] = DEFAULT_ROUTES;
 
 const DairyPulseContext = createContext<DairyPulseContextType | undefined>(undefined);
 
@@ -204,7 +210,18 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   const [movements, setMovements] = useState<InventoryMovement[]>(initialMovements);
   
   // Master raw state arrays
-  const [rawCustomers, setRawCustomers] = useState<Customer[]>(initialCustomers);
+  const [rawCustomers, setRawCustomers] = useState<Customer[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('dairypulse_customers');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return initialCustomers;
+  });
   const [rawSubscriptions, setRawSubscriptions] = useState<Subscription[]>(initialSubscriptions);
   const [rawShopOrders, setRawShopOrders] = useState<ShopOrder[]>(initialShopOrders);
   const [rawDeliveries, setRawDeliveries] = useState<DeliveryTask[]>(initialDeliveries);
@@ -222,7 +239,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
     }
     return initialStaff;
   });
-  const [rawRoutes, setRawRoutes] = useState<RouteInfo[]>([]);
+  const [rawRoutes, setRawRoutes] = useState<RouteInfo[]>(initialRoutes);
 
   // Aliases so all existing mutators cleanly update the master raw state
   const setCustomers = setRawCustomers;
@@ -244,7 +261,7 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
         }
       } catch (e) {}
     }
-    return [];
+    return DEFAULT_DAIRIES;
   });
   const [selectedActiveDairy, setSelectedActiveDairy] = useState<DairyInfo | null>(null);
 
@@ -432,28 +449,28 @@ export function DairyPulseProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     refreshDairies();
     getProducts().then((data) => {
-      if (data && Array.isArray(data)) setProducts(data);
+      if (data && Array.isArray(data) && data.length > 0) setProducts(data);
     });
     getCustomers().then((data) => {
-      if (data && Array.isArray(data)) setRawCustomers(data);
+      if (data && Array.isArray(data) && data.length > 0) setRawCustomers(data);
     });
     getSubscriptions().then((data) => {
-      if (data && Array.isArray(data)) setRawSubscriptions(data);
+      if (data && Array.isArray(data) && data.length > 0) setRawSubscriptions(data);
     });
     getShopOrders().then((data) => {
-      if (data && Array.isArray(data)) setRawShopOrders(data);
+      if (data && Array.isArray(data) && data.length > 0) setRawShopOrders(data);
     });
     getDeliveriesToday().then((data) => {
-      if (data && Array.isArray(data)) {
+      if (data && Array.isArray(data) && data.length > 0) {
         const sorted = [...data].sort((a: any, b: any) => (a.sequenceOrder || 1) - (b.sequenceOrder || 1));
         setRawDeliveries(sorted);
       }
     });
     getInvoices().then((data) => {
-      if (data && Array.isArray(data)) setRawInvoices(data);
+      if (data && Array.isArray(data) && data.length > 0) setRawInvoices(data);
     });
     getExpenses().then((data) => {
-      if (data && Array.isArray(data)) setRawExpenses(data);
+      if (data && Array.isArray(data) && data.length > 0) setRawExpenses(data);
     });
     getStaff().then((data) => {
       if (data && Array.isArray(data)) {

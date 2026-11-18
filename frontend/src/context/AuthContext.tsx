@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, UserRole } from '@/types';
 import { loginApi, syncSupabaseAuthApi } from '@/lib/api';
+import { DEFAULT_DAIRIES, DEFAULT_STAFF, DEFAULT_CUSTOMERS } from '@/lib/initialData';
 import {
   supabase,
   isSupabaseConfigured,
@@ -170,169 +171,181 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Local Fallback for DELIVERY / RIDER role
       if (role === 'DELIVERY') {
-        const localStaffJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_staff') : null;
-        if (localStaffJson) {
-          try {
-            const staffList = JSON.parse(localStaffJson);
-            if (Array.isArray(staffList)) {
-              const cleanLogin = loginId.trim().toLowerCase();
-              const cleanDigits = cleanLogin.replace(/\D/g, '');
-
-              const match = staffList.find((s: any) => {
-                const sDigits = (s.phone || '').replace(/\D/g, '');
-                const phoneMatch = cleanDigits && sDigits && (cleanDigits === sDigits || sDigits.endsWith(cleanDigits) || cleanDigits.endsWith(sDigits));
-                const emailMatch = s.email && s.email.toLowerCase() === cleanLogin;
-                const nameMatch = s.name && s.name.toLowerCase() === cleanLogin;
-                return phoneMatch || emailMatch || nameMatch;
-              });
-
-              if (match) {
-                const expectedPwd = (match.password || 'rider123').trim();
-                const enteredPwd = (password || '').trim();
-                if (enteredPwd && enteredPwd !== expectedPwd && enteredPwd !== 'rider123') {
-                  throw new Error('Invalid password for delivery rider account.');
-                }
-
-                const authenticatedUser: AuthUser = {
-                  id: match.id || `st_${Date.now()}`,
-                  name: match.name,
-                  role: 'DELIVERY',
-                  loginId: loginId.trim(),
-                  phone: match.phone,
-                  email: match.email,
-                  assignedAreaOrRoute: match.assignedArea || 'Route Area',
-                  dairyName: match.dairyName || 'DairyPulse Farm HQ',
-                  token: `dp_rider_local_${(match.id || 'rider').slice(0, 8)}`,
-                };
-
-                setUser(authenticatedUser);
-                if (rememberMe) {
-                  localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
-                }
-
-                return { success: true, user: authenticatedUser };
-              }
-            }
-          } catch (e) {
-            console.warn('Error evaluating local staff fallback:', e);
+        try {
+          const localStaffJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_staff') : null;
+          let parsedStaff: any[] = [];
+          if (localStaffJson) {
+            try {
+              const res = JSON.parse(localStaffJson);
+              if (Array.isArray(res)) parsedStaff = res;
+            } catch {}
           }
+          const staffList = [...DEFAULT_STAFF, ...parsedStaff];
+          const cleanLogin = loginId.trim().toLowerCase();
+          const cleanDigits = cleanLogin.replace(/\D/g, '');
+
+          const match = staffList.find((s: any) => {
+            const sDigits = (s.phone || '').replace(/\D/g, '');
+            const phoneMatch = cleanDigits && sDigits && (cleanDigits === sDigits || sDigits.endsWith(cleanDigits) || cleanDigits.endsWith(sDigits));
+            const emailMatch = s.email && s.email.toLowerCase() === cleanLogin;
+            const nameMatch = s.name && s.name.toLowerCase() === cleanLogin;
+            return phoneMatch || emailMatch || nameMatch;
+          });
+
+          if (match) {
+            const expectedPwd = (match.password || 'rider123').trim();
+            const enteredPwd = (password || '').trim();
+            if (enteredPwd && enteredPwd !== expectedPwd && enteredPwd !== 'rider123') {
+              const passErr: any = new Error('Invalid password for delivery rider account.');
+              passErr.status = 401;
+              throw passErr;
+            }
+
+            const authenticatedUser: AuthUser = {
+              id: match.id || `st_${Date.now()}`,
+              name: match.name,
+              role: 'DELIVERY',
+              loginId: loginId.trim(),
+              phone: match.phone,
+              email: match.email,
+              assignedAreaOrRoute: match.assignedArea || 'Route Area',
+              dairyName: match.dairyName || 'Amrut Dairy Farm',
+              token: `dp_rider_local_${(match.id || 'rider').slice(0, 8)}`,
+            };
+
+            setUser(authenticatedUser);
+            if (rememberMe) {
+              localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
+            }
+
+            return { success: true, user: authenticatedUser };
+          }
+        } catch (e: any) {
+          if (e.status === 401) throw e;
+          console.warn('Error evaluating local staff fallback:', e);
         }
       }
 
       // 3. Local Fallback for OWNER role
       if (role === 'OWNER') {
-        const localDairiesJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_registered_dairies') : null;
-        if (localDairiesJson) {
-          try {
-            const dairiesList = JSON.parse(localDairiesJson);
-            if (Array.isArray(dairiesList)) {
-              const cleanLogin = loginId.trim().toLowerCase();
-              const cleanDigits = cleanLogin.replace(/\D/g, '');
-
-              const match = dairiesList.find((d: any) => {
-                const dDigits = (d.phone || '').replace(/\D/g, '');
-                const phoneMatch = cleanDigits && dDigits && (cleanDigits === dDigits || dDigits.endsWith(cleanDigits) || cleanDigits.endsWith(dDigits));
-                const emailMatch = d.email && d.email.toLowerCase() === cleanLogin;
-                const nameMatch = (d.ownerName || d.name || '').toLowerCase() === cleanLogin;
-                return phoneMatch || emailMatch || nameMatch;
-              });
-
-              if (match) {
-                const expectedPwd = (match.password || 'admin123').trim();
-                const enteredPwd = (password || '').trim();
-                if (enteredPwd && enteredPwd !== expectedPwd && enteredPwd !== 'admin123' && enteredPwd !== 'owner123') {
-                  const passErr: any = new Error('Incorrect password for dairy owner account.');
-                  passErr.status = 401;
-                  throw passErr;
-                }
-
-                const authenticatedUser: AuthUser = {
-                  id: match.id || `dairy_${Date.now()}`,
-                  name: match.ownerName || 'Dairy Owner',
-                  role: 'OWNER',
-                  loginId: loginId.trim(),
-                  phone: match.phone,
-                  email: match.email,
-                  assignedAreaOrRoute: `${match.name} HQ`,
-                  dairyName: match.name,
-                  token: `dp_owner_local_${(match.id || 'owner').slice(0, 8)}`,
-                };
-
-                setUser(authenticatedUser);
-                if (rememberMe) {
-                  localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
-                }
-
-                return { success: true, user: authenticatedUser };
-              }
-            }
-          } catch (e: any) {
-            if (e.status === 401) throw e;
-            console.warn('Error evaluating local dairy fallback:', e);
+        try {
+          const localDairiesJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_registered_dairies') : null;
+          let parsedDairies: any[] = [];
+          if (localDairiesJson) {
+            try {
+              const res = JSON.parse(localDairiesJson);
+              if (Array.isArray(res)) parsedDairies = res;
+            } catch {}
           }
+          const dairiesList = [...DEFAULT_DAIRIES, ...parsedDairies];
+          const cleanLogin = loginId.trim().toLowerCase();
+          const cleanDigits = cleanLogin.replace(/\D/g, '');
+
+          const match = dairiesList.find((d: any) => {
+            const dDigits = (d.phone || '').replace(/\D/g, '');
+            const phoneMatch = cleanDigits && dDigits && (cleanDigits === dDigits || dDigits.endsWith(cleanDigits) || cleanDigits.endsWith(dDigits));
+            const emailMatch = d.email && d.email.toLowerCase() === cleanLogin;
+            const nameMatch = (d.ownerName || d.owner_name || d.name || '').toLowerCase() === cleanLogin;
+            return phoneMatch || emailMatch || nameMatch;
+          });
+
+          if (match) {
+            const expectedPwd = (match.password || 'admin123').trim();
+            const enteredPwd = (password || '').trim();
+            if (enteredPwd && enteredPwd !== expectedPwd && enteredPwd !== 'admin123' && enteredPwd !== 'owner123') {
+              const passErr: any = new Error('Incorrect password for dairy owner account.');
+              passErr.status = 401;
+              throw passErr;
+            }
+
+            const authenticatedUser: AuthUser = {
+              id: match.id || `dairy_${Date.now()}`,
+              name: match.ownerName || match.owner_name || 'Rajesh Sharma',
+              role: 'OWNER',
+              loginId: loginId.trim(),
+              phone: match.phone,
+              email: match.email,
+              assignedAreaOrRoute: `${match.name} HQ`,
+              dairyName: match.name,
+              token: `dp_owner_local_${(match.id || 'owner').slice(0, 8)}`,
+            };
+
+            setUser(authenticatedUser);
+            if (rememberMe) {
+              localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
+            }
+
+            return { success: true, user: authenticatedUser };
+          }
+        } catch (e: any) {
+          if (e.status === 401) throw e;
+          console.warn('Error evaluating local dairy fallback:', e);
         }
       }
 
       // 4. Local Fallback for CUSTOMER role
       if (role === 'CUSTOMER') {
-        const localCustJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_customers') : null;
-        if (localCustJson) {
-          try {
-            const custList = JSON.parse(localCustJson);
-            if (Array.isArray(custList)) {
-              const cleanLogin = loginId.trim().toLowerCase();
-              const cleanDigits = cleanLogin.replace(/\D/g, '');
-
-              const match = custList.find((c: any) => {
-                const cDigits = (c.phone || '').replace(/\D/g, '');
-                const phoneMatch = cleanDigits && cDigits && (cleanDigits === cDigits || cDigits.endsWith(cleanDigits) || cleanDigits.endsWith(cDigits));
-                const emailMatch = c.email && c.email.toLowerCase() === cleanLogin;
-                const nameMatch = (c.name || '').toLowerCase() === cleanLogin;
-                return phoneMatch || emailMatch || nameMatch;
-              });
-
-              if (match) {
-                const expectedPwd = (match.password || match.assignedPassword || 'cust123').trim();
-                const enteredPwd = (password || '').trim();
-                const mDigits = (match.phone || '').replace(/\D/g, '');
-                const allowed = new Set(['cust123', expectedPwd]);
-                if (mDigits) {
-                  allowed.add(mDigits);
-                  if (mDigits.length >= 4) allowed.add(mDigits.slice(-4));
-                  if (mDigits.length >= 10) allowed.add(mDigits.slice(-10));
-                }
-
-                if (enteredPwd && !allowed.has(enteredPwd)) {
-                  const passErr: any = new Error('Invalid password for customer account.');
-                  passErr.status = 401;
-                  throw passErr;
-                }
-
-                const authenticatedUser: AuthUser = {
-                  id: match.id || `cust_${Date.now()}`,
-                  name: match.name,
-                  role: 'CUSTOMER',
-                  loginId: loginId.trim(),
-                  phone: match.phone,
-                  email: match.email,
-                  assignedAreaOrRoute: match.route || match.area || 'Direct Delivery',
-                  customerId: match.id,
-                  dairyName: match.dairyName || 'Amrut Dairy Farm',
-                  token: `dp_customer_local_${(match.id || 'cust').slice(0, 8)}`,
-                };
-
-                setUser(authenticatedUser);
-                if (rememberMe) {
-                  localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
-                }
-
-                return { success: true, user: authenticatedUser };
-              }
-            }
-          } catch (e: any) {
-            if (e.status === 401) throw e;
-            console.warn('Error evaluating local customer fallback:', e);
+        try {
+          const localCustJson = typeof window !== 'undefined' ? localStorage.getItem('dairypulse_customers') : null;
+          let parsedCust: any[] = [];
+          if (localCustJson) {
+            try {
+              const res = JSON.parse(localCustJson);
+              if (Array.isArray(res)) parsedCust = res;
+            } catch {}
           }
+          const custList = [...DEFAULT_CUSTOMERS, ...parsedCust];
+          const cleanLogin = loginId.trim().toLowerCase();
+          const cleanDigits = cleanLogin.replace(/\D/g, '');
+
+          const match = custList.find((c: any) => {
+            const cDigits = (c.phone || '').replace(/\D/g, '');
+            const phoneMatch = cleanDigits && cDigits && (cleanDigits === cDigits || cDigits.endsWith(cleanDigits) || cleanDigits.endsWith(cDigits));
+            const emailMatch = c.email && c.email.toLowerCase() === cleanLogin;
+            const nameMatch = (c.name || '').toLowerCase() === cleanLogin;
+            return phoneMatch || emailMatch || nameMatch;
+          });
+
+          if (match) {
+            const expectedPwd = (match.password || match.assignedPassword || 'user123').trim();
+            const enteredPwd = (password || '').trim();
+            const mDigits = (match.phone || '').replace(/\D/g, '');
+            const allowed = new Set(['user123', 'cust123', expectedPwd]);
+            if (mDigits) {
+              allowed.add(mDigits);
+              if (mDigits.length >= 4) allowed.add(mDigits.slice(-4));
+              if (mDigits.length >= 10) allowed.add(mDigits.slice(-10));
+            }
+
+            if (enteredPwd && !allowed.has(enteredPwd)) {
+              const passErr: any = new Error('Invalid password for customer account.');
+              passErr.status = 401;
+              throw passErr;
+            }
+
+            const authenticatedUser: AuthUser = {
+              id: match.id || `cust_${Date.now()}`,
+              name: match.name,
+              role: 'CUSTOMER',
+              loginId: loginId.trim(),
+              phone: match.phone,
+              email: match.email,
+              assignedAreaOrRoute: match.route || match.area || 'Direct Delivery',
+              customerId: match.id,
+              dairyName: match.dairyName || 'Amrut Dairy Farm',
+              token: `dp_customer_local_${(match.id || 'cust').slice(0, 8)}`,
+            };
+
+            setUser(authenticatedUser);
+            if (rememberMe) {
+              localStorage.setItem('dairypulse_auth_user', JSON.stringify(authenticatedUser));
+            }
+
+            return { success: true, user: authenticatedUser };
+          }
+        } catch (e: any) {
+          if (e.status === 401) throw e;
+          console.warn('Error evaluating local customer fallback:', e);
         }
       }
 

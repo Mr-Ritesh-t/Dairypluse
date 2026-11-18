@@ -17,6 +17,11 @@ function resolveApiBaseUrl(): string {
     if (isLocalhost && (envUrl.includes('dairypulse-backend.onrender.com') || !envUrl)) {
       return 'http://localhost:8000/api/v1';
     }
+    // In HTTPS production (such as on Vercel) where no HTTPS cloud API is configured,
+    // avoid mixed-content failure against http://localhost:8000
+    if (!isLocalhost && window.location.protocol === 'https:' && (!envUrl || envUrl.includes('localhost'))) {
+      return '';
+    }
   }
   const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
   return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;

@@ -1165,6 +1165,11 @@ export async function loginApi(credentials: {
   password?: string;
   role: string;
 }) {
+  if (!API_BASE_URL) {
+    const error: any = new Error('No remote backend configured. Activating local workspace.');
+    error.status = 503;
+    throw error;
+  }
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
