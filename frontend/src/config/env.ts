@@ -14,17 +14,24 @@ function resolveApiBaseUrl(): string {
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
     const envUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    if (isLocalhost && (envUrl.includes('dairypulse-backend.onrender.com') || !envUrl)) {
+    
+    // Explicit external cloud backend (e.g. Render / Railway)
+    if (envUrl && !envUrl.includes('localhost')) {
+      const raw = envUrl.trim().replace(/\/+$/, '');
+      return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+    }
+    
+    // Local development targeting local FastAPI backend on port 8000
+    if (isLocalhost && !envUrl.includes('vercel.app')) {
       return 'http://localhost:8000/api/v1';
     }
-    // In HTTPS production (such as on Vercel) where no HTTPS cloud API is configured,
-    // avoid mixed-content failure against http://localhost:8000
-    if (!isLocalhost && window.location.protocol === 'https:' && (!envUrl || envUrl.includes('localhost'))) {
-      return '';
-    }
+    
+    // On Vercel cloud deployment: use same-origin relative /api/v1
+    // (serviced natively by Next.js Cloud Serverless Routes connected to Supabase PostgreSQL)
+    return '/api/v1';
   }
-  const raw = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+  const raw = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '');
+  return raw ? (raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`) : '/api/v1';
 }
 
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
