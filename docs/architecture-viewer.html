@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DairyPulse — System Architecture & UML Specifications</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --primary: #0F766E;
+      --primary-dark: #0D6560;
+      --bg-canvas: #0f172a;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --accent-teal: #14b8a6;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: var(--text-main);
+      padding: 24px;
+    }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      background: white;
+      padding: 24px 32px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .brand h1 {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #0f172a;
+    }
+    .brand h1 span {
+      color: var(--primary);
+    }
+    .brand p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: #f0fdfa;
+      color: var(--primary);
+      border: 1px solid #ccfbf1;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .nav-tabs button {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .nav-tabs button:hover {
+      color: var(--primary);
+      border-color: var(--accent-teal);
+    }
+    .nav-tabs button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px -2px rgba(15, 118, 110, 0.35);
+    }
+    .diagram-panel {
+      display: none;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04);
+      margin-bottom: 28px;
+    }
+    .diagram-panel.active {
+      display: block;
+    }
+    .diagram-panel h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .diagram-panel p.desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .mermaid-wrapper {
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 24px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+    footer {
+      max-width: 1200px;
+      margin: 32px auto 0;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>Dairy<span>Pulse</span> System Engineering Blueprint</h1>
+      <p>Multi-Dairy Farm & Supply Chain Operations Platform — Formal UML Specifications</p>
+    </div>
+    <div class="badge">
+      <span>●</span> Capstone Submission Edition
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="nav-tabs">
+      <button class="active" onclick="showTab('architecture', this)">1. Architecture Diagram</button>
+      <button onclick="showTab('usecase', this)">2. Use Case Diagram</button>
+      <button onclick="showTab('er', this)">3. ER Data Model</button>
+      <button onclick="showTab('sequence', this)">4. Sequence Diagram</button>
+      <button onclick="showTab('state', this)">5. State Machine</button>
+      <button onclick="showTab('dfd', this)">6. DFD Level 1</button>
+    </div>
+
+    <!-- TAB 1: ARCHITECTURE -->
+    <div id="architecture" class="diagram-panel active">
+      <h2>1. Five-Tier System Architecture</h2>
+      <p class="desc">Structural decomposition detailing the Next.js 16 Presentation layer, Global Reactive State Cache, FastAPI Application Router, Core Micro-Services, and Relational Database.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+graph TB
+    subgraph ClientLayer ["1. Client Presentation Layer (Next.js 16 + React 19)"]
+        OwnerUI["Dairy Owner Operations Portal<br/>(/, /delivery, /inventory, /billing)"]
+        RiderUI["Delivery Fleet Partner PWA<br/>(/mobile/delivery)"]
+        CustomerUI["Customer Household Portal<br/>(/mobile/customer)"]
+    end
+
+    subgraph StateLayer ["2. Client State & Persistence Layer"]
+        DairyContext["DairyPulseContext<br/>(Global Reactive State Cache)"]
+        AuthContext["AuthContext<br/>(Role & Session Guard)"]
+        LocalStore["Browser Storage & Cache<br/>(Offline Delivery Queue)"]
+    end
+
+    subgraph APILayer ["3. Application & API Gateway (FastAPI)"]
+        CORS["CORS & Request Middleware<br/>(Allowed Origins)"]
+        RouterV1["REST API Router (/api/v1)<br/>• /auth & /dairies<br/>• /customers & /deliveries<br/>• /inventory & /invoices"]
+        Pydantic["Pydantic v2 Schema Validators<br/>(Strict DTO Serialization)"]
+    end
+
+    subgraph ServiceLayer ["4. Business Logic Services"]
+        RouteService["Route Builder & Sequencing Engine"]
+        DispatchService["Daily Dispatch Manifest Generator"]
+        StockService["Cold-Chain Silo Stock Ledger"]
+        BillingService["Automated Billing & Invoice Engine"]
+        PayrollService["Staff Shift & Payroll Engine"]
+    end
+
+    subgraph DatabaseLayer ["5. Persistence Layer"]
+        ORM["SQLAlchemy 2.0 ORM Engine"]
+        DB[("Relational Database<br/>SQLite (Dev) / PostgreSQL (Cloud)")]
+    end
+
+    OwnerUI --> DairyContext
+    RiderUI --> DairyContext
+    CustomerUI --> DairyContext
+    RiderUI <--> LocalStore
+    OwnerUI --> AuthContext
+
+    DairyContext --> RouterV1
+    LocalStore --> RouterV1
+    AuthContext --> RouterV1
+
+    CORS --> RouterV1
+    RouterV1 --> Pydantic
+    Pydantic --> RouteService
+    Pydantic --> DispatchService
+    Pydantic --> StockService
+    Pydantic --> BillingService
+    Pydantic --> PayrollService
+
+    RouteService --> ORM
+    DispatchService --> ORM
+    StockService --> ORM
+    BillingService --> ORM
+    PayrollService --> ORM
+    ORM --> DB
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 2: USE CASE -->
+    <div id="usecase" class="diagram-panel">
+      <h2>2. Complete System Use Case Diagram</h2>
+      <p class="desc">Interactions between external actors (Dairy Owner, Delivery Rider, Customer, Chron Worker) and the system boundaries.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+graph LR
+    Owner((Dairy Owner / Admin))
+    Rider((Delivery Rider))
+    Customer((Customer / Subscriber))
+    Scheduler((System Chron Worker))
+
+    subgraph SystemBoundary ["DairyPulse Enterprise System Boundary"]
+        UC_Auth["UC-1: Authenticate / Switch Dairy Workspace"]
+        UC_RegDairy["UC-2: Register & Configure Dairy Farm"]
+        UC_Stock["UC-3: Record Milk Intake & Fat/SNF"]
+        UC_Cust["UC-4: Manage Customers & Subscriptions"]
+        UC_BuildRoute["UC-5: Build & Sequence Delivery Routes"]
+        UC_Dispatch["UC-6: Generate Daily Dispatch Manifest"]
+        UC_Payroll["UC-7: Process Rider Daily Wage Payouts"]
+        UC_Reports["UC-8: Audit Revenue, Wastage & P&L"]
+
+        UC_ShiftStart["UC-9: Clock-in Attendance & Milk Pickup"]
+        UC_DropOff["UC-10: Mark Doorstep Drop & Collect Bottles"]
+        UC_CashCollect["UC-11: Collect Cash Payment on Delivery"]
+        UC_OfflineSync["UC-12: Sync Offline Completed Deliveries"]
+
+        UC_SubManage["UC-13: Modify Milk Quantity or Pause Date"]
+        UC_TrackDeliv["UC-14: Track Morning Delivery Status"]
+        UC_RateDriver["UC-15: Rate Driver & Submit Feedback"]
+        UC_PayInvoice["UC-16: Settle Monthly Milk Invoice"]
+    end
+
+    Owner --- UC_Auth
+    Owner --- UC_RegDairy
+    Owner --- UC_Stock
+    Owner --- UC_Cust
+    Owner --- UC_BuildRoute
+    Owner --- UC_Dispatch
+    Owner --- UC_Payroll
+    Owner --- UC_Reports
+
+    Rider --- UC_Auth
+    Rider --- UC_ShiftStart
+    Rider --- UC_DropOff
+    Rider --- UC_CashCollect
+    Rider --- UC_OfflineSync
+
+    Customer --- UC_Auth
+    Customer --- UC_SubManage
+    Customer --- UC_TrackDeliv
+    Customer --- UC_RateDriver
+    Customer --- UC_PayInvoice
+
+    Scheduler --- UC_Dispatch
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 3: ER DIAGRAM -->
+    <div id="er" class="diagram-panel">
+      <h2>3. Entity-Relationship (ER) Data Model</h2>
+      <p class="desc">Database schema and relational associations between multi-dairy farms, inventory, customers, deliveries, staff, and invoices.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+erDiagram
+    DAIRIES ||--o{ USERS : "employs"
+    DAIRIES ||--o{ STAFF : "employs"
+    DAIRIES ||--o{ CUSTOMERS : "serves"
+    DAIRIES ||--o{ PRODUCTS : "produces"
+    DAIRIES ||--o{ ROUTES : "operates"
+
+    CUSTOMERS ||--o{ SUBSCRIPTIONS : "holds"
+    CUSTOMERS ||--o{ INVOICES : "billed_to"
+    CUSTOMERS ||--o{ DELIVERY_TASKS : "receives"
+
+    STAFF ||--o{ DELIVERY_TASKS : "assigned_to"
+    STAFF ||--o{ DRIVER_RATINGS : "reviewed_in"
+
+    DAIRIES {
+        string id PK
+        string name
+        string owner_name
+        string email
+        string phone
+        string city
+        float rating
+    }
+
+    USERS {
+        string id PK
+        string email
+        string phone
+        string role
+        string dairy_name FK
+    }
+
+    PRODUCTS {
+        string id PK
+        string name
+        string variant
+        float fat_content
+        float snf_content
+        float selling_price
+        float available_stock
+    }
+
+    CUSTOMERS {
+        string id PK
+        string name
+        string phone
+        string address
+        string area
+        float balance
+        string status
+    }
+
+    SUBSCRIPTIONS {
+        string id PK
+        string customer_id FK
+        string product_variant
+        float quantity_liters
+        string time_slot
+        string frequency
+        float unit_price
+    }
+
+    DELIVERY_TASKS {
+        string id PK
+        string delivery_number
+        string customer_id FK
+        string assigned_rider FK
+        string status
+        int sequence_order
+        string delivery_date
+    }
+
+    STAFF {
+        string id PK
+        string name
+        string role
+        string phone
+        string status
+        float daily_salary
+    }
+
+    INVOICES {
+        string id PK
+        string invoice_number
+        string customer_id FK
+        float total_amount
+        float paid_amount
+        string status
+    }
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 4: SEQUENCE -->
+    <div id="sequence" class="diagram-panel">
+      <h2>4. Morning Dispatch & Delivery Sequence</h2>
+      <p class="desc">Chronological call flow across actors, UI components, REST APIs, and the database engine for morning milk fulfillment.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Owner as Dairy Owner
+    actor Rider as Delivery Rider
+    participant Frontend as Next.js PWA
+    participant Backend as FastAPI Gateway
+    participant DB as SQLite / PostgreSQL Database
+    actor Customer as Household Customer
+
+    Note over Owner, Backend: 05:00 AM — Manifest Generation
+    Owner->>Frontend: Click "Generate Daily Manifest"
+    Frontend->>Backend: POST /api/v1/deliveries/generate-daily
+    Backend->>DB: Query Active Subscriptions
+    DB-->>Backend: Return Subscriptions
+    Backend->>DB: Bulk Create DeliveryTasks (Status: Assigned)
+    Backend-->>Frontend: 200 OK (Tasks Generated)
+
+    Note over Rider, Backend: 05:30 AM — Milk Pickup & Attendance
+    Rider->>Frontend: Clock-in & Confirm Milk Pickup
+    Frontend->>Backend: POST /api/v1/staff/pickup-milk (Liters, Crates)
+    Backend->>DB: Decrement Silo Inventory Available Stock
+    Backend-->>Frontend: Shift Activated & Crates Loaded
+
+    Note over Rider, Customer: 06:15 AM — Doorstep Milk Drop
+    Rider->>Frontend: Tap "Mark Delivered" on Customer Stop
+    Frontend->>Backend: PATCH /api/v1/deliveries/{id}/status (Status: Delivered)
+    Backend->>DB: Update DeliveryTask status
+    Backend-->>Frontend: 200 OK
+
+    Note over Customer, Backend: 07:00 AM — Verification & Review
+    Customer->>Frontend: Open Customer Portal
+    Frontend->>Backend: GET /api/v1/deliveries/today
+    Backend-->>Frontend: Return Delivered status
+    Customer->>Frontend: Rate Rider (5 Stars + Review note)
+    Frontend->>Backend: POST /api/v1/driver-ratings
+    Backend->>DB: Save DriverRating
+    Backend-->>Customer: "Review Recorded!"
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 5: STATE MACHINE -->
+    <div id="state" class="diagram-panel">
+      <h2>5. Delivery Task Lifecycle State Machine</h2>
+      <p class="desc">State transitions and guards governing delivery tasks from scheduled recurrence to doorstep fulfillment or return-to-hub.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Scheduled: Daily Generation / Subscription Active
+    
+    Scheduled --> Assigned: Route Allocated to Rider
+    Assigned --> In_Progress: Rider Starts Delivery Route
+    
+    In_Progress --> Delivered: Doorstep Drop Completed
+    In_Progress --> Failed: Door Locked / Guard Refused
+    In_Progress --> Skipped: Customer Requested Same-Day Skip
+    
+    Failed --> In_Progress: Retry Delivery on Return Loop
+    Failed --> Returned_to_Hub: Shift Finished Without Redelivery
+    
+    Delivered --> [*]: Bottles Logged & Payment Settled
+    Returned_to_Hub --> [*]: Milk Checked into Spoilage/Cold Silo
+    Skipped --> [*]: Bill Adjusted for Omitted Day
+        </pre>
+      </div>
+    </div>
+
+    <!-- TAB 6: DFD LEVEL 1 -->
+    <div id="dfd" class="diagram-panel">
+      <h2>6. Data Flow Diagram (DFD Level 1)</h2>
+      <p class="desc">Operational data movement between external entities, business processes, and internal data stores.</p>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+graph TD
+    E_Farmer["Dairy Farmer / Supplier"]
+    E_Owner["Dairy Owner"]
+    E_Rider["Delivery Fleet"]
+    E_Cust["Customer"]
+
+    P1["1.0 Milk Intake & Silo Quality"]
+    P2["2.0 Subscription & Order Mgmt"]
+    P3["3.0 Daily Route & Dispatch Planning"]
+    P4["4.0 Doorstep Delivery Execution"]
+    P5["5.0 Billing & Invoice Ledger"]
+    P6["6.0 Staff Attendance & Payroll"]
+
+    D1[("D1: Inventory Silos")]
+    D2[("D2: Customers & Subscriptions")]
+    D3[("D3: Delivery Tasks")]
+    D4[("D4: Invoices & Receipts")]
+    D5[("D5: Staff & Attendance")]
+
+    E_Farmer -->|Raw Milk Liters, FAT/SNF| P1
+    P1 -->|Update Available Stock| D1
+
+    E_Cust -->|Register Subscription / Pause| P2
+    P2 -->|Save Customer Profile & Schedule| D2
+
+    E_Owner -->|Trigger Daily Dispatch| P3
+    D2 -->|Read Active Subscriptions| P3
+    D1 -->|Verify Available Stock| P3
+    P3 -->|Write Manifest Stops| D3
+
+    D3 -->|Assigned Stop Sequence| P4
+    E_Rider -->|Drop Confirmation & Bottles| P4
+    P4 -->|Update Task Status| D3
+
+    D3 -->|Completed Liters| P5
+    P5 -->|Generate Monthly Invoices| D4
+    D4 -->|WhatsApp Bill Statement| E_Cust
+
+    E_Rider -->|Clock-in GPS & Pickup| P6
+    P6 -->|Record Shift & Daily Salary| D5
+    E_Owner -->|Disburse UPI / Cash Wage| P6
+        </pre>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>DairyPulse System Documentation &bull; Built with Next.js 16, FastAPI, and SQLAlchemy &bull; Academic Year 2026</p>
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#e0f2fe',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0284c7',
+        lineColor: '#0F766E',
+        secondaryColor: '#f0fdfa',
+        tertiaryColor: '#ffffff'
+      }
+    });
+
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.diagram-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
