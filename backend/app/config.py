@@ -4,14 +4,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = BACKEND_DIR / "dairypulse.db"
+DEFAULT_SUPABASE_DB_URL = "postgresql://postgres.vgpflayyocspsrakuvvs:riteshtayade68@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "DairyPulse API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
-    # Database URL: uses PostgreSQL if provided, defaults to absolute SQLite path
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH.as_posix()}")
+    # Database URL: Primary is live Supabase PostgreSQL, fallback to SQLite if needed
+    DATABASE_URL: str = os.getenv("DATABASE_URL", DEFAULT_SUPABASE_DB_URL)
     
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dairypulse-secret-key-development-2026")
     ALGORITHM: str = "HS256"

@@ -416,7 +416,94 @@ export async function POST(
       return NextResponse.json({ success: true, rating: newRating }, { headers });
     }
 
-    // 7. Generic successful creation fallback
+    // 7. Add Product / Stock Receipt
+    if (path === 'inventory/products') {
+      const prodId = `prod_${Date.now()}`;
+      const newProd = {
+        id: prodId,
+        name: body.name,
+        variant: body.variant,
+        unit: body.unit || 'Liter',
+        fat_content: body.fatContent || 4.2,
+        snf_content: body.snfContent || 8.5,
+        selling_price: body.sellingPrice || 60,
+        cost_price: body.costPrice || 45,
+        available_stock: body.availableStock || 500,
+        low_stock_threshold: body.lowStockThreshold || 100,
+        status: 'In Stock',
+        dairy_name: body.dairyName || 'Amrut Dairy Farm',
+      };
+      await supabase.from('products').insert([newProd]);
+      return NextResponse.json(newProd, { headers });
+    }
+
+    // 8. Log Stock Receipt
+    if (path === 'inventory/receipts') {
+      const rcpt = {
+        id: `rcpt_${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        type: 'RECEIPT',
+        product_variant: body.productVariant,
+        quantity: body.quantity,
+        supplier_batch: body.supplierOrBatch || 'Direct Tanker Intake',
+        rate_per_liter: body.ratePerLiter || 45,
+        fat_percentage: body.fatPercentage || 4.2,
+        snf_percentage: body.snfPercentage || 8.5,
+        notes: body.notes || '',
+      };
+      await supabase.from('stock_receipts').insert([rcpt]);
+      return NextResponse.json({ success: true, receipt: rcpt }, { headers });
+    }
+
+    // 9. Add Staff Member
+    if (path === 'staff') {
+      const staffId = `st_${Date.now()}`;
+      const newStaff = {
+        id: staffId,
+        name: body.name,
+        role: body.role || 'Delivery Rider',
+        phone: body.phone,
+        email: body.email || '',
+        assigned_area: body.assignedArea || 'Central Route',
+        status: 'On Duty',
+        daily_salary: body.dailySalary || 600,
+        pending_salary: 0,
+        dairy_name: body.dairyName || 'Amrut Dairy Farm',
+      };
+      await supabase.from('staff').insert([newStaff]);
+      if (body.password) {
+        await supabase.from('users').insert([
+          {
+            id: `usr_${Date.now()}`,
+            email: body.email || '',
+            phone: body.phone,
+            password_hash: body.password,
+            full_name: body.name,
+            role: 'DELIVERY',
+            dairy_name: body.dairyName || 'Amrut Dairy Farm',
+          },
+        ]);
+      }
+      return NextResponse.json(newStaff, { headers });
+    }
+
+    // 10. Log Expense
+    if (path === 'expenses') {
+      const exp = {
+        id: `exp_${Date.now()}`,
+        category: body.category,
+        amount: body.amount,
+        date: body.date || new Date().toISOString().split('T')[0],
+        vendor: body.vendor,
+        payment_method: body.paymentMethod || 'UPI',
+        notes: body.notes || '',
+        dairy_name: body.dairyName || 'Amrut Dairy Farm',
+      };
+      await supabase.from('expenses').insert([exp]);
+      return NextResponse.json(exp, { headers });
+    }
+
+    // 11. Generic successful creation fallback
     return NextResponse.json({ success: true, id: `res_${Date.now()}`, ...body }, { headers });
   } catch (err: any) {
     console.error(`API POST error on /${path}:`, err);
@@ -446,6 +533,31 @@ export async function PATCH(
       return NextResponse.json({ success: true, id: deliveryId, status: body.status }, { headers });
     }
 
+    // Update Customer Profile
+    if (path.startsWith('customers/')) {
+      const parts = path.split('/');
+      const custId = parts[1];
+      const updates: any = {};
+      if (body.name) updates.name = body.name;
+      if (body.phone) updates.phone = body.phone;
+      if (body.address) updates.address = body.address;
+      if (body.area) updates.area = body.area;
+      if (body.status) updates.status = body.status;
+      await supabase.from('customers').update(updates).eq('id', custId);
+      return NextResponse.json({ success: true, id: custId, ...updates }, { headers });
+    }
+
+    // Update Staff Status / Salary
+    if (path.startsWith('staff/')) {
+      const parts = path.split('/');
+      const staffId = parts[1];
+      const updates: any = {};
+      if (body.status) updates.status = body.status;
+      if (body.dailySalary || body.daily_salary) updates.daily_salary = body.dailySalary || body.daily_salary;
+      await supabase.from('staff').update(updates).eq('id', staffId);
+      return NextResponse.json({ success: true, id: staffId, ...updates }, { headers });
+    }
+
     return NextResponse.json({ success: true, ...body }, { headers });
   } catch (err: any) {
     console.error(`API PATCH error on /${path}:`, err);
@@ -460,6 +572,32 @@ export async function DELETE(
   const { slug } = await context.params;
   const path = slug.join('/');
   const headers = corsHeaders();
+
+  try {
+    if (path.startsWith('customers/')) {
+      const id = path.split('/')[1];
+      await supabase.from('customers').delete().eq('id', id);
+      return NextResponse.json({ success: true, deleted: id }, { headers });
+    }
+    if (path.startsWith('subscriptions/')) {
+      const id = path.split('/')[1];
+      await supabase.from('subscriptions').delete().eq('id', id);
+      return NextResponse.json({ success: true, deleted: id }, { headers });
+    }
+    if (path.startsWith('staff/')) {
+      const id = path.split('/')[1];
+      await supabase.from('staff').delete().eq('id', id);
+      return NextResponse.json({ success: true, deleted: id }, { headers });
+    }
+    if (path.startsWith('inventory/products/')) {
+      const id = path.split('/')[2];
+      await supabase.from('products').delete().eq('id', id);
+      return NextResponse.json({ success: true, deleted: id }, { headers });
+    }
+  } catch (err: any) {
+    console.warn(`DELETE error on /${path}:`, err);
+  }
+
   return NextResponse.json({ success: true, deleted: path }, { headers });
 }
 
